@@ -27,14 +27,13 @@ if not os.path.exists(UPLOAD_DIRECTORY):
 
 @tool
 def SQLQuery(text):
-    """Forms the SQL Query and returns the result of the query."""
-    # db = SQLDatabase.from_uri("sqlite:///JK_Data.db") 
+    """Forms the SQL Query and returns the result of the query.""" 
     conn = psycopg2.connect( 
-        database="postgres", 
+        database="test2", 
         user="postgres", 
-        password="pwd123", 
+        password="123", 
         host="localhost", 
-        port="5433"
+        port="5432"
     ) 
 
     query_prompt = ChatPromptTemplate.from_template(
