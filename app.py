@@ -1,7 +1,6 @@
 import os
 from flask import Flask, jsonify, request,send_file
 from flask_cors import CORS
-from langchain_groq import ChatGroq
 from langchain_community.callbacks import get_openai_callback
 from langchain_openai import ChatOpenAI
 
