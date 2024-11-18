@@ -1,5 +1,5 @@
 import os
-from flask import Flask, jsonify, request,send_file
+from flask import Flask, jsonify, request, send_file
 from flask_cors import CORS
 from langchain_community.callbacks import get_openai_callback
 from langchain_openai import ChatOpenAI
@@ -10,6 +10,12 @@ from langchain_core.output_parsers import JsonOutputParser
 import pandas as pd
 import psycopg2
 import time
+from dotenv import load_dotenv
+import logging
+
+load_dotenv()
+
+log = logging.getLogger(__name__)
 
 llm = ChatOpenAI(model='gpt-4o')
 
@@ -26,13 +32,15 @@ if not os.path.exists(UPLOAD_DIRECTORY):
 def SQLQuery(text):
     """Forms the SQL Query and returns the result of the query."""
     conn = psycopg2.connect(
-        host='localhost', 
-        database='test2', 
-        user='postgres', 
-        password='123',
-        port='5433'
+        host = "localhost", 
+        database = "test2", 
+        user = "postgres", 
+        password = "123",
+        port = "5433"
     )
     conn.autocommit = True
+
+    log.debug("Connection Established!")
 
     query_prompt = ChatPromptTemplate.from_template(
     """
@@ -170,9 +178,13 @@ def SQLQuery(text):
     query = format_chain.invoke({"text": text, "sql_format_example": sql_format_example})
     print("\nQuery: ", query)
 
+    log.debug("Query Formed!")
+
     cursor = conn.cursor() 
 
     cursor.execute(query) 
+
+    log.debug("Query Executed!")
 
     result = cursor.fetchall()
     # print("\nResult: ", result)
@@ -229,11 +241,12 @@ def visualize(text):
 
     json_chain = json_prompt | llm | parser
 
-    # Add a print statement to check the output before parsing
     print("Raw output before JSON parsing:", result)  # Debugging line
 
     query = json_chain.invoke({"result": result, "text": text, "query": query, "data_format": json_format_example})
 
+    log.debug("Json Formed!")
+    
     print("\nJson: ", query)
 
     return query
@@ -246,6 +259,7 @@ def excel(text):
     current_time_millis = int(time.time() * 1000)
     filename = os.path.join(UPLOAD_DIRECTORY, '{current_time_millis}.xlsx'.format(current_time_millis=current_time_millis))
     df.to_excel(filename, index=False)
+    log.debug("Excel Formed!")
     return '{domain}{current_time_millis}.xlsx'.format(domain=domain, current_time_millis=current_time_millis)
     
 tool = [SQLQuery, visualize, excel]
@@ -348,6 +362,8 @@ def queryJson():
     print(req)
     text = req['question']
 
+    log.debug("Request Received!")
+
     with get_openai_callback() as cb:
         function_call = format_chain.invoke({"query": text})
         print("FC:", function_call)
@@ -359,12 +375,14 @@ def queryJson():
         else:
             result = SQLQuery.invoke(text)
 
-        return result
+    log.debug("Request Completed!")
 
     print(f"Total Tokens: {cb.total_tokens}")
     print(f"Prompt Tokens: {cb.prompt_tokens}")
     print(f"Completion Tokens: {cb.completion_tokens}")
     print(f"Total Cost (USD): ${cb.total_cost}")
+
+    return result
 
 @app.route('/lms/download-excel', methods=['GET'])
 def download_excel():
@@ -374,6 +392,7 @@ def download_excel():
         if not os.path.exists(filename):
             return jsonify({'error': 'Excel file not found'}), 404
 
+        log.debug("Excel Return Processing!")
         # Send the Excel file as a downloadable attachment
         return send_file(
             filename,
