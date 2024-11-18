@@ -1,12 +1,9 @@
 import os
 from flask import Flask, jsonify, request,send_file
 from flask_cors import CORS
+from langchain_groq import ChatGroq
 from langchain_community.callbacks import get_openai_callback
 from langchain_openai import ChatOpenAI
-
-# llm = ChatGroq(model='llama-3.1-70b-versatile')
-llm = ChatOpenAI(model='gpt-4o')
-
 from langchain_core.tools import tool
 from langchain_core.prompts import ChatPromptTemplate
 from langchain.schema import StrOutputParser
@@ -14,6 +11,8 @@ from langchain_core.output_parsers import JsonOutputParser
 import pandas as pd
 import psycopg2
 import time
+
+llm = ChatOpenAI(model='gpt-4o')
 
 app = Flask(__name__)
 CORS(app, origins = ['*']) 
@@ -26,14 +25,15 @@ if not os.path.exists(UPLOAD_DIRECTORY):
 
 @tool
 def SQLQuery(text):
-    """Forms the SQL Query and returns the result of the query.""" 
-    conn = psycopg2.connect( 
-        database="test2", 
-        user="postgres", 
-        password="123", 
-        host="localhost", 
-        port="5432"
-    ) 
+    """Forms the SQL Query and returns the result of the query."""
+    conn = psycopg2.connect(
+        host='localhost', 
+        database='test2', 
+        user='postgres', 
+        password='123',
+        port='5433'
+    )
+    conn.autocommit = True
 
     query_prompt = ChatPromptTemplate.from_template(
     """
@@ -359,6 +359,8 @@ def queryJson():
             result = excel.invoke(result)
         else:
             result = SQLQuery.invoke(text)
+
+        return result
 
     print(f"Total Tokens: {cb.total_tokens}")
     print(f"Prompt Tokens: {cb.prompt_tokens}")
