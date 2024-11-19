@@ -35,8 +35,7 @@ def SQLQuery(text):
         host = "localhost", 
         database = "test2", 
         user = "postgres", 
-        password = "123",
-        port = "5433"
+        password = "123"
     )
     conn.autocommit = True
 
