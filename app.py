@@ -243,13 +243,13 @@ def visualize(text):
 
     print("Raw output before JSON parsing:", result)  # Debugging line
 
-    query = json_chain.invoke({"result": result, "text": text, "query": query, "data_format": json_format_example})
+    query1 = json_chain.invoke({"result": result, "text": text, "query": query, "data_format": json_format_example})
 
     log.debug("Json Formed!")
     
-    print("\nJson: ", query)
+    print("\nJson: ", query1)
 
-    return query
+    return query1
 
 @tool
 def excel(text):
