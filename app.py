@@ -219,11 +219,11 @@ def visualize(text):
     For the given user question {text}, please give an approprite graph type and accurate graph parameters datakey and namekey wherever relevant.
     The json result should consist of the following JSON keys:
         1. "input" -> The user input {text}
-        2. "query" -> The SQL Query {query}
-        2. "graph_type" -> This will have the type of chart to be plotted. It will consist of only the type of chart such as "line", "bar", "area", "pie", "scatter" and no other information.
+        2. "graph_type" -> This will have the type of chart to be plotted. It will consist of only the type of chart such as "linechart", "barchart", "areachart", "piechart", "scatterchart" and no other information.
         3. "graph_parameters" -> This will have parameters needed to plot the graph.
         4. "data" -> This will consist of data points. 
-
+        5. "sql_query" -> The SQL query input {query}
+        6. "label" -> A label for the graph
     Only output the json and nothing else.
     Labels and Legends should have human readable names (not the field names).
     The dataKey should only reference fields from the user question.
@@ -243,18 +243,42 @@ def visualize(text):
 
     print("Raw output before JSON parsing:", result)  # Debugging line
 
-    query1 = json_chain.invoke({"result": result, "text": text, "query": query, "data_format": json_format_example})
+    query = json_chain.invoke({"result": result, "text": text, "query": query, "data_format": json_format_example})
 
     log.debug("Json Formed!")
     
-    print("\nJson: ", query1)
+    print("\nJson: ", query)
 
-    return query1
+    # return query
+    return {
+            'chart_result': {
+                'data': query.get('data', None),
+                'graph_parameters': query.get('graph_parameters', None),
+                'graph_type': query.get('graph_type', None),
+                'query': query.get('sql_query', None),
+                'chart_description': query.get('label', None),
+                },
+            'input_question':query.get('input', None),
+            }, 200
+
+
+
+# return {
+#                 'chart_result': {
+#                     'data': result or [],
+#                     'graph_parameters': response_json.get('graph_parameters', None),
+#                     'graph_type': response_json.get('graph_type', None),
+#                     'query': query_result or None,
+#                     'chart_description': chart_description or None
+#                     # 'chart_description': None
+#                     },
+#                 'input_question': question,
+#             }, 200
 
 @tool
 def excel(text):
     """Return results as excel file"""
-    result = SQLQuery.invoke(text)
+    query, result = SQLQuery.invoke(text)
     df = pd.DataFrame(result)
     current_time_millis = int(time.time() * 1000)
     filename = os.path.join(UPLOAD_DIRECTORY, '{current_time_millis}.xlsx'.format(current_time_millis=current_time_millis))
@@ -269,20 +293,22 @@ Example 1 =>
 ```json
 {
     "input": "Share a bar chart for average quarterly offtake for year 2022",
-    "query": "SELECT "quarter", AVG("quantity") AS "average_offtake" FROM "data" WHERE "year" = 2022 GROUP BY "quarter"",
-    "graph_type": "bar",
+    "graph_type": "barchart",
     "graph_parameters": {"datakey_XAxis": "quarter", "namekey_XAxis": "quarter", "datakey_YAxis": "average_offtake", "namekey_YAxis": "Average Quarterly Offtake", "datakey_Bar_1": "average_offtake", "namekey_Bar_1": "Average Offtake"},
-    "data": [{"quarter": "Q1", "average_offtake": 8.0393105368476108}, {"quarter": "Q2", "average_offtake": 8.2378032538059075}, {"quarter": "Q3", "average_offtake": 7.8879574670104418}, {"quarter": "Q4", "average_offtake": 7.8775089728485712}]
+    "data": [{"quarter": "Q1", "average_offtake": 8.0393105368476108}, {"quarter": "Q2", "average_offtake": 8.2378032538059075}, {"quarter": "Q3", "average_offtake": 7.8879574670104418}, {"quarter": "Q4", "average_offtake": 7.8775089728485712}],
+    "sql_query": "SELECT "quarter", AVG("quantity") AS "average_offtake" FROM "data" WHERE "year" = 2022 GROUP BY "quarter"",
+    "label": "Bar Chart for Average Quarterly Offtake"
 }
 
 Example 2 =>
 ```json
 {
     "input": "Share a pie chart for average quarterly offtake for year 2022",
-    "query": "SELECT "quarter", AVG("quantity") AS "average_offtake" FROM "data" WHERE "year" = 2022 GROUP BY "quarter"",
-    "graph_type": "pie",
+    "graph_type": "piechart",
     "graph_parameters": {"datakey_Pie_1": "average_quarterly_offtake", "namekey_Pie_1": "quarter"},
-    "data": [{"quarter": "Q1", "average_offtake": 8.0393105368476108}, {"quarter": "Q2", "average_offtake": 8.2378032538059075}, {"quarter": "Q3", "average_offtake": 7.8879574670104418}, {"quarter": "Q4", "average_offtake": 7.8775089728485712}]
+    "data": [{"quarter": "Q1", "average_offtake": 8.0393105368476108}, {"quarter": "Q2", "average_offtake": 8.2378032538059075}, {"quarter": "Q3", "average_offtake": 7.8879574670104418}, {"quarter": "Q4", "average_offtake": 7.8775089728485712}],
+    "sql_query": "SELECT "quarter", AVG("quantity") AS "average_offtake" FROM "data" WHERE "year" = 2022 GROUP BY "quarter"",
+    "label": "Pie Chart for Average Quarterly Offtake"
 }
 ```
 
@@ -290,10 +316,11 @@ Example 3 =>
 ```json
 {
     "input": "Show a bar chart for the count of distinct dealers for each zone with 'HY' classification for FY 2020-21",
-    "query": "SELECT "data"."zone", COUNT(DISTINCT "data"."customercode") FROM "data" WHERE "data"."customerclassification" = 'HY' AND "data"."financialyear" = '20-21' GROUP BY "data"."zone""
-    "graph_type": "bar",
+    "graph_type": "barchart",
     "graph_parameters": {"datakey_XAxis": "zone", "namekey_XAxis": "Zone", "datakey_YAxis": "count", "namekey_YAxis": "Count of Dealers", "datakey_Bar_1": "count", "namekey_Bar_1": "Count of Dealers"},
-    "data": [{"zone": "East", "count": 13}, {"zone": "North", "count": 2}, {"zone": "West", "count": 3}]
+    "data": [{"zone": "East", "count": 13}, {"zone": "North", "count": 2}, {"zone": "West", "count": 3}],
+    "sql_query": "SELECT "data"."zone", COUNT(DISTINCT "data"."customercode") FROM "data" WHERE "data"."customerclassification" = 'HY' AND "data"."financialyear" = '20-21' GROUP BY "data"."zone"",
+    "label": "Bar Chart for Count of Dealers"
 }
 ```
 
@@ -301,10 +328,12 @@ Example 4 =>
 ```json
 {
     "input": "Share a bar graph for total count of customers by year and quarter in North Zone with Customer Classification 'TP' for Q1 of FY 2019-20 to Q4 of FY 2020-21", 
-    "query": "SELECT "year", "quarter", COUNT("customercode") FROM "data" WHERE "zone" = \'North\' AND "customerclassification" = \'TP\' AND "financialyear" IN (\'19-20\', \'20-21\') GROUP BY "financialyear", "quarter" ORDER BY "financialyear"",
-    "graph_type": "bar", 
+    "graph_type": "barchart", 
     "graph_parameters": {"datakey_XAxis": "quarter", "namekey_XAxis": "Quarter", "datakey_YAxis": "count", "namekey_YAxis": "Total Count of Customers", "datakey_Bar_1": "count", "namekey_Bar_1": "Total Count of Customers"}, 
-    "data": [{"quarter": "Q1 2019-20", "count": 14475}, {"quarter": "Q2 2019-20", "count": 10021}, {"quarter": "Q3 2019-20", "count": 7925}, {"quarter": "Q4 2019-20", "count": 7070}, {"quarter": "Q1 2020-21", "count": 3700}, {"quarter": "Q2 2020-21", "count": 7819}, {"quarter": "Q3 2020-21", "count": 7704}, {"quarter": "Q4 2020-21", "count": 6444}
+    "data": [{"quarter": "Q1 2019-20", "count": 14475}, {"quarter": "Q2 2019-20", "count": 10021}, {"quarter": "Q3 2019-20", "count": 7925}, {"quarter": "Q4 2019-20", "count": 7070}, {"quarter": "Q1 2020-21", "count": 3700}, {"quarter": "Q2 2020-21", "count": 7819}, {"quarter": "Q3 2020-21", "count": 7704}, {"quarter": "Q4 2020-21", "count": 6444}],
+    "sql_query": "SELECT "year", "quarter", COUNT("customercode") FROM "data" WHERE "zone" = \'North\' AND "customerclassification" = \'TP\' AND "financialyear" IN (\'19-20\', \'20-21\') GROUP BY "financialyear", "quarter" ORDER BY "financialyear"",
+    "label": "Bar Graph for Total Count of Customers"
+}
 
 In the above examples, the fields for "data" are truncated for some cases, but for actual output print all the entries available.
 """
@@ -373,7 +402,7 @@ def queryJson():
         elif function_call == "excel":
             result = excel.invoke(result)
         else:
-            result = SQLQuery.invoke(text)
+            query, result = SQLQuery.invoke(text)
 
     log.debug("Request Completed!")
 
@@ -406,6 +435,3 @@ def download_excel():
 if __name__ == '__main__':
     # Run the Flask development server on a different port (e.g., 8000)
     app.run(host="0.0.0.0", port=8001, debug=False, threaded=True)
-
-
-
