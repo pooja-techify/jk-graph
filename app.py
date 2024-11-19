@@ -231,7 +231,9 @@ def visualize(text):
     DO NOT ADD numbered suffixed like "_1" or "_2" to graph parameters containing XAxis or YAxis in their name.
     The json should contain the data in chronological month order (JAN, FEB, MAR, etc.) per year and not alphabetically.
     For queries involving quarters of years the data should ALWAYS be ordered as Q4, Q1, Q2, Q3 - ordered in ascending order of years.
+    For queries involving quarters of financial years the data should ALWAYS be ordered as Q1, Q2, Q3, Q4 - ordered in ascending order of years.
     For example: Q1 2020, Q2 2020, Q3 2020, Q4 2021, Q1 2021, Q2 2021 and so on.
+    For example: Q1 21-22, Q2 21-22, Q3 21-22, Q4 21-22, Q1 22-23, Q2 22-23 and so on.
     Each data point in "data" should consist of only 2 fields. In case if data points consists of multiple fields, merge the categorical value. For example: quarter and year can be merged to form date.
     
     Here are some examples of the format of output required : {data_format}
