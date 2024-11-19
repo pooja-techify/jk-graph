@@ -185,14 +185,15 @@ def SQLQuery(text):
 
     log.debug("Query Executed!")
 
-    result = cursor.fetchall()
+    res = cursor.fetchall()
+    result = '\n'.join(str(e) for e in res)
     # print("\nResult: ", result)
  
     conn.commit() 
     conn.close() 
 
     # result = db.run(query)
-    print("\nResult: ", result)
+    print(result)
     
     return query, result
 
