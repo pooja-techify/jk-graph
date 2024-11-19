@@ -130,7 +130,7 @@ def SQLQuery(text):
     
     Unless asked exclusively, don't include active status in query.
 
-    When asked for a quarter on quarter offtake or month on month offtake, calculate the difference in quantity for a month or quarter  across the years.
+    When asked for a quarter on quarter offtake or month on month offtake, calculate the difference in quantity for a month or quarter across the years and return only the difference per month or quarter and month or quarter respectively.
 
     When user mentions a quarter of a year, only fetch details for that particular quarter of that year.
 
@@ -336,6 +336,17 @@ Example 4 =>
     "label": "Bar Graph for Total Count of Customers"
 }
 
+example 5 =>
+```json
+{
+    "input": "Share a change in quarter on quarter offtake for year FY 2021-22 vs FY 2022-23 as a line chart", 
+    "graph_type": "linechart", 
+    "graph_parameters": {"datakey_XAxis": "quarter", "namekey_XAxis": "Quarter", "datakey_YAxis": "quarter_on_quarter_offtake", "namekey_YAxis": "Change in Quarter on Quarter Offtake", "datakey_Bar_1": "change", "namekey_Bar_1": "Change in Offtake"}, 
+    "data": [{"quarter": "Q1", "count": 14475}, {"quarter": "Q2", "count": 10021}, {"quarter": "Q3", "count": 7925}, {"quarter": "Q4", "count": 7070}],
+    "sql_query": "SELECT "quarter", SUM(CASE WHEN "financialyear" = '22-23' THEN "quantity" ELSE 0 END) - SUM(CASE WHEN "financialyear" = '21-22' THEN "quantity" ELSE 0 END) AS "change_in_offtake" FROM "data" WHERE ("data"."financialyear" IN ('21-22', '22-23')) GROUP BY "data"."quarter" ORDER BY "data"."quarter""
+    "label": "Line Graph for Change in Quarter on Quarter Offtake"
+}
+
 In the above examples, the fields for "data" are truncated for some cases, but for actual output print all the entries available.
 """
 
@@ -355,6 +366,10 @@ Example 3 =>
 Example 4 =>
     Input: Share the amount of distinct dealers with Steel Wheels classification, where quarterly offtake reduced by 30%, from Q1 FY 2022-23 to Q1 FY 2023-24
     Output: SELECT COUNT(DISTINCT "data"."customercode") FROM "data" WHERE "data"."customerclassification" = 'SW' AND ("data"."financialyear" = '22-23' AND "data"."quarter" = 'Q1' OR "data"."financialyear" = '23-24' AND "data"."quarter" = 'Q1') HAVING SUM(CASE WHEN "data"."financialyear" = '22-23' THEN "data"."quantity" ELSE 0 END) > 0 AND SUM(CASE WHEN "data"."financialyear" = '23-24' THEN "data"."quantity" ELSE 0 END) < SUM(CASE WHEN "data"."financialyear" = '22-23' THEN "data"."quantity" ELSE 0 END) * 0.7
+
+Example 5 =>
+    Input: Share a change in quarter on quarter offtake for year FY 2021-22 vs FY 2022-23 as a line chart
+    Output: SELECT "quarter", SUM(CASE WHEN "financialyear" = '22-23' THEN "quantity" ELSE 0 END) - SUM(CASE WHEN "financialyear" = '21-22' THEN "quantity" ELSE 0 END) AS "change_in_offtake" FROM "data" WHERE ("data"."financialyear" IN ('21-22', '22-23')) GROUP BY "data"."quarter" ORDER BY "data"."quarter" 
 """
 
 
