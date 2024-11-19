@@ -158,8 +158,8 @@ def SQLQuery(text):
     Make sure your query does not have more than one row returned by a subquery used as an expression.
 
     For SELECT DISTINCT, ORDER BY expressions must be present in query.
-    For queries using months for yearly data, the order of months should always be chronologically (JAN, FEB, MAR) and not alphabetically.
-    For queries using months for Financial Yearly data, the order of months should always be chronologically, starting from APR and going to MAR in order (APR, MAY, JUN, JUL) and not alphabetically.
+    For queries using months for quarterly or yearly data, the order of months should always be chronologically (JAN, FEB, MAR, APR) and not alphabetically.
+    For queries using months for quarters or years of Financial Yearly data, the order of months should always be chronologically, starting from APR and going to MAR in order (APR, MAY, JUN, JUL) and not alphabetically.
     
     For financial year queries, NEVER group by year.
     It you are using ORDER BY for a column, it should ALWAYS be fetched under the SELECT part of the query.
