@@ -12,6 +12,8 @@ import psycopg2
 import time
 from dotenv import load_dotenv
 import logging
+import json
+import uuid
 
 load_dotenv()
 
@@ -395,6 +397,229 @@ format_chain = function_calling_prompt | llm | StrOutputParser()
 @app.route("/", methods=['GET'])
 def hello_world():
   return "<p>I'm building something cool today!</p>"
+
+def query_result(query):
+    try:
+        conn = psycopg2.connect(
+        host = "localhost", 
+        database = "test2", 
+        user = "postgres", 
+        password = "123"
+    )
+        cur=conn.cursor()
+    
+        cur.execute(query)
+        rows=cur.fetchall()
+        column_names=[desc[0] for desc in cur.description]
+        print(rows)
+        print("Successfully generated Query Output.")
+        result=[dict(zip(column_names,row)) for row in rows]
+        return result
+    except (Exception,psycopg2.Error) as e:
+        print(f"Error creating table: {str(e)}")
+    finally:
+        if cur:
+            cur.close()
+        if conn:
+            conn.close()
+    
+def update_order_number(user_id):
+    update_count=""" UPDATE chart_data SET display_order = display_order + 1 WHERE user_id=%s;"""
+    try:
+        conn = psycopg2.connect(
+        host = "localhost", 
+        database = "test2", 
+        user = "postgres", 
+        password = "123"
+    )
+        cur=conn.cursor()
+        cur.execute(update_count,(str(user_id),))
+        conn.commit()
+        return jsonify({"message":f"Successfuly updated the order count"}), 200
+    except (Exception, psycopg2.Error) as e:
+        return jsonify({"message": f"Error updating  display order column: {str(e)}"}), 500
+    finally:
+        
+        if cur:
+            cur.close()
+        if conn:
+            conn.close()
+
+
+def insert_data(user_id,prompt,query,graph_type,graph_parameters,name):
+    update_order_number(user_id)
+    order=0
+    insert_rows="""
+INSERT INTO chart_data(user_id,prompt,query,graph_type,graph_parameters,name,id,display_order) VALUES(%s,%s,%s,%s,%s,%s,%s,%s);
+
+"""
+    try:
+        conn = psycopg2.connect(
+        host = "localhost", 
+        database = "test2", 
+        user = "postgres", 
+        password = "123"
+    )
+        cur=conn.cursor()
+        cur.execute(insert_rows,(user_id,prompt,query,graph_type,graph_parameters,name,str(uuid.uuid4()),order))
+        conn.commit()
+        return {"message":"Successfully saved the chart data in chart_data table."}
+    except (Exception,psycopg2.Error) as e:
+        return {"message":f"Error saving chart data {str(e)}"}
+    finally:
+        if cur:
+            cur.close()
+        if conn:
+            conn.close()
+    
+
+@ app.route('/lms/save',methods=['POST'])
+def save_query_url():
+    result={}
+    data=request.json
+    user_id=data.get("user_id")
+    prompt=data.get("prompt")
+    
+    if not user_id or not prompt:
+        return jsonify({"error": 'Missing user_id or prompt in the request'}),400
+    
+    try:
+        # llm_response=chat_with_openai(prompt)
+        # try:
+        #     json_data=json.loads(llm_response)
+        # except json.JSONDecodeError as e:
+        #     return jsonify({"error": f"Error parsing LLM response: {str(e)}"}), 500
+
+        # if 'query' not in json_data:
+        #     return jsonify({"error": "Query not found in LLM response"}), 500
+        
+        json_data = request.json
+        query=json_data["query"]
+        # chart_data=query_result(query)
+        graph_type=json_data["graph_type"]
+        graph_parameters=json_data["graph_parameters"]
+        name=json_data["name"]
+        result["prompt"]=prompt
+        result["name"]=name
+        result["query"]=query
+        result["graph_type"]=graph_type
+        result["graph_parameters"]=graph_parameters
+
+        postgres_response=insert_data(user_id,prompt,query,graph_type,json.dumps(graph_parameters),name)
+        result["database_message"]=postgres_response["message"]
+        return jsonify(result),200
+    except Exception as e:
+        return jsonify({"error":f"An error occured: {str(e)}"}),500
+
+@app.route('/lms/charts', methods=['GET'])
+def fetch_charts():
+    user_id = request.args.get('user_id')
+    
+   
+    if not user_id:
+        return jsonify({"message": "user_id is required"}), 400
+
+    query = "SELECT * FROM Chart_data WHERE user_id = %s"
+    conn = None
+    cur = None
+    
+    try:
+        
+        conn = psycopg2.connect(
+        host = "localhost", 
+        database = "test2", 
+        user = "postgres", 
+        password = "123"
+    )
+        cur = conn.cursor()
+        
+        
+        cur.execute(query, (str(user_id),))
+        result = cur.fetchall()
+
+      
+        if not result:
+            return jsonify({"message": "No charts found for this user."}), 404
+
+        
+        column_names = [desc[0] for desc in cur.description]
+        charts = [dict(zip(column_names, row)) for row in result]
+        print(charts)
+        results=[]
+        for i in charts:
+            result={}
+            result['id']=i['id']
+            result['user_id']=i['user_id']
+            result['name']=i['name']
+            result['prompt']=i['prompt']
+            query=i['query']
+            chart_data=query_result(query)
+            result['chartData']=chart_data
+            graph_type=i['graph_type']
+            graph_parameters=i['graph_parameters']
+            result['order']=i['display_order']
+            result['chartConfig']={
+                "query":query,
+                "graph_type":graph_type,
+                "graph_parameters":graph_parameters
+            }
+            results.append(result)
+
+        return jsonify(results), 200
+    
+    except (Exception, psycopg2.Error) as e:
+        return jsonify({"message": f"Error getting chart data: {str(e)}"}), 500
+
+    finally:
+        
+        if cur:
+            cur.close()
+        if conn:
+            conn.close()
+@app.route("/lms/charts/order", methods=["POST"])
+def update_order():
+    data = request.json
+    charts = data.get('charts')
+    update_query = """UPDATE chart_data SET display_order = %s WHERE id = %s;"""
+
+    
+    conn = None
+    cur = None
+
+    try:
+        
+        conn = psycopg2.connect(
+        host = "localhost", 
+        database = "test2", 
+        user = "postgres", 
+        password = "123"
+    )
+        cur = conn.cursor()
+
+        
+        for chart in charts:
+            chart_id = chart.get('id')
+            order = chart.get('order')
+            cur.execute(update_query, (order, chart_id))
+
+        
+        conn.commit()
+
+        return jsonify({"message": "Successfully saved the updated order in chart_data table."}), 200
+
+    except (Exception, psycopg2.Error) as e:
+   
+        if conn:
+            conn.rollback()
+        return jsonify({"message": f"Error updating order chart data: {str(e)}"}), 500
+
+    finally:
+       
+        if cur:
+            cur.close()
+        if conn:
+            conn.close()
+
 
 @app.route("/lms", methods=['POST'])
 def queryJson():
