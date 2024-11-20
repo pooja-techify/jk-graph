@@ -228,22 +228,36 @@ def visualize(text):
         3. "graph_parameters" -> This will have parameters needed to plot the graph.
         4. "data" -> This will consist of data points. 
         5. "sql_query" -> The SQL query input {query}
-        6. "label" -> A label for the graph
+        6. "label" -> A label for the graph, in human readable format and not field names.
     Only output the json and nothing else.
-    Labels and Legends should have human readable names (not the field names).
     The dataKey should only reference fields from the user question.
     The dataKey should always be exactly as in the SQL result, never use a dataKey that is not in the results.
     Always indicate where the datakey is coming from by suffixing the component with "_" followed by component name. Example: datakey_Pie_1, datakey_YAxis etc.
     DO NOT ADD numbered suffixed like "_1" or "_2" to graph parameters containing XAxis or YAxis in their name.
-    The namekey should be added for every graph.
-    There should be multiple namekey only when there are multi-plots.
+    The 'graph_parameters' should contain keys be as below depending on 'graph_type'. The necessary keys should always be there and the optional keys are added as per need:
+        - 'barchart' :
+            necessary : 'datakey_XAxis' => categorical value 
+                        'datakey_Bar_1' => numerical value
+            optional :  'datakey_Bar_2' => numerical value, add one each for plotting multiple bar graphs
+        - 'piechart' :
+            necessary : 'namekey_Pie_1' => categorical value 
+                        'datakey_Pie_1' => numerical value
+        - 'linechart' :
+            necessary : 'datakey_XAxis' => categorical value 
+                        'datakey_Line_1' => numerical value
+            optional :  'datakey_Line_2' => numerical value, add one each for plotting multiple line graphs
+        - 'scatterchart' :
+            necessary : 'namekey_Scatter' => categorical value 
+                        'datakey_XAxis' => numerical value
+            optional :  'datakey_Scatter_1' => numerical value, add one each for plotting multiple scatter graphs
+                        
+
     The json should contain the data in chronological month order (JAN, FEB, MAR, etc.) per year and not alphabetically.
     For queries involving quarters of years the data should ALWAYS be ordered as Q4, Q1, Q2, Q3 - ordered in ascending order of years.
     For queries involving quarters of financial years the data should ALWAYS be ordered as Q1, Q2, Q3, Q4 - ordered in ascending order of years.
     For example: Q1 2020, Q2 2020, Q3 2020, Q4 2021, Q1 2021, Q2 2021 and so on.
     For example: Q1 21-22, Q2 21-22, Q3 21-22, Q4 21-22, Q1 22-23, Q2 22-23 and so on.
-    Each data point in "data" should consist of only 2 fields. In case if data points consists of multiple fields, merge the categorical value. For example: quarter and year can be merged to form date.
-    
+    The data should have keys exactly same as values of 'graph_parameters', with each value from graph_parameter present in data as key.
     Here are some examples of the format of output required : {data_format}
     """
     )
@@ -289,7 +303,7 @@ Example 1 =>
 {
     "input": "Share a bar chart for average quarterly offtake for year 2022",
     "graph_type": "barchart",
-    "graph_parameters": {"datakey_XAxis": "quarter", "datakey_YAxis": "average_offtake", "namekey_Bar_1": "average_offtake"},
+    "graph_parameters": {"datakey_XAxis": "quarter", "namekey_Bar_1": "average_offtake"},
     "data": [{"quarter": "Q1", "average_offtake": 8.0393105368476108}, {"quarter": "Q2", "average_offtake": 8.2378032538059075}, {"quarter": "Q3", "average_offtake": 7.8879574670104418}, {"quarter": "Q4", "average_offtake": 7.8775089728485712}],
     "sql_query": "SELECT "quarter", AVG("quantity") AS "average_offtake" FROM "data" WHERE "year" = 2022 GROUP BY "quarter"",
     "label": "Bar Chart for Average Quarterly Offtake"
@@ -300,7 +314,7 @@ Example 2 =>
 {
     "input": "Share a pie chart for average quarterly offtake for year 2022",
     "graph_type": "piechart",
-    "graph_parameters": {"datakey_Pie_1": "average_quarterly_offtake", "namekey_Pie_1": "quarter"},
+    "graph_parameters": {"namekey_Pie_1": "quarter", "datakey_Pie_1": "average_offtake"},
     "data": [{"quarter": "Q1", "average_offtake": 8.0393105368476108}, {"quarter": "Q2", "average_offtake": 8.2378032538059075}, {"quarter": "Q3", "average_offtake": 7.8879574670104418}, {"quarter": "Q4", "average_offtake": 7.8775089728485712}],
     "sql_query": "SELECT "quarter", AVG("quantity") AS "average_offtake" FROM "data" WHERE "year" = 2022 GROUP BY "quarter"",
     "label": "Pie Chart for Average Quarterly Offtake"
@@ -312,7 +326,7 @@ Example 3 =>
 {
     "input": "Show a bar chart for the count of distinct dealers for each zone with 'HY' classification for FY 2020-21",
     "graph_type": "barchart",
-    "graph_parameters": {"datakey_XAxis": "zone", "datakey_YAxis": "count", "namekey_Bar_1": "count"},
+    "graph_parameters": {"datakey_XAxis": "zone", "namekey_Bar_1": "count"},
     "data": [{"zone": "East", "count": 13}, {"zone": "North", "count": 2}, {"zone": "West", "count": 3}],
     "sql_query": "SELECT "data"."zone", COUNT(DISTINCT "data"."customercode") FROM "data" WHERE "data"."customerclassification" = 'HY' AND "data"."financialyear" = '20-21' GROUP BY "data"."zone"",
     "label": "Bar Chart for Count of Dealers"
@@ -324,7 +338,7 @@ Example 4 =>
 {
     "input": "Share a scatter graph for total count of customers by year and quarter in North Zone with Customer Classification 'TP' for Q1 of FY 2019-20 to Q4 of FY 2020-21", 
     "graph_type": "scatterchart", 
-    "graph_parameters": {"datakey_XAxis": "quarter", "datakey_YAxis": "count", "namekey_Scatter_1": "count"}, 
+    "graph_parameters": {"datakey_XAxis": "count", "namekey_Scatter_1": "quarter"}, 
     "data": [{"quarter": "Q1 2019-20", "count": 14475}, {"quarter": "Q2 2019-20", "count": 10021}, {"quarter": "Q3 2019-20", "count": 7925}, {"quarter": "Q4 2019-20", "count": 7070}, {"quarter": "Q1 2020-21", "count": 3700}, {"quarter": "Q2 2020-21", "count": 7819}, {"quarter": "Q3 2020-21", "count": 7704}, {"quarter": "Q4 2020-21", "count": 6444}],
     "sql_query": "SELECT "year", "quarter", COUNT("customercode") FROM "data" WHERE "zone" = \'North\' AND "customerclassification" = \'TP\' AND "financialyear" IN (\'19-20\', \'20-21\') GROUP BY "financialyear", "quarter" ORDER BY "financialyear"",
     "label": "Scatter Graph for Total Count of Customers"
@@ -335,7 +349,7 @@ example 5 =>
 {
     "input": "Share a change in quarter on quarter offtake for year FY 2021-22 vs FY 2022-23 as a line chart", 
     "graph_type": "linechart", 
-    "graph_parameters": {"datakey_XAxis": "quarter", "datakey_YAxis": "quarter_on_quarter_offtake", "namekey_Line_1": "offtake"}, 
+    "graph_parameters": {"datakey_XAxis": "quarter", "datakey_Line_1": "offtake"}, 
     "data": [{"quarter": "Q1", "offtake": 14475}, {"quarter": "Q2", "offtake": 10021}, {"quarter": "Q3", "offtake": 7925}, {"quarter": "Q4", "offtake": 7070}],
     "sql_query": "SELECT "quarter", SUM(CASE WHEN "financialyear" = '22-23' THEN "quantity" ELSE 0 END) - SUM(CASE WHEN "financialyear" = '21-22' THEN "quantity" ELSE 0 END) AS "change_in_offtake" FROM "data" WHERE ("data"."financialyear" IN ('21-22', '22-23')) GROUP BY "data"."quarter" ORDER BY "data"."quarter""
     "label": "Line Graph for Change in Quarter on Quarter Offtake"
@@ -346,7 +360,7 @@ example 6 =>
 {
     "input": "Show a bar chart to compare offtake between FY 2022-23 and FY 2023-24 for each zone",
     "graph_type": "barchart",
-    "graph_parameters": {"datakey_XAxis": "zone", "datakey_YAxis": "offtake", "namekey_Bar_1": "offtake_22_23", "namekey_Bar_2": "offtake_23_24"},
+    "graph_parameters": {"datakey_XAxis": "zone", "namekey_Bar_1": "offtake_22_23", "namekey_Bar_2": "offtake_23_24"},
     "data": [{"zone": "East", "offtake_22_23": 2559720.0, "offtake_23_24": 1944190.0}, {"zone": "Nepal", "offtake_22_23": 0, "offtake_23_24": 19298.0}, {"zone": "North", "offtake_22_23": 3564074.0, "offtake_23_24": 3717753.0}, {"zone": "Not assigned", "offtake_22_23": 0, "offtake_23_24": 803.0}, {"zone": "Plant", "offtake_22_23": 0, "offtake_23_24": 5002.0}, {"zone": "South", "offtake_22_23": 2151174.0, "offtake_23_24": 0}, {"zone": "South - I", "offtake_22_23": 459828.0, "offtake_23_24": 1249148.0}, {"zone": "South - II", "offtake_22_23": 567537.0, "offtake_23_24": 1582382.0}, {"zone": "West", "offtake_22_23": 2947819.0, "offtake_23_24": 2624835.0}],
     "sql_query": "SELECT "zone", SUM(CASE WHEN "financialyear" = \'22-23\' THEN "quantity" ELSE 0 END) AS "offtake_22_23", SUM(CASE WHEN "financialyear" = \'23-24\' THEN "quantity" ELSE 0 END) AS "offtake_23_24" FROM "data" WHERE "financialyear" IN (\'22-23\', \'23-24\') GROUP BY "zone"",
     "label": "Bar Chart for Offtake Comparison between FY 2022-23 and FY 2023-24"
@@ -357,7 +371,7 @@ example 7 =>
 {
     "input": "Share a change in quarter on quarter offtake for year FY 2021-22 and FY 2022-23 as a line chart", 
     "graph_type": "linechart", 
-    "graph_parameters": {"datakey_XAxis": "quarter", "datakey_YAxis": "offtake", "namekey_Line_1": "change_in_offtake"}, 
+    "graph_parameters": {"datakey_XAxis": "quarter", "datakey_Line_1": "change_in_offtake"}, 
     "data": [{"quarter": "Q1 21-22", "change_in_offtake": 557018.0}, {"quarter": "Q2 21-22", "change_in_offtake": 2413659.0}, {"quarter": "Q3 21-22", "change_in_offtake": 2171918.0}, {"quarter": "Q4 21-22", "change_in_offtake": 751088.0}], 
     "sql_query": "SELECT "quarter", SUM(CASE WHEN "financialyear" = \'22-23\' THEN "quantity" ELSE 0 END) - SUM(CASE WHEN "financialyear" = \'21-22\' THEN "quantity" ELSE 0 END) AS "change_in_offtake" FROM "data" WHERE "financialyear" IN (\'21-22\', \'22-23\') GROUP BY "quarter" ORDER BY "quarter"", 
     "label": "Line Chart for Quarter on Quarter Offtake Change"
@@ -368,7 +382,7 @@ example 8 =>
 {
     "input": "Share a comparision of quarter on quarter offtake for year FY 2021-22 and FY 2022-23 as a line chart", 
     "graph_type": "linechart", 
-    "graph_parameters": {"datakey_XAxis": "quarter", "datakey_YAxis":"offtake", "namekey_Line_1": "FY_2021_22", "namekey_Line_2": "FY_2022_23"}, 
+    "graph_parameters": {"datakey_XAxis": "quarter", "datakey_Line_1": "FY_2021_22", "datakey_Line_2": "FY_2022_23"}, 
     "data": [{"quarter": "Q1 21-22", "FY_2021_22": 3089499.0, "FY_2022_23": 2532481.0}, {"quarter": "Q2 21-22", "FY_2021_22": 3278102.0, "FY_2022_23": 864443.0}, {"quarter": "Q3 21-22", "FY_2021_22": 3007339.0, "FY_2022_23": 835421.0}, {"quarter": "Q4 21-22", "FY_2021_22": 2875212.0, "FY_2022_23": 2124124.0}], 
     "sql_query": "SELECT "quarter", SUM(CASE WHEN "financialyear" = \'22-23\' THEN "quantity" ELSE 0 END) AS "FY_2022_23", SUM(CASE WHEN "financialyear" = \'21-22\' THEN "quantity" ELSE 0 END) AS "FY_2021_22" FROM "data" WHERE "financialyear" IN (\'21-22\', \'22-23\') GROUP BY "quarter" ORDER BY "quarter"", 
     "label": "Line Chart for Quarter on Quarter Offtake Comparison FY 2021-22 vs FY 2022-23"
