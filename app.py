@@ -14,7 +14,6 @@ from dotenv import load_dotenv
 import logging
 import json
 import uuid
-from langchain.chains import create_sql_query_chain 
 
 load_dotenv()
 
@@ -340,6 +339,39 @@ example 5 =>
     "label": "Line Graph for Change in Quarter on Quarter Offtake"
 }
 
+example 6 =>
+```json
+{
+    "input": "Show a bar chart to compare offtake between FY 2022-23 and FY 2023-24 for each zone",
+    "graph_type": "barchart",
+    "graph_parameters": {"datakey_XAxis": "zone", "datakey_YAxis": "offtake_22_23", "datakey_YAxis_2": "offtake_23_24"},
+    "data": [{"zone": "East", "offtake_22_23": 2559720.0, "offtake_23_24": 1944190.0}, {"zone": "Nepal", "offtake_22_23": 0, "offtake_23_24": 19298.0}, {"zone": "North", "offtake_22_23": 3564074.0, "offtake_23_24": 3717753.0}, {"zone": "Not assigned", "offtake_22_23": 0, "offtake_23_24": 803.0}, {"zone": "Plant", "offtake_22_23": 0, "offtake_23_24": 5002.0}, {"zone": "South", "offtake_22_23": 2151174.0, "offtake_23_24": 0}, {"zone": "South - I", "offtake_22_23": 459828.0, "offtake_23_24": 1249148.0}, {"zone": "South - II", "offtake_22_23": 567537.0, "offtake_23_24": 1582382.0}, {"zone": "West", "offtake_22_23": 2947819.0, "offtake_23_24": 2624835.0}],
+    "sql_query": "SELECT "zone", SUM(CASE WHEN "financialyear" = \'22-23\' THEN "quantity" ELSE 0 END) AS "offtake_22_23", SUM(CASE WHEN "financialyear" = \'23-24\' THEN "quantity" ELSE 0 END) AS "offtake_23_24" FROM "data" WHERE "financialyear" IN (\'22-23\', \'23-24\') GROUP BY "zone"",
+    "label": "Bar Chart for Offtake Comparison between FY 2022-23 and FY 2023-24"
+}
+
+example 7 =>
+```json
+{
+    "input": "Share a change in quarter on quarter offtake for year FY 2021-22 and FY 2022-23 as a line chart", 
+    "graph_type": "linechart", 
+    "graph_parameters": {"datakey_XAxis": "quarter", "datakey_YAxis": "change_in_offtake"}, 
+    "data": [{"quarter": "Q1 21-22", "change_in_offtake": 557018.0}, {"quarter": "Q2 21-22", "change_in_offtake": 2413659.0}, {"quarter": "Q3 21-22", "change_in_offtake": 2171918.0}, {"quarter": "Q4 21-22", "change_in_offtake": 751088.0}], 
+    "sql_query": "SELECT "quarter", SUM(CASE WHEN "financialyear" = \'22-23\' THEN "quantity" ELSE 0 END) - SUM(CASE WHEN "financialyear" = \'21-22\' THEN "quantity" ELSE 0 END) AS "change_in_offtake" FROM "data" WHERE "financialyear" IN (\'21-22\', \'22-23\') GROUP BY "quarter" ORDER BY "quarter"", 
+    "label": "Line Chart for Quarter on Quarter Offtake Change"
+}
+
+example 8 =>
+```json
+{
+    "input": "Share a comparision of quarter on quarter offtake for year FY 2021-22 and FY 2022-23 as a line chart", 
+    "graph_type": "linechart", 
+    "graph_parameters": {"datakey_XAxis": "quarter", "datakey_YAxis_1": "FY_2021_22", "datakey_YAxis_2": "FY_2022_23"}, 
+    "data": [{"quarter": "Q1 21-22", "FY_2021_22": 3089499.0, "FY_2022_23": 2532481.0}, {"quarter": "Q2 21-22", "FY_2021_22": 3278102.0, "FY_2022_23": 864443.0}, {"quarter": "Q3 21-22", "FY_2021_22": 3007339.0, "FY_2022_23": 835421.0}, {"quarter": "Q4 21-22", "FY_2021_22": 2875212.0, "FY_2022_23": 2124124.0}], 
+    "sql_query": "SELECT "quarter", SUM(CASE WHEN "financialyear" = \'22-23\' THEN "quantity" ELSE 0 END) AS "FY_2022_23", SUM(CASE WHEN "financialyear" = \'21-22\' THEN "quantity" ELSE 0 END) AS "FY_2021_22" FROM "data" WHERE "financialyear" IN (\'21-22\', \'22-23\') GROUP BY "quarter" ORDER BY "quarter"", 
+    "label": "Line Chart for Quarter on Quarter Offtake Comparison FY 2021-22 vs FY 2022-23"
+}
+
 In the above examples, the fields for "data" are truncated for some cases, but for actual output print all the entries available.
 """
 
@@ -478,6 +510,7 @@ INSERT INTO chart_data(user_id,prompt,query,graph_type,graph_parameters,name,id,
 def save_query_url():
     result={}
     data=request.json
+    print("\n Data \n", data)
     user_id=data.get("user_id")
     prompt=data.get("prompt")
     
@@ -628,7 +661,7 @@ def queryJson():
     print(req)
     text = req['question']
 
-    if 'excel' in data.lower() or 'list' in data.lower():
+    if 'excel' in text.lower() or 'list' in text.lower():
         # chain = create_sql_query_chain(ChatOpenAI(temperature=0, model_name=MODEL_NAME), db, k=10000000)
         # response = chain.invoke({"question":text})
         response, result = SQLQuery.invoke(text)
@@ -639,9 +672,9 @@ def queryJson():
             user = "postgres", 
             password = "123")
         cursor = connection.cursor()
-        split_start = response.find('```sql')
-        split_end = response.find('```', split_start + 1)
-        response = response[split_start + len('```sql'):split_end]
+        #split_start = response.find('```sql')
+        #split_end = response.find('```', split_start + 1)
+        #response = response[split_start + len('```sql'):split_end]
         cursor.execute(response)
         columns = [desc[0] for desc in cursor.description]
         data = cursor.fetchall()
