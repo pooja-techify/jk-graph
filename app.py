@@ -14,6 +14,7 @@ from dotenv import load_dotenv
 import logging
 import json
 import uuid
+from langchain.chains import create_sql_query_chain 
 
 load_dotenv()
 
@@ -627,6 +628,34 @@ def queryJson():
     print(req)
     text = req['question']
 
+    if 'excel' in data.lower() or 'list' in data.lower():
+        # chain = create_sql_query_chain(ChatOpenAI(temperature=0, model_name=MODEL_NAME), db, k=10000000)
+        # response = chain.invoke({"question":text})
+        response, result = SQLQuery.invoke(text)
+        print(response)
+        connection = psycopg2.connect(
+            host = "localhost", 
+            database = "test2", 
+            user = "postgres", 
+            password = "123")
+        cursor = connection.cursor()
+        split_start = response.find('```sql')
+        split_end = response.find('```', split_start + 1)
+        response = response[split_start + len('```sql'):split_end]
+        cursor.execute(response)
+        columns = [desc[0] for desc in cursor.description]
+        data = cursor.fetchall()
+        result = []
+        for row in data:
+            result.append(dict(zip(columns, row)))
+        cursor.close()
+        connection.close()
+        df = pd.DataFrame(result)
+        current_time_millis = int(time.time() * 1000)
+        filename = os.path.join(UPLOAD_DIRECTORY, '{current_time_millis}.xlsx'.format(current_time_millis=current_time_millis))
+        df.to_excel(filename, index=False)
+        return '{domain}{current_time_millis}.xlsx'.format(domain=domain, current_time_millis=current_time_millis)
+
     log.debug("Request Received!")
 
     with get_openai_callback() as cb:
@@ -636,7 +665,7 @@ def queryJson():
         if function_call == "visualize":
             result = visualize.invoke(text)
         elif function_call == "excel":
-            result = excel.invoke(result)
+            result = excel.invoke(text)
         else:
             query, result = SQLQuery.invoke(text)
 
