@@ -320,12 +320,12 @@ Example 3 =>
 Example 4 =>
 ```json
 {
-    "input": "Share a bar graph for total count of customers by year and quarter in North Zone with Customer Classification 'TP' for Q1 of FY 2019-20 to Q4 of FY 2020-21", 
-    "graph_type": "barchart", 
-    "graph_parameters": {"datakey_XAxis": "quarter", "datakey_YAxis": "count"}, 
+    "input": "Share a scatter graph for total count of customers by year and quarter in North Zone with Customer Classification 'TP' for Q1 of FY 2019-20 to Q4 of FY 2020-21", 
+    "graph_type": "scatterchart", 
+    "graph_parameters": {"datakey_XAxis": "quarter", "datakey_YAxis": "count", "namekey_Scatter": "customer"}, 
     "data": [{"quarter": "Q1 2019-20", "count": 14475}, {"quarter": "Q2 2019-20", "count": 10021}, {"quarter": "Q3 2019-20", "count": 7925}, {"quarter": "Q4 2019-20", "count": 7070}, {"quarter": "Q1 2020-21", "count": 3700}, {"quarter": "Q2 2020-21", "count": 7819}, {"quarter": "Q3 2020-21", "count": 7704}, {"quarter": "Q4 2020-21", "count": 6444}],
     "sql_query": "SELECT "year", "quarter", COUNT("customercode") FROM "data" WHERE "zone" = \'North\' AND "customerclassification" = \'TP\' AND "financialyear" IN (\'19-20\', \'20-21\') GROUP BY "financialyear", "quarter" ORDER BY "financialyear"",
-    "label": "Bar Graph for Total Count of Customers"
+    "label": "Scatter Graph for Total Count of Customers"
 }
 
 example 5 =>
@@ -510,7 +510,7 @@ INSERT INTO chart_data(user_id,prompt,query,graph_type,graph_parameters,name,id,
 def save_query_url():
     result={}
     data=request.json
-    print("\n Data \n", data)
+    print("\n Save Data \n", data)
     user_id=data.get("user_id")
     prompt=data.get("prompt")
     
@@ -610,6 +610,8 @@ def fetch_charts():
             cur.close()
         if conn:
             conn.close()
+
+
 @app.route("/lms/charts/order", methods=["POST"])
 def update_order():
     data = request.json
