@@ -315,8 +315,8 @@ Example 2 =>
 {
     "input": "Share a pie chart for average quarterly offtake for year 2022",
     "graph_type": "piechart",
-    "graph_parameters": {"namekey_Pie_1": "quarter", "datakey_Pie_1": "average_offtake"},
-    "data": [{"quarter": "Q1", "average_offtake": 8.0393105368476108}, {"quarter": "Q2", "average_offtake": 8.2378032538059075}, {"quarter": "Q3", "average_offtake": 7.8879574670104418}, {"quarter": "Q4", "average_offtake": 7.8775089728485712}],
+    "graph_parameters": {"datakey_Pie_1": "average_offtake", "namekey_Pie_1": "quarter"},
+    "data": [{"average_offtake": 8.0393105368476108, "quarter": "Q1"}, {"average_offtake": 8.2378032538059075, "quarter": "Q2"}, {"average_offtake": 7.8879574670104418, "quarter": "Q3"}, {"average_offtake": 7.8775089728485712, "quarter": "Q4"}],
     "sql_query": "SELECT "quarter", AVG("quantity") AS "average_offtake" FROM "data" WHERE "year" = 2022 GROUP BY "quarter"",
     "label": "Pie Chart for Average Quarterly Offtake"
 }
