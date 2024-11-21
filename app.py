@@ -252,6 +252,13 @@ def visualize(text):
                         
     Always make sure that the 'graph parameters' are in the same order as above and the 'data' also has data entries in the same order as 'graph parameters'.
     Especially for when 'graph_type' is 'piechart' each data entry must have the numerical data i.e. datakey first, followed by categorical data i.e. namekey for each data entry.
+    For example:
+        {
+        "graph_type": "piechart",
+        "graph_parameters": {"datakey_Pie_1": "average_offtake", "namekey_Pie_1": "quarter"},
+        "data": [{"average_offtake": 8.0393105368476108, "quarter": "Q1"}, {"average_offtake": 8.2378032538059075, "quarter": "Q2"}],
+        }
+        This is only an example on the order to be followed and the actual data would vary.
     The json should contain the data in chronological month order (JAN, FEB, MAR, etc.) per year and not alphabetically.
     For queries involving quarters of years the data should ALWAYS be ordered as Q4, Q1, Q2, Q3 - ordered in ascending order of years.
     For queries involving quarters of financial years the data should ALWAYS be ordered as Q1, Q2, Q3, Q4 - ordered in ascending order of years.
