@@ -251,14 +251,14 @@ def visualize(text):
                         'datakey_XAxis' => numerical value
             optional :  'datakey_Scatter_1' => numerical value, add one each for plotting multiple scatter graphs
                         
-    Always make sure that the graph parameters are in the same order as above.
+    Always make sure that the 'graph parameters' are in the same order as above and the 'data' also has data entries in the same order as 'graph parameters'.
     The json should contain the data in chronological month order (JAN, FEB, MAR, etc.) per year and not alphabetically.
     For queries involving quarters of years the data should ALWAYS be ordered as Q4, Q1, Q2, Q3 - ordered in ascending order of years.
     For queries involving quarters of financial years the data should ALWAYS be ordered as Q1, Q2, Q3, Q4 - ordered in ascending order of years.
     For example: Q1 2020, Q2 2020, Q3 2020, Q4 2021, Q1 2021, Q2 2021 and so on.
     For example: Q1 21-22, Q2 21-22, Q3 21-22, Q4 21-22, Q1 22-23, Q2 22-23 and so on.
-    The data should have keys exactly same as values of 'graph_parameters', with each value from graph_parameter present in data as key.
-    Always make sure that the order of keys in each data entry follows the same order as in graph_parameter values.
+    The 'data' should have keys exactly same as values of 'graph_parameters', with each value from 'graph_parameter' present in 'data' as key.
+    Always make sure that the order of keys in each 'data' entry follows the same order as in 'graph_parameter' values.
     Here are some examples of the format of output required : {data_format}
     """
     )
