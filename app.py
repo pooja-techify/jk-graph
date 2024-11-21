@@ -252,6 +252,7 @@ def visualize(text):
             optional :  'datakey_Scatter_1' => numerical value, add one each for plotting multiple scatter graphs
                         
     Always make sure that the 'graph parameters' are in the same order as above and the 'data' also has data entries in the same order as 'graph parameters'.
+    Especially for when 'graph_type' is 'piechart' each data entry the numerical data should be first, followed by categorical data.
     The json should contain the data in chronological month order (JAN, FEB, MAR, etc.) per year and not alphabetically.
     For queries involving quarters of years the data should ALWAYS be ordered as Q4, Q1, Q2, Q3 - ordered in ascending order of years.
     For queries involving quarters of financial years the data should ALWAYS be ordered as Q1, Q2, Q3, Q4 - ordered in ascending order of years.
@@ -387,6 +388,17 @@ example 8 =>
     "data": [{"quarter": "Q1 21-22", "FY_2021_22": 3089499.0, "FY_2022_23": 2532481.0}, {"quarter": "Q2 21-22", "FY_2021_22": 3278102.0, "FY_2022_23": 864443.0}, {"quarter": "Q3 21-22", "FY_2021_22": 3007339.0, "FY_2022_23": 835421.0}, {"quarter": "Q4 21-22", "FY_2021_22": 2875212.0, "FY_2022_23": 2124124.0}], 
     "sql_query": "SELECT "quarter", SUM(CASE WHEN "financialyear" = \'22-23\' THEN "quantity" ELSE 0 END) AS "FY_2022_23", SUM(CASE WHEN "financialyear" = \'21-22\' THEN "quantity" ELSE 0 END) AS "FY_2021_22" FROM "data" WHERE "financialyear" IN (\'21-22\', \'22-23\') GROUP BY "quarter" ORDER BY "quarter"", 
     "label": "Line Chart for Quarter on Quarter Offtake Comparison FY 2021-22 vs FY 2022-23"
+}
+
+example 9 =>
+```json
+{
+    "input": "pie chart for total offtake per month for FY 2020-21", 
+    "graph_type": "piechart", 
+    "graph_parameters": {"datakey_Pie_1": "total_offtake", "namekey_Pie_1": "month"}, 
+    "data": [{"total_offtake": "82899.0", "month": "APR"}, {"total_offtake": "672333.0", "month": "MAY"}, {"total_offtake": "955921.0", "month": "JUN"}, {"total_offtake": "1022520.0", "month": "JUL"}, {"total_offtake": "1007422.0", "month": "AUG"}, {"total_offtake": "1115069.0", "month": "SEP"}, {"total_offtake": "1164656.0", "month": "OCT"}, {"total_offtake": "1045839.0", "month": "NOV"}, {"total_offtake": "1147228.0", "month": "DEC"}, {"total_offtake": "1080000.0", "month": "JAN"}, {"total_offtake": "1033255.0", "month": "FEB"}, {"total_offtake": "1060214.0", "month": "MAR"}], 
+    "sql_query": "SELECT \"month\", SUM(\"quantity\") AS \"total_offtake\" FROM \"data\" WHERE \"financialyear\" = '20-21' GROUP BY \"month\" ORDER BY CASE \"month\" WHEN 'APR' THEN 1 WHEN 'MAY' THEN 2 WHEN 'JUN' THEN 3 WHEN 'JUL' THEN 4 WHEN 'AUG' THEN 5 WHEN 'SEP' THEN 6 WHEN 'OCT' THEN 7 WHEN 'NOV' THEN 8 WHEN 'DEC' THEN 9 WHEN 'JAN' THEN 10 WHEN 'FEB' THEN 11 WHEN 'MAR' THEN 12 END",
+    "label": "Pie Chart for Total Offtake per Month for FY 2020-21"
 }
 
 In the above examples, the fields for "data" are truncated for some cases, but for actual output print all the entries available.
