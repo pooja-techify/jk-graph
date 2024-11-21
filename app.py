@@ -230,9 +230,8 @@ def visualize(text):
         5. "sql_query" -> The SQL query input {query}
         6. "label" -> A label for the graph, in human readable format and not field names.
     Only output the json and nothing else.
-    The dataKey should only reference fields from the user question.
-    The dataKey should always be exactly as in the SQL result, never use a dataKey that is not in the results.
-    Always indicate where the datakey is coming from by suffixing the component with "_" followed by component name. Example: datakey_Pie_1, datakey_YAxis etc.
+    The datakey and namekey should always be exactly as in the SQL result, never use a datakey that is not in the results.
+    Always indicate where the datakey or namekey is coming from by suffixing the component with "_" followed by component name. Example: datakey_Pie_1, namekey_Pie_1, datakey_YAxis etc.
     DO NOT ADD numbered suffixed like "_1" or "_2" to graph parameters containing XAxis or YAxis in their name.
     The 'graph_parameters' should contain keys be as below depending on 'graph_type'. The necessary keys should always be there and the optional keys are added as per need:
         - 'barchart' :
@@ -252,7 +251,11 @@ def visualize(text):
             optional :  'datakey_Scatter_1' => numerical value, add one each for plotting multiple scatter graphs
                         
     Always make sure that the 'graph parameters' are in the same order as above and the 'data' also has data entries in the same order as 'graph parameters'.
-    Especially for when 'graph_type' is 'piechart' each data entry the numerical data should be first, followed by categorical data.
+    Especially for when 'graph_type' is 'piechart' each data entry must have the numerical data i.e. datakey first, followed by categorical data i.e. namekey for each data entry.
+    For eg:
+        "graph_type": "piechart",
+        "graph_parameters": {"datakey_Pie_1": "average_offtake", "namekey_Pie_1": "quarter"},
+        "data": [{"average_offtake": 8.0393105368476108, "quarter": "Q1"}, {"average_offtake": 8.2378032538059075, "quarter": "Q2"}],
     The json should contain the data in chronological month order (JAN, FEB, MAR, etc.) per year and not alphabetically.
     For queries involving quarters of years the data should ALWAYS be ordered as Q4, Q1, Q2, Q3 - ordered in ascending order of years.
     For queries involving quarters of financial years the data should ALWAYS be ordered as Q1, Q2, Q3, Q4 - ordered in ascending order of years.
