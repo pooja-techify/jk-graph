@@ -333,9 +333,9 @@ def excel_bcb():
                 file_source=image,
                 features=[
                 TextractFeatures.TABLES
-            ],
-            save_image=True
-        )
+                ],
+                save_image=True
+                )
 
             for i in range(len(response.tables)):
                 table = EntityList(response.tables[i])
@@ -549,29 +549,29 @@ def excel_boa():
                     df=table[0].to_pandas()
                     debits_aws = pd.concat([debits_aws, df], ignore_index=True)
 
-        # df = debits_aws
+        df = debits_aws
 
-        # df1 = df[df.iloc[:,0].str.match(r'^\d{2}/\d{2}/\d{2}', na=False)].reset_index(drop=True)
+        df1 = df[df.iloc[:,0].str.match(r'^\d{2}/\d{2}/\d{2}', na=False)].reset_index(drop=True)
 
-        # new_df = df1.rename(columns={0: "date", 1: "description", len(df1.columns)-1: "amount"})
-        # if len(df1.columns) > 3:
-        #     ori_columns = df1.columns
-        #     for i in range(2, len(df1.columns)-1):
-        #         new_df['description'] = new_df['description'].astype(str) + ' ' + new_df[ori_columns[i]].astype(str)
+        new_df = df1.rename(columns={0: "date", 1: "description", len(df1.columns)-1: "amount"})
+        if len(df1.columns) > 3:
+            ori_columns = df1.columns
+            for i in range(2, len(df1.columns)-1):
+                new_df['description'] = new_df['description'].astype(str) + ' ' + new_df[ori_columns[i]].astype(str)
 
-        # new_df = new_df[['date', 'description', 'amount']]
-        # new_df['amount'] = new_df['amount'].str.replace(r'[-,]', '', regex=True)
-        # new_df['amount'] = pd.to_numeric(new_df['amount'])
+        new_df = new_df[['date', 'description', 'amount']]
+        new_df['amount'] = new_df['amount'].str.replace(r'[-,]', '', regex=True)
+        new_df['amount'] = pd.to_numeric(new_df['amount'])
 
-        # debits = new_df
+        debits_aws = new_df
 
-        # df = credits_aws
+        df = credits_aws
 
-        # df1 = df[df.iloc[:,0].str.match(r'^\d{2}/\d{2}/\d{2}', na=False)].reset_index(drop=True)
+        df1 = df[df.iloc[:,0].str.match(r'^\d{2}/\d{2}/\d{2}', na=False)].reset_index(drop=True)
 
-        # new_df = df1.rename(columns={0: "date", 1: "description", len(df1.columns)-1: "amount"})
+        new_df = df1.rename(columns={0: "date", 1: "description", len(df1.columns)-1: "amount"})
                             
-        # credits = new_df
+        credits_aws = new_df
 
         with pd.ExcelWriter('excel2.xlsx', engine='openpyxl') as writer:
             credits_aws.to_excel(writer, sheet_name='Credit', index=False)
