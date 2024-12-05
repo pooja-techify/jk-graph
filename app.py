@@ -5,10 +5,10 @@ import numpy as np
 import pymupdf
 from openpyxl.styles import numbers
 from flask import Flask, request, jsonify, send_file
+from flask_cors import CORS
 from langchain_community.document_loaders import AmazonTextractPDFLoader
 from pdf2image import convert_from_path
 import tempfile
-from pdf2image import convert_from_path
 from PIL import Image
 from textractor import Textractor
 from textractor.visualizers.entitylist import EntityList
@@ -18,6 +18,7 @@ import io
 from datetime import datetime
 
 app = Flask(__name__)
+CORS(app)
 
 @app.route('/amex', methods=['POST'])
 def excel_amex():
