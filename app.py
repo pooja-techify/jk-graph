@@ -9,6 +9,7 @@ from flask_cors import CORS
 from langchain_community.document_loaders import AmazonTextractPDFLoader
 from pdf2image import convert_from_path
 import tempfile
+from pdf2image import convert_from_path
 from PIL import Image
 from textractor import Textractor
 from textractor.visualizers.entitylist import EntityList
@@ -97,11 +98,11 @@ def excel_amex():
         debits = pd.DataFrame(debits)
         debits['debit'] = debits['debit'].apply(clean_amount)
 
-        with pd.ExcelWriter('excel.xlsx', engine='openpyxl') as writer:
+        with pd.ExcelWriter('excel1.xlsx', engine='openpyxl') as writer:
             credits.to_excel(writer, sheet_name='Credit', index=False)
             debits.to_excel(writer, sheet_name='Debit', index=False)
 
-            workbook = writer.book
+            workbook1 = writer.book
             worksheet1 = writer.sheets['Credit']
             worksheet2 = writer.sheets['Debit']
 
@@ -112,8 +113,9 @@ def excel_amex():
                 cell.number_format = '##0.00'
 
         temp_excel = tempfile.NamedTemporaryFile(suffix='.xlsx', delete=False)
-        workbook.save(temp_excel.name)
-
+        workbook1.save(temp_excel.name)
+        
+        print("Starting textract")
         pages = convert_from_path(temp_path, dpi=300)
 
         files = []
@@ -125,8 +127,9 @@ def excel_amex():
         debits_aws = pd.DataFrame()
 
         for f in files:
+            print("New Page")
             image = Image.open(f) # loads the document image with Pillow
-            extractor = Textractor(region_name="ap-south-1") # Initialize textractor client, modify region if required
+            extractor = Textractor(region_name="us-east-1") # Initialize textractor client, modify region if required
             response = extractor.analyze_document(
                 file_source=image,
                 features=[
@@ -135,79 +138,108 @@ def excel_amex():
                 save_image=True
             )
 
-        for i in range(len(response.tables)):
-            table = EntityList(response.tables[i])
-            response.tables[i].visualize()
-            table_title = table[0].title
-            if table_title:
-                if 'Detail' in table_title.text:
-                    df=table[0].to_pandas()
-                    credits_aws = pd.concat([credits_aws, df], ignore_index=True)
-                if 'Interest Charged' in table_title.text:
-                    df=table[0].to_pandas()
-                    credits_aws = pd.concat([credits_aws, df], ignore_index=True)
+            for i in range(len(response.tables)):
+                table = EntityList(response.tables[i])
+                response.tables[i].visualize()
+                table_title = table[0].title
+                if table_title:
+                    print(table_title)
+                    if 'Detail' in table_title.text:
+                        df=table[0].to_pandas()
+                        credits_aws = pd.concat([credits_aws, df], ignore_index=True)
+                    if 'Interest Charged' in table_title.text:
+                        df=table[0].to_pandas()
+                        credits_aws = pd.concat([credits_aws, df], ignore_index=True)
 
-        df = credits_aws
+        # df = credits_aws
 
-        df1 = df[df.iloc[:,0].str.match(r'^\d{2}/\d{2}/\d{2}.+', na=False)].reset_index(drop=True)
+        #df1 = df[df.iloc[:,0].str.match(r'^\d{2}/\d{2}', na=False)].reset_index(drop=True)
 
-        df1.iloc[:, 0] = df1.iloc[:, 0].str.strip()
+        #df1.iloc[:, 0] = df1.iloc[:, 0].str.strip()
 
-        for i in range(len(df1)):
-            if pd.isna(df1.iloc[i, -1]):
-                df1.iloc[i, -1] = df1.iloc[i, df1.iloc[i].last_valid_index()]
+        #for i in range(len(df1)):
+         #   if pd.isna(df1.iloc[i, -1]):
+         #       df1.iloc[i, -1] = df1.iloc[i, df1.iloc[i].last_valid_index()]
 
-        for i in range(len(df1)):
-            if df1.iloc[i,0][-1] == '*':
-                df1.iloc[i,0] = df1.iloc[i,0][:-1]
-            if re.fullmatch(r'\d{2}/\d{2}/\d{2}.+', str(df1.iloc[i, 0])):
-                df1.iloc[i, 0] = df1.iloc[i, 0][0:8]
-                df1.iloc[i, 1] = df1.iloc[i, 1][8:]
+        #for i in range(len(df1)):
+         #   if df1.iloc[i,0][-1] == '*':
+         #       df1.iloc[i,0] = df1.iloc[i,0][:-1]
+         #   if re.fullmatch(r'\d{2}/\d{2}/\d{2}.+', str(df1.iloc[i, 0])):
+         #       df1.iloc[i, 0] = df1.iloc[i, 0][0:8]
+         #       df1.iloc[i, 1] = df1.iloc[i, 1][8:]
 
-        new_df = df1[[0, 1, 4]].rename(columns={0: "date", 1: "description", 4: "amount"})
+        #new_df = df1[[0, 1, 4]].rename(columns={0: "date", 1: "description", 4: "amount"})
 
         #Clean up the amount column
-        new_df['amount'] = new_df['amount'].str.replace(r'[$,]', '', regex=True)
-        new_df['amount'] = pd.to_numeric(new_df['amount'])
+        #new_df['amount'] = new_df['amount'].str.replace(r'[$,]', '', regex=True)
+        #new_df['amount'] = pd.to_numeric(new_df['amount'])
 
 
-        credits_aws = new_df[new_df['amount']<0]
-        credits_aws['amount'] = credits_aws['amount'].astype(str).replace(r'[-,]', '', regex=True)
-        credits_aws['amount'] = pd.to_numeric(credits_aws['amount'])
+        #credits_aws = new_df[new_df['amount']<0]
+        #credits_aws['amount'] = credits_aws['amount'].astype(str).replace(r'[-,]', '', regex=True)
+        #credits_aws['amount'] = pd.to_numeric(credits_aws['amount'])
 
-        debits_aws = new_df[new_df['amount']>0]
+        #debits_aws = new_df[new_df['amount']>0]
 
 
-        with pd.ExcelWriter('excel.xlsx', engine='openpyxl') as writer:
+        with pd.ExcelWriter('excel2.xlsx', engine='openpyxl') as writer:
             credits_aws.to_excel(writer, sheet_name='Credit', index=False)
             debits_aws.to_excel(writer, sheet_name='Debit', index=False)
 
-            workbook = writer.book
+            workbook2 = writer.book
             worksheet1 = writer.sheets['Credit']
             worksheet2 = writer.sheets['Debit']
 
             temp_excel2 = tempfile.NamedTemporaryFile(suffix='.xlsx', delete=False)
-            workbook.save(temp_excel2.name)
+            workbook2.save(temp_excel2.name)
 
+        excel1_buffer = io.BytesIO()
+        workbook1.save(excel1_buffer)
+        excel1_buffer.seek(0)
+        
+        excel2_buffer = io.BytesIO()
+        workbook2.save(excel2_buffer)
+        excel2_buffer.seek(0)
+        
+        # Create a zip file in memory
         zip_buffer = io.BytesIO()
-
         with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
-            zip_file.write(temp_excel.name, 'converted_file_1.xlsx')
-            zip_file.write(temp_excel2.name, 'converted_file_2.xlsx')
-            
-            zip_buffer.seek(0)
-
+            zip_file.writestr('regex.xlsx', excel1_buffer.getvalue())
+            zip_file.writestr('textract.xlsx', excel2_buffer.getvalue())
+        
+        zip_buffer.seek(0)
+        
+        # Send the zip file
         return send_file(
-            zip_buffer,
+            zip_buffer, 
             mimetype='application/zip',
             as_attachment=True,
-            download_name='converted_files.zip'
+            download_name='excel_exports.zip'
         )
 
+        # zip_buffer = io.BytesIO()
+
+        # with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
+        #     zip_file.write(temp_excel.name, 'regex.xlsx')
+        #     zip_file.write(temp_excel2.name, 'textract.xlsx')
+            
+        #     zip_buffer.seek(0)
+
+        # return send_file(
+        #     zip_buffer,
+        #     mimetype='application/zip',
+        #     as_attachment=True,
+        #     download_name='converted_files.zip'
+        # )
+
+    except Exception as e:
+        print("An error occured: {e}")
+        
     finally:
+        print("Final block")
         os.remove(temp_path)
-        # os.remove(temp_excel)
-        # os.remove(temp_excel2)
+       # os.remove(temp_excel)
+       # os.remove(temp_excel2)
         for f in files:
             os.remove(f)
 
@@ -267,11 +299,11 @@ def excel_bcb():
         debits = pd.DataFrame(debits)
         debits['debit'] = debits['debit'].apply(clean_amount)
 
-        with pd.ExcelWriter('excel.xlsx', engine='openpyxl') as writer:
+        with pd.ExcelWriter('excel1.xlsx', engine='openpyxl') as writer:
             credits.to_excel(writer, sheet_name='Credit', index=False)
             debits.to_excel(writer, sheet_name='Debit', index=False)
 
-            workbook = writer.book
+            workbook1 = writer.book
             worksheet1 = writer.sheets['Credit']
             worksheet2 = writer.sheets['Debit']
 
@@ -282,7 +314,7 @@ def excel_bcb():
                 cell.number_format = '##0.00'
 
         temp_excel = tempfile.NamedTemporaryFile(suffix='.xlsx', delete=False)
-        workbook.save(temp_excel.name)
+        workbook1.save(temp_excel.name)
 
 
         pages = convert_from_path(temp_path, dpi=300)
@@ -292,10 +324,12 @@ def excel_bcb():
             pages[i].save("BCB_page_"+str(i+1)+".png", "PNG")
             files.append("BCB_page_"+str(i+1)+".png")
 
+        credits_aws = pd.DataFrame()
+        debits_aws = pd.DataFrame()
 
         for f in files:
             image = Image.open(f) # loads the document image with Pillow
-            extractor = Textractor(region_name="ap-south-1") # Initialize textractor client, modify region if required
+            extractor = Textractor(region_name="us-east-1") # Initialize textractor client, modify region if required
             response = extractor.analyze_document(
                 file_source=image,
                 features=[
@@ -304,66 +338,78 @@ def excel_bcb():
             save_image=True
         )
 
-        for i in range(len(response.tables)):
-            table = EntityList(response.tables[i])
-            response.tables[i].visualize()
-            table_title = table[0].title
-            if table_title:
-                if table_title.text in ["ACTIVITY DESCRIPTION"]:
-                    df=table[0].to_pandas()
-                    credits = pd.concat([credits, df], ignore_index=True)
+            for i in range(len(response.tables)):
+                table = EntityList(response.tables[i])
+                response.tables[i].visualize()
+                table_title = table[0].title
+                if table_title:
+                    if table_title.text in ["ACTIVITY DESCRIPTION"]:
+                        df=table[0].to_pandas()
+                        credits_aws = pd.concat([credits_aws, df], ignore_index=True)
 
-        df = credits
+        # df = credits
 
-        df1 = df[df.iloc[:,0].str.match(r'^\d{2}/\d{2}.*', na=False)].reset_index(drop=True)
+        # df1 = df[df.iloc[:,0].str.match(r'^\d{2}/\d{2}.*', na=False)].reset_index(drop=True)
 
-        df1[['date', 'description']] = df1[0].str.split(' ', n=1, expand=True)
+        #df1[['date', 'description']] = df1[0].str.split(' ', n=1, expand=True)
 
-        new_df = df1[['date','description', 1, 2]].rename(columns={1: "debit", 2: "credit"})
+        #new_df = df1[['date','description', 1, 2]].rename(columns={1: "debit", 2: "credit"})
 
-        credit_list = []
-        debit_list = []
+        #credit_list = []
+        #debit_list = []
 
-        for i in range(len(new_df)):
-            if pd.isna(new_df.iloc[i, -1]):
-                debit_list.append(new_df.iloc[i])
+        #for i in range(len(new_df)):
+         #   if pd.isna(new_df.iloc[i, -1]):
+          #      debit_list.append(new_df.iloc[i])
 
-            if pd.isna(new_df.iloc[i, -2]):
-                credit_list.append(new_df.iloc[i])
+           # if pd.isna(new_df.iloc[i, -2]):
+            #    credit_list.append(new_df.iloc[i])
 
-        credits_aws = pd.DataFrame(credit_list)[['date', 'description', 'credit']]
-        debits_aws = pd.DataFrame(debit_list)[['date', 'description', 'debit']]
+        #credits_aws = pd.DataFrame(credit_list)[['date', 'description', 'credit']]
+        #debits_aws = pd.DataFrame(debit_list)[['date', 'description', 'debit']]
 
-        with pd.ExcelWriter('excel.xlsx', engine='openpyxl') as writer:
+        with pd.ExcelWriter('excel2.xlsx', engine='openpyxl') as writer:
             credits_aws.to_excel(writer, sheet_name='Credit', index=False)
             debits_aws.to_excel(writer, sheet_name='Debit', index=False)
 
-            workbook = writer.book
+            workbook2 = writer.book
             worksheet1 = writer.sheets['Credit']
             worksheet2 = writer.sheets['Debit']
 
             temp_excel2 = tempfile.NamedTemporaryFile(suffix='.xlsx', delete=False)
-            workbook.save(temp_excel2.name)
+            workbook2.save(temp_excel2.name)
 
+        excel1_buffer = io.BytesIO()
+        workbook1.save(excel1_buffer)
+        excel1_buffer.seek(0)
+        
+        excel2_buffer = io.BytesIO()
+        workbook2.save(excel2_buffer)
+        excel2_buffer.seek(0)
+        
+        # Create a zip file in memory
         zip_buffer = io.BytesIO()
-
         with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
-            zip_file.write(temp_excel.name, 'converted_file_1.xlsx')
-            zip_file.write(temp_excel2.name, 'converted_file_2.xlsx')
-            
-            zip_buffer.seek(0)
-
+            zip_file.writestr('regex.xlsx', excel1_buffer.getvalue())
+            zip_file.writestr('textract.xlsx', excel2_buffer.getvalue())
+        
+        zip_buffer.seek(0)
+        
+        # Send the zip file
         return send_file(
-            zip_buffer,
+            zip_buffer, 
             mimetype='application/zip',
             as_attachment=True,
-            download_name='converted_files.zip'
+            download_name='excel_exports.zip'
         )
+    
+    except Exception as e:
+        print("An error occured: {e}")
     
     finally:
         os.remove(temp_path)
-        os.remove(temp_excel)
-        os.remove(temp_excel2)
+        #os.remove(temp_excel)
+        #os.remove(temp_excel2)
         for f in files:
             os.remove(f)
 
@@ -448,11 +494,11 @@ def excel_boa():
 
         # print(debits)
 
-        with pd.ExcelWriter('excel.xlsx', engine='openpyxl') as writer:
+        with pd.ExcelWriter('excel1.xlsx', engine='openpyxl') as writer:
             credits.to_excel(writer, sheet_name='Credit', index=False)
             debits.to_excel(writer, sheet_name='Debit', index=False)
 
-            workbook = writer.book
+            workbook1 = writer.book
             worksheet1 = writer.sheets['Credit']
             worksheet2 = writer.sheets['Debit']
 
@@ -463,7 +509,7 @@ def excel_boa():
                 cell.number_format = '##0.00'
 
         temp_excel = tempfile.NamedTemporaryFile(suffix='.xlsx', delete=False)
-        workbook.save(temp_excel.name)
+        workbook1.save(temp_excel.name)
 
         pages = convert_from_path(temp_path, dpi=300)
 
@@ -477,7 +523,7 @@ def excel_boa():
 
         for f in files:
             image = Image.open(f) # loads the document image with Pillow
-            extractor = Textractor(region_name="ap-south-1") # Initialize textractor client, modify region if required
+            extractor = Textractor(region_name="us-east-1") # Initialize textractor client, modify region if required
             response = extractor.analyze_document(
                 file_source=image,
                 features=[
@@ -491,7 +537,7 @@ def excel_boa():
             response.tables[i].visualize()
             table_title = table[0].title
             if table_title:
-                # print(table_title.text)
+                print(table_title.text)
                 if "Deposits" in table_title.text:
                     df=table[0].to_pandas()
                     credits_aws = pd.concat([credits_aws, df], ignore_index=True)
@@ -504,60 +550,72 @@ def excel_boa():
                     df=table[0].to_pandas()
                     debits_aws = pd.concat([debits_aws, df], ignore_index=True)
 
-        df = debits_aws
+        # df = debits_aws
 
-        df1 = df[df.iloc[:,0].str.match(r'^\d{2}/\d{2}/\d{2}', na=False)].reset_index(drop=True)
+        # df1 = df[df.iloc[:,0].str.match(r'^\d{2}/\d{2}/\d{2}', na=False)].reset_index(drop=True)
 
-        new_df = df1.rename(columns={0: "date", 1: "description", len(df1.columns)-1: "amount"})
-        if len(df1.columns) > 3:
-            ori_columns = df1.columns
-            for i in range(2, len(df1.columns)-1):
-                new_df['description'] = new_df['description'].astype(str) + ' ' + new_df[ori_columns[i]].astype(str)
+        # new_df = df1.rename(columns={0: "date", 1: "description", len(df1.columns)-1: "amount"})
+        # if len(df1.columns) > 3:
+        #     ori_columns = df1.columns
+        #     for i in range(2, len(df1.columns)-1):
+        #         new_df['description'] = new_df['description'].astype(str) + ' ' + new_df[ori_columns[i]].astype(str)
 
-        new_df = new_df[['date', 'description', 'amount']]
-        new_df['amount'] = new_df['amount'].str.replace(r'[-,]', '', regex=True)
-        new_df['amount'] = pd.to_numeric(new_df['amount'])
+        # new_df = new_df[['date', 'description', 'amount']]
+        # new_df['amount'] = new_df['amount'].str.replace(r'[-,]', '', regex=True)
+        # new_df['amount'] = pd.to_numeric(new_df['amount'])
 
-        debits = new_df
+        # debits = new_df
 
-        df = credits_aws
+        # df = credits_aws
 
-        df1 = df[df.iloc[:,0].str.match(r'^\d{2}/\d{2}/\d{2}', na=False)].reset_index(drop=True)
+        # df1 = df[df.iloc[:,0].str.match(r'^\d{2}/\d{2}/\d{2}', na=False)].reset_index(drop=True)
 
-        new_df = df1.rename(columns={0: "date", 1: "description", len(df1.columns)-1: "amount"})
+        # new_df = df1.rename(columns={0: "date", 1: "description", len(df1.columns)-1: "amount"})
                             
-        credits = new_df
+        # credits = new_df
 
-        with pd.ExcelWriter('excel.xlsx', engine='openpyxl') as writer:
-            credits.to_excel(writer, sheet_name='Credit', index=False)
-            debits.to_excel(writer, sheet_name='Debit', index=False)
+        with pd.ExcelWriter('excel2.xlsx', engine='openpyxl') as writer:
+            credits_aws.to_excel(writer, sheet_name='Credit', index=False)
+            debits_aws.to_excel(writer, sheet_name='Debit', index=False)
 
-            workbook = writer.book
+            workbook2 = writer.book
             worksheet1 = writer.sheets['Credit']
             worksheet2 = writer.sheets['Debit']
 
             temp_excel2 = tempfile.NamedTemporaryFile(suffix='.xlsx', delete=False)
-            workbook.save(temp_excel2.name)
+            workbook2.save(temp_excel2.name)
 
+        excel1_buffer = io.BytesIO()
+        workbook1.save(excel1_buffer)
+        excel1_buffer.seek(0)
+        
+        excel2_buffer = io.BytesIO()
+        workbook2.save(excel2_buffer)
+        excel2_buffer.seek(0)
+        
+        # Create a zip file in memory
         zip_buffer = io.BytesIO()
-
         with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
-            zip_file.write(temp_excel.name, 'converted_file_1.xlsx')
-            zip_file.write(temp_excel2.name, 'converted_file_2.xlsx')
-            
-            zip_buffer.seek(0)
-
+            zip_file.writestr('regex.xlsx', excel1_buffer.getvalue())
+            zip_file.writestr('textract.xlsx', excel2_buffer.getvalue())
+        
+        zip_buffer.seek(0)
+        
+        # Send the zip file
         return send_file(
-            zip_buffer,
+            zip_buffer, 
             mimetype='application/zip',
             as_attachment=True,
-            download_name='converted_files.zip'
+            download_name='excel_exports.zip'
         )
 
+    except Exception as e:
+        print("An error occured: {e}")
+        
     finally:
         os.remove(temp_path)
-        os.remove(temp_excel)
-        os.remove(temp_excel2)
+        # os.remove(temp_excel)
+        # os.remove(temp_excel2)
         for f in files:
             os.remove(f)
 
@@ -621,11 +679,11 @@ def excel_capitalone():
 
         # print(debits)
 
-        with pd.ExcelWriter('excel.xlsx', engine='openpyxl') as writer:
+        with pd.ExcelWriter('excel1.xlsx', engine='openpyxl') as writer:
             credits.to_excel(writer, sheet_name='Credit', index=False)
             debits.to_excel(writer, sheet_name='Debit', index=False)
 
-            workbook = writer.book
+            workbook1 = writer.book
             worksheet1 = writer.sheets['Credit']
             worksheet2 = writer.sheets['Debit']
 
@@ -636,7 +694,7 @@ def excel_capitalone():
                 cell.number_format = '##0.00'
         
         temp_excel = tempfile.NamedTemporaryFile(suffix='.xlsx', delete=False)
-        workbook.save(temp_excel.name)
+        workbook1.save(temp_excel.name)
 
         pages = convert_from_path(temp_path, dpi=300)
 
@@ -650,7 +708,7 @@ def excel_capitalone():
 
         for f in files:
             image = Image.open(f) # loads the document image with Pillow
-            extractor = Textractor(region_name="ap-south-1") # Initialize textractor client, modify region if required
+            extractor = Textractor(region_name="us-east-1") # Initialize textractor client, modify region if required
             response = extractor.analyze_document(
                 file_source=image,
                 features=[
@@ -659,82 +717,94 @@ def excel_capitalone():
                 save_image=True
             )
 
-        for i in range(len(response.tables)):
-            table = EntityList(response.tables[i])
-            response.tables[i].visualize()
-            table_title = table[0].title
-            if table_title:
-                if "Credits" in table_title.text:
-                    df=table[0].to_pandas()
-                    credits_aws = pd.concat([credits_aws, df], ignore_index=True)
+            for i in range(len(response.tables)):
+                table = EntityList(response.tables[i])
+                response.tables[i].visualize()
+                table_title = table[0].title
+                if table_title:
+                    if "Credits" in table_title.text:
+                        df=table[0].to_pandas()
+                        credits_aws = pd.concat([credits_aws, df], ignore_index=True)
 
-                if "Transactions" in table_title.text:
-                    df=table[0].to_pandas()
-                    debits_aws = pd.concat([debits_aws, df], ignore_index=True)
+                    if "Transactions" in table_title.text:
+                        df=table[0].to_pandas()
+                        debits_aws = pd.concat([debits_aws, df], ignore_index=True)
 
-                if "Fees" in table_title.text:
-                    df=table[0].to_pandas()
-                    debits_aws = pd.concat([debits_aws, df], ignore_index=True)
+                    if "Fees" in table_title.text:
+                        df=table[0].to_pandas()
+                        debits_aws = pd.concat([debits_aws, df], ignore_index=True)
 
-                if "Interests Charged" in table_title.text:
-                    df=table[0].to_pandas()
-                    debits_aws = pd.concat([debits_aws, df], ignore_index=True)
+                    if "Interests Charged" in table_title.text:
+                        df=table[0].to_pandas()
+                        debits_aws = pd.concat([debits_aws, df], ignore_index=True)
 
-        df = debits_aws
+        # df = debits_aws
 
-        df1 = df[df.iloc[:,0].str.match(r'^[A-z]{3} \d{1,2}', na=False)].reset_index(drop=True)
+        # df1 = df[df.iloc[:,0].str.match(r'^[A-z]{3} \d{1,2}', na=False)].reset_index(drop=True)
 
-        new_df = df1[[0, 2, 3]].rename(columns={0: "date", 2: "description", 3: "amount"})
+        # new_df = df1[[0, 2, 3]].rename(columns={0: "date", 2: "description", 3: "amount"})
 
-        new_df['amount'] = new_df['amount'].str.replace(r'[$,]', '', regex=True)
-        new_df['amount'] = pd.to_numeric(new_df['amount'])
+        # new_df['amount'] = new_df['amount'].str.replace(r'[$,]', '', regex=True)
+        # new_df['amount'] = pd.to_numeric(new_df['amount'])
 
-        debit = new_df
+        # debit = new_df
 
-        df = credits_aws
+        # df = credits_aws
 
-        df1 = df[df.iloc[:,0].str.match(r'^[A-z]{3} \d{1,2}', na=False)].reset_index(drop=True)
+        # df1 = df[df.iloc[:,0].str.match(r'^[A-z]{3} \d{1,2}', na=False)].reset_index(drop=True)
 
-        df1 = df[df.iloc[:,0].str.match(r'^[A-z]{3} \d{1,2}', na=False)].reset_index(drop=True)
+        # df1 = df[df.iloc[:,0].str.match(r'^[A-z]{3} \d{1,2}', na=False)].reset_index(drop=True)
 
-        new_df = df1[[0, 2, 3]].rename(columns={0: "date", 2: "description", 3: "amount"})
+        # new_df = df1[[0, 2, 3]].rename(columns={0: "date", 2: "description", 3: "amount"})
 
-        new_df['amount'] = new_df['amount'].str.replace(r'[$,]', '', regex=True)
-        new_df['amount'] = pd.to_numeric(new_df['amount'])
+        # new_df['amount'] = new_df['amount'].str.replace(r'[$,]', '', regex=True)
+        # new_df['amount'] = pd.to_numeric(new_df['amount'])
 
-        credit = new_df
+        # credit = new_df
 
 
-        with pd.ExcelWriter('capitalone_bank.xlsx', engine='openpyxl') as writer:
-            credit.to_excel(writer, sheet_name='Credit', index=False)
-            debit.to_excel(writer, sheet_name='Debit', index=False)
+        with pd.ExcelWriter('excel2.xlsx', engine='openpyxl') as writer:
+            credits_aws.to_excel(writer, sheet_name='Credit', index=False)
+            debits_aws.to_excel(writer, sheet_name='Debit', index=False)
 
-            workbook = writer.book
+            workbook2 = writer.book
             worksheet1 = writer.sheets['Credit']
             worksheet2 = writer.sheets['Debit']
 
             temp_excel2 = tempfile.NamedTemporaryFile(suffix='.xlsx', delete=False)
-            workbook.save(temp_excel2.name)
+            workbook2.save(temp_excel2.name)
 
+        excel1_buffer = io.BytesIO()
+        workbook1.save(excel1_buffer)
+        excel1_buffer.seek(0)
+        
+        excel2_buffer = io.BytesIO()
+        workbook2.save(excel2_buffer)
+        excel2_buffer.seek(0)
+        
+        # Create a zip file in memory
         zip_buffer = io.BytesIO()
-
         with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
-            zip_file.write(temp_excel.name, 'converted_file_1.xlsx')
-            zip_file.write(temp_excel2.name, 'converted_file_2.xlsx')
-            
-            zip_buffer.seek(0)
-
+            zip_file.writestr('regex.xlsx', excel1_buffer.getvalue())
+            zip_file.writestr('textract.xlsx', excel2_buffer.getvalue())
+        
+        zip_buffer.seek(0)
+        
+        # Send the zip file
         return send_file(
-            zip_buffer,
+            zip_buffer, 
             mimetype='application/zip',
             as_attachment=True,
-            download_name='converted_files.zip'
+            download_name='excel_exports.zip'
         )
+    
+    except Exception as e:
+        print("An error occured: {e}")
 
     finally:
         os.remove(temp_path)
-        os.remove(temp_excel)
-        os.remove(temp_excel2)
+        # os.remove(temp_excel)
+        # os.remove(temp_excel2)
         for f in files:
             os.remove(f)   
 
@@ -816,11 +886,11 @@ def excel_chase():
 
         # print(debits)
 
-        with pd.ExcelWriter('excel.xlsx', engine='openpyxl') as writer:
+        with pd.ExcelWriter('excel1.xlsx', engine='openpyxl') as writer:
             credits.to_excel(writer, sheet_name='Credit', index=False)
             debits.to_excel(writer, sheet_name='Debit', index=False)
 
-            workbook = writer.book
+            workbook1 = writer.book
             worksheet1 = writer.sheets['Credit']
             worksheet2 = writer.sheets['Debit']
 
@@ -831,7 +901,7 @@ def excel_chase():
                 cell.number_format = '##0.00'
         
         temp_excel = tempfile.NamedTemporaryFile(suffix='.xlsx', delete=False)
-        workbook.save(temp_excel.name)
+        workbook1.save(temp_excel.name)
 
         pages = convert_from_path(temp_path, dpi=300)
 
@@ -840,12 +910,12 @@ def excel_chase():
             pages[i].save("Chase_page_"+str(i+1)+".png", "PNG")
             files.append("Chase_page_"+str(i+1)+".png")
 
-        credits = pd.DataFrame()
-        debits = pd.DataFrame()
+        credits_aws = pd.DataFrame()
+        debits_aws = pd.DataFrame()
 
         for f in files:
             image = Image.open(f) # loads the document image with Pillow
-            extractor = Textractor(region_name="ap-south-1") # Initialize textractor client, modify region if required
+            extractor = Textractor(region_name="us-east-1") # Initialize textractor client, modify region if required
             response = extractor.analyze_document(
                 file_source=image,
                 features=[
@@ -865,7 +935,7 @@ def excel_chase():
                         for i in range(2, len(df.columns)-1):
                             df[1] = df[1] + ' ' + df[i]
                         df1 = df[[0,1,len(df.columns)-1]].rename(columns={0: "date", 1: "description", len(df.columns)-1: "amount"})
-                        credits = pd.concat([credits, df], ignore_index=True)
+                        credits_aws = pd.concat([credits_aws, df], ignore_index=True)
 
                 if table_title.text in ['ATM & DEBIT CARD WITHDRAWALS', 'ELECTRONIC WITHDRAWALS', 'FEES']:
                     df=table[0].to_pandas()
@@ -874,47 +944,59 @@ def excel_chase():
                         for i in range(2, len(df.columns)-1):
                             df[1] = df[1] + ' ' + df[i]
                         df1 = df[[0,1,len(df.columns)-1]].rename(columns={0: "date", 1: "description", len(df.columns)-1: "amount"})
-                        debits = pd.concat([debits, df1], ignore_index=True)
+                        debits_aws = pd.concat([debits_aws, df1], ignore_index=True)
 
-        debits['amount'] = debits['amount'].str.replace(r'[$,]', '', regex=True)
-        debits['amount'] = pd.to_numeric(debits['amount'])
+        # debits['amount'] = debits['amount'].str.replace(r'[$,]', '', regex=True)
+        # debits['amount'] = pd.to_numeric(debits['amount'])
 
-        credits['amount'] = credits['amount'].str.replace(r'[$,]', '', regex=True)
-        credits['amount'] = pd.to_numeric(credits['amount'])
+        # credits['amount'] = credits['amount'].str.replace(r'[$,]', '', regex=True)
+        # credits['amount'] = pd.to_numeric(credits['amount'])
 
-        debits_aws = debits[debits.iloc[:,0].str.match(r'^\d{2}/\d{2}.*', na=False)].reset_index(drop=True)
-        credits_aws = credits[debits.iloc[:,0].str.match(r'^\d{2}/\d{2}.*', na=False)].reset_index(drop=True)
+        # debits_aws = debits[debits.iloc[:,0].str.match(r'^\d{2}/\d{2}.*', na=False)].reset_index(drop=True)
+        # credits_aws = credits[debits.iloc[:,0].str.match(r'^\d{2}/\d{2}.*', na=False)].reset_index(drop=True)
 
-        with pd.ExcelWriter('excel.xlsx', engine='openpyxl') as writer:
+        with pd.ExcelWriter('excel2.xlsx', engine='openpyxl') as writer:
             credits_aws.to_excel(writer, sheet_name='Credit', index=False)
             debits_aws.to_excel(writer, sheet_name='Debit', index=False)
 
-            workbook = writer.book
+            workbook2 = writer.book
             worksheet1 = writer.sheets['Credit']
             worksheet2 = writer.sheets['Debit']
 
             temp_excel2 = tempfile.NamedTemporaryFile(suffix='.xlsx', delete=False)
-            workbook.save(temp_excel2.name)
+            workbook2.save(temp_excel2.name)
 
+        excel1_buffer = io.BytesIO()
+        workbook1.save(excel1_buffer)
+        excel1_buffer.seek(0)
+        
+        excel2_buffer = io.BytesIO()
+        workbook2.save(excel2_buffer)
+        excel2_buffer.seek(0)
+        
+        # Create a zip file in memory
         zip_buffer = io.BytesIO()
-
         with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
-            zip_file.write(temp_excel.name, 'converted_file_1.xlsx')
-            zip_file.write(temp_excel2.name, 'converted_file_2.xlsx')
-            
-            zip_buffer.seek(0)
-
+            zip_file.writestr('regex.xlsx', excel1_buffer.getvalue())
+            zip_file.writestr('textract.xlsx', excel2_buffer.getvalue())
+        
+        zip_buffer.seek(0)
+        
+        # Send the zip file
         return send_file(
-            zip_buffer,
+            zip_buffer, 
             mimetype='application/zip',
             as_attachment=True,
-            download_name='converted_files.zip'
+            download_name='excel_exports.zip'
         )
+    
+    except Exception as e:
+        print("An error occured: {e}")
 
     finally:
         os.remove(temp_path)
-        os.remove(temp_excel)
-        os.remove(temp_excel2)
+        # os.remove(temp_excel)
+        # os.remove(temp_excel2)
         for f in files:
             os.remove(f)
 
@@ -985,11 +1067,11 @@ def excel_citi():
 
         # # print(debits)
 
-        with pd.ExcelWriter('excel.xlsx', engine='openpyxl') as writer:
+        with pd.ExcelWriter('excel1.xlsx', engine='openpyxl') as writer:
             # credits.to_excel(writer, sheet_name='Credit', index=False)
             debits.to_excel(writer, sheet_name='Debit', index=False)
 
-            workbook = writer.book
+            workbook1 = writer.book
             # worksheet1 = writer.sheets['Credit']
             worksheet2 = writer.sheets['Debit']
 
@@ -1000,7 +1082,7 @@ def excel_citi():
                 cell.number_format = '##0.00'
 
         temp_excel = tempfile.NamedTemporaryFile(suffix='.xlsx', delete=False)
-        workbook.save(temp_excel.name)
+        workbook1.save(temp_excel.name)
 
         pages = convert_from_path(temp_path, dpi=300)
 
@@ -1009,12 +1091,12 @@ def excel_citi():
             pages[i].save("Citi_page_"+str(i+1)+".png", "PNG")
             files.append("Citi_page_"+str(i+1)+".png")
 
-        credits = pd.DataFrame()
-        debits = pd.DataFrame()
+        credits_aws = pd.DataFrame()
+        debits_aws = pd.DataFrame()
 
         for f in files:
             image = Image.open(f) # loads the document image with Pillow
-            extractor = Textractor(region_name="ap-south-1") # Initialize textractor client, modify region if required
+            extractor = Textractor(region_name="us-east-1") # Initialize textractor client, modify region if required
             response = extractor.analyze_document(
                 file_source=image,
                 features=[
@@ -1030,38 +1112,50 @@ def excel_citi():
                 if table_title:
                     if table_title.text in ['CHECKING ACTIVITY']:
                         df=table[0].to_pandas()
-                        credits = pd.concat([credits, df], ignore_index=True)
+                        credits_aws = pd.concat([credits_aws, df], ignore_index=True)
 
-        with pd.ExcelWriter('excel.xlsx', engine='openpyxl') as writer:
-            credits.to_excel(writer, sheet_name='Credit', index=False)
-            debits.to_excel(writer, sheet_name='Debit', index=False)
+        with pd.ExcelWriter('excel2.xlsx', engine='openpyxl') as writer:
+            credits_aws.to_excel(writer, sheet_name='Credit', index=False)
+            debits_aws.to_excel(writer, sheet_name='Debit', index=False)
 
-            workbook = writer.book
+            workbook2 = writer.book
             worksheet1 = writer.sheets['Credit']
             worksheet2 = writer.sheets['Debit']
 
             temp_excel2 = tempfile.NamedTemporaryFile(suffix='.xlsx', delete=False)
-            workbook.save(temp_excel2.name)
+            workbook2.save(temp_excel2.name)
 
+        excel1_buffer = io.BytesIO()
+        workbook1.save(excel1_buffer)
+        excel1_buffer.seek(0)
+        
+        excel2_buffer = io.BytesIO()
+        workbook2.save(excel2_buffer)
+        excel2_buffer.seek(0)
+        
+        # Create a zip file in memory
         zip_buffer = io.BytesIO()
-
         with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
-            zip_file.write(temp_excel.name, 'converted_file_1.xlsx')
-            zip_file.write(temp_excel2.name, 'converted_file_2.xlsx')
-            
-            zip_buffer.seek(0)
-
+            zip_file.writestr('regex.xlsx', excel1_buffer.getvalue())
+            zip_file.writestr('textract.xlsx', excel2_buffer.getvalue())
+        
+        zip_buffer.seek(0)
+        
+        # Send the zip file
         return send_file(
-            zip_buffer,
+            zip_buffer, 
             mimetype='application/zip',
             as_attachment=True,
-            download_name='converted_files.zip'
+            download_name='excel_exports.zip'
         )
+    
+    except Exception as e:
+        print("An error occured: {e}")
 
     finally:
         os.remove(temp_path)
-        os.remove(temp_excel)
-        os.remove(temp_excel2)
+        # os.remove(temp_excel)
+        # os.remove(temp_excel2)
         for f in files:
             os.remove(f)
         
@@ -1131,11 +1225,11 @@ def excel_citirewards():
 
         # print(debits)
 
-        with pd.ExcelWriter('excel.xlsx', engine='openpyxl') as writer:
+        with pd.ExcelWriter('excel1.xlsx', engine='openpyxl') as writer:
             credits.to_excel(writer, sheet_name='Credit', index=False)
             debits.to_excel(writer, sheet_name='Debit', index=False)
 
-            workbook = writer.book
+            workbook1 = writer.book
             worksheet1 = writer.sheets['Credit']
             worksheet2 = writer.sheets['Debit']
 
@@ -1146,7 +1240,7 @@ def excel_citirewards():
                 cell.number_format = '##0.00'
         
         temp_excel = tempfile.NamedTemporaryFile(suffix='.xlsx', delete=False)
-        workbook.save(temp_excel.name)
+        workbook1.save(temp_excel.name)
 
         pages = convert_from_path(temp_path, dpi=300)
 
@@ -1155,12 +1249,12 @@ def excel_citirewards():
             pages[i].save("CitiRewards_page_"+str(i+1)+".png", "PNG")
             files.append("CitiRewards_page_"+str(i+1)+".png")
 
-        credits = pd.DataFrame()
-        debits = pd.DataFrame()
+        credits_aws = pd.DataFrame()
+        debits_aws = pd.DataFrame()
 
         for f in files:
             image = Image.open(f) # loads the document image with Pillow
-            extractor = Textractor(region_name="ap-south-1") # Initialize textractor client, modify region if required
+            extractor = Textractor(region_name="us-east-1") # Initialize textractor client, modify region if required
             response = extractor.analyze_document(
                 file_source=image,
                 features=[
@@ -1173,38 +1267,50 @@ def excel_citirewards():
                 table = EntityList(response.tables[i])
                 response.tables[i].visualize()
                 df=table[0].to_pandas()
-                credits = pd.concat([credits, df], ignore_index=True)
+                credits_aws = pd.concat([credits_aws, df], ignore_index=True)
 
-        with pd.ExcelWriter('excel.xlsx', engine='openpyxl') as writer:
-            credits.to_excel(writer, sheet_name='Credit', index=False)
-            debits.to_excel(writer, sheet_name='Debit', index=False)
+        with pd.ExcelWriter('excel2.xlsx', engine='openpyxl') as writer:
+            credits_aws.to_excel(writer, sheet_name='Credit', index=False)
+            debits_aws.to_excel(writer, sheet_name='Debit', index=False)
 
-            workbook = writer.book
+            workbook2 = writer.book
             worksheet1 = writer.sheets['Credit']
             worksheet2 = writer.sheets['Debit']
 
             temp_excel2 = tempfile.NamedTemporaryFile(suffix='.xlsx', delete=False)
-            workbook.save(temp_excel2.name)
+            workbook2.save(temp_excel2.name)
 
+        excel1_buffer = io.BytesIO()
+        workbook1.save(excel1_buffer)
+        excel1_buffer.seek(0)
+        
+        excel2_buffer = io.BytesIO()
+        workbook2.save(excel2_buffer)
+        excel2_buffer.seek(0)
+        
+        # Create a zip file in memory
         zip_buffer = io.BytesIO()
-
         with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
-            zip_file.write(temp_excel.name, 'converted_file_1.xlsx')
-            zip_file.write(temp_excel2.name, 'converted_file_2.xlsx')
-            
-            zip_buffer.seek(0)
-
+            zip_file.writestr('regex.xlsx', excel1_buffer.getvalue())
+            zip_file.writestr('textract.xlsx', excel2_buffer.getvalue())
+        
+        zip_buffer.seek(0)
+        
+        # Send the zip file
         return send_file(
-            zip_buffer,
+            zip_buffer, 
             mimetype='application/zip',
             as_attachment=True,
-            download_name='converted_files.zip'
+            download_name='excel_exports.zip'
         )
 
+    except Exception as e:
+        print("An error occured: {e}")
+        
     finally:
         os.remove(temp_path)
-        os.remove(temp_excel)
-        os.remove(temp_excel2)
+        # os.remove(temp_excel)
+        # os.remove(temp_excel2)
         for f in files:
             os.remove(f)
 
@@ -1279,11 +1385,11 @@ def excel_hab():
 
         # print(debits)
 
-        with pd.ExcelWriter('excel.xlsx', engine='openpyxl') as writer:
+        with pd.ExcelWriter('excel1.xlsx', engine='openpyxl') as writer:
             credits.to_excel(writer, sheet_name='Credit', index=False)
             debits.to_excel(writer, sheet_name='Debit', index=False)
 
-            workbook = writer.book
+            workbook1 = writer.book
             worksheet1 = writer.sheets['Credit']
             worksheet2 = writer.sheets['Debit']
 
@@ -1294,7 +1400,7 @@ def excel_hab():
                 cell.number_format = '##0.00'
 
         temp_excel = tempfile.NamedTemporaryFile(suffix='.xlsx', delete=False)
-        workbook.save(temp_excel.name)
+        workbook1.save(temp_excel.name)
 
         pages = convert_from_path(temp_path, dpi=300)
 
@@ -1303,12 +1409,12 @@ def excel_hab():
             pages[i].save("Hab_page_"+str(i+1)+".png", "PNG")
             files.append("Hab_page_"+str(i+1)+".png")
 
-        credits = pd.DataFrame()
-        debits = pd.DataFrame()
+        credits_aws = pd.DataFrame()
+        debits_aws = pd.DataFrame()
 
         for f in files:
             image = Image.open(f) # loads the document image with Pillow
-            extractor = Textractor(region_name="ap-south-1") # Initialize textractor client, modify region if required
+            extractor = Textractor(region_name="us-east-1") # Initialize textractor client, modify region if required
             response = extractor.analyze_document(
                 file_source=image,
                 features=[
@@ -1324,42 +1430,54 @@ def excel_hab():
             if table_title:
                 if table_title.text in ['Deposits and Credits', 'DEPOSIT']:
                     df=table[0].to_pandas()
-                    credits = pd.concat([credits, df], ignore_index=True)
+                    credits_aws = pd.concat([credits_aws, df], ignore_index=True)
 
                 if table_title.text in ['Debit(s)', 'DAILY ACCOUNT ACTIVITY Electronic Payments (continued)', 'Electronic Payments (continued)', 'Other Withdrawals', 'Service Charges']:
                     df=table[0].to_pandas()
-                    debits = pd.concat([debits, df], ignore_index=True)
+                    debits_aws = pd.concat([debits_aws, df], ignore_index=True)
 
-        with pd.ExcelWriter('excel.xlsx', engine='openpyxl') as writer:
-            credits.to_excel(writer, sheet_name='Credit', index=False)
-            debits.to_excel(writer, sheet_name='Debit', index=False)
+        with pd.ExcelWriter('excel2.xlsx', engine='openpyxl') as writer:
+            credits_aws.to_excel(writer, sheet_name='Credit', index=False)
+            debits_aws.to_excel(writer, sheet_name='Debit', index=False)
 
-            workbook = writer.book
+            workbook2 = writer.book
             worksheet1 = writer.sheets['Credit']
             worksheet2 = writer.sheets['Debit']
 
             temp_excel2 = tempfile.NamedTemporaryFile(suffix='.xlsx', delete=False)
-            workbook.save(temp_excel2.name)
+            workbook2.save(temp_excel2.name)
 
+        excel1_buffer = io.BytesIO()
+        workbook1.save(excel1_buffer)
+        excel1_buffer.seek(0)
+        
+        excel2_buffer = io.BytesIO()
+        workbook2.save(excel2_buffer)
+        excel2_buffer.seek(0)
+        
+        # Create a zip file in memory
         zip_buffer = io.BytesIO()
-
         with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
-            zip_file.write(temp_excel.name, 'converted_file_1.xlsx')
-            zip_file.write(temp_excel2.name, 'converted_file_2.xlsx')
-            
-            zip_buffer.seek(0)
-
+            zip_file.writestr('regex.xlsx', excel1_buffer.getvalue())
+            zip_file.writestr('textract.xlsx', excel2_buffer.getvalue())
+        
+        zip_buffer.seek(0)
+        
+        # Send the zip file
         return send_file(
-            zip_buffer,
+            zip_buffer, 
             mimetype='application/zip',
             as_attachment=True,
-            download_name='converted_files.zip'
+            download_name='excel_exports.zip'
         )
+
+    except Exception as e:
+        print("An error occured: {e}")
 
     finally:
         os.remove(temp_path)
-        os.remove(temp_excel)
-        os.remove(temp_excel2)
+        # os.remove(temp_excel)
+        # os.remove(temp_excel2)
         for f in files:
             os.remove(f)
 
@@ -1429,11 +1547,11 @@ def excel_regions():
 
         # print(debits)
 
-        with pd.ExcelWriter('excel.xlsx', engine='openpyxl') as writer:
+        with pd.ExcelWriter('excel1.xlsx', engine='openpyxl') as writer:
             credits.to_excel(writer, sheet_name='Credit', index=False)
             # debits.to_excel(writer, sheet_name='Debit', index=False)
 
-            workbook = writer.book
+            workbook1 = writer.book
             worksheet1 = writer.sheets['Credit']
             # worksheet2 = writer.sheets['Debit']
 
@@ -1444,7 +1562,7 @@ def excel_regions():
                 # cell.number_format = '##0.00'
 
         temp_excel = tempfile.NamedTemporaryFile(suffix='.xlsx', delete=False)
-        workbook.save(temp_excel.name)
+        workbook1.save(temp_excel.name)
 
         pages = convert_from_path(temp_path, dpi=300)
 
@@ -1453,12 +1571,12 @@ def excel_regions():
             pages[i].save("Regions_page_"+str(i+1)+".png", "PNG")   
             files.append("Regions_page_"+str(i+1)+".png")
 
-        credits = pd.DataFrame()
-        debits = pd.DataFrame()
+        credits_aws = pd.DataFrame()
+        debits_aws = pd.DataFrame()
 
         for f in files:
             image = Image.open(f)
-            extractor = Textractor(region_name="ap-south-1")
+            extractor = Textractor(region_name="us-east-1")
             response = extractor.analyze_document(
                 file_source=image,
                 features=[
@@ -1473,42 +1591,54 @@ def excel_regions():
                 table_title = table[0].title
                 if table_title.text in ['DEPOSITS & CREDITS', 'AUTOMATIC TRANSFERS']:
                     df=table[0].to_pandas()
-                    credits = pd.concat([credits, df], ignore_index=True)
+                    credits_aws = pd.concat([credits_aws, df], ignore_index=True)
 
                 if table_title.text in ['WITHDRAWALS', 'FEES', 'CHECKS']:
                     df=table[0].to_pandas()
-                    debits = pd.concat([debits, df], ignore_index=True)
+                    debits_aws = pd.concat([debits_aws, df], ignore_index=True)
 
-        with pd.ExcelWriter('excel.xlsx', engine='openpyxl') as writer:
-            credits.to_excel(writer, sheet_name='Credit', index=False)
-            debits.to_excel(writer, sheet_name='Debit', index=False)
+        with pd.ExcelWriter('excel2.xlsx', engine='openpyxl') as writer:
+            credits_aws.to_excel(writer, sheet_name='Credit', index=False)
+            debits_aws.to_excel(writer, sheet_name='Debit', index=False)
 
-            workbook = writer.book
+            workbook2 = writer.book
             worksheet1 = writer.sheets['Credit']
             worksheet2 = writer.sheets['Debit']
 
             temp_excel2 = tempfile.NamedTemporaryFile(suffix='.xlsx', delete=False)
-            workbook.save(temp_excel2.name)
+            workbook2.save(temp_excel2.name)
 
+        excel1_buffer = io.BytesIO()
+        workbook1.save(excel1_buffer)
+        excel1_buffer.seek(0)
+        
+        excel2_buffer = io.BytesIO()
+        workbook2.save(excel2_buffer)
+        excel2_buffer.seek(0)
+        
+        # Create a zip file in memory
         zip_buffer = io.BytesIO()
-
         with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
-            zip_file.write(temp_excel.name, 'converted_file_1.xlsx')
-            zip_file.write(temp_excel2.name, 'converted_file_2.xlsx')
-            
-            zip_buffer.seek(0)
-
+            zip_file.writestr('regex.xlsx', excel1_buffer.getvalue())
+            zip_file.writestr('textract.xlsx', excel2_buffer.getvalue())
+        
+        zip_buffer.seek(0)
+        
+        # Send the zip file
         return send_file(
-            zip_buffer,
+            zip_buffer, 
             mimetype='application/zip',
             as_attachment=True,
-            download_name='converted_files.zip'
+            download_name='excel_exports.zip'
         )
+    
+    except Exception as e:
+        print("An error occured: {e}")
 
     finally:
         os.remove(temp_path)
-        os.remove(temp_excel)
-        os.remove(temp_excel2)
+        # os.remove(temp_excel)
+        # os.remove(temp_excel2)
         for f in files:
             os.remove(f)
 
@@ -1575,11 +1705,11 @@ def excel_santander():
 
         # # print(debits)
 
-        with pd.ExcelWriter('excel.xlsx', engine='openpyxl') as writer:
+        with pd.ExcelWriter('excel1.xlsx', engine='openpyxl') as writer:
             credits.to_excel(writer, sheet_name='Credit', index=False)
         #     debits.to_excel(writer, sheet_name='Debit', index=False)
 
-            workbook = writer.book
+            workbook1 = writer.book
             worksheet1 = writer.sheets['Credit']
         #     worksheet2 = writer.sheets['Debit']
 
@@ -1590,7 +1720,7 @@ def excel_santander():
     #         cell.number_format = '##0.00'
 
         temp_excel = tempfile.NamedTemporaryFile(suffix='.xlsx', delete=False)
-        workbook.save(temp_excel.name)
+        workbook1.save(temp_excel.name)
 
         # Send the file as response
         pages = convert_from_path(temp_path, dpi=300)
@@ -1600,12 +1730,12 @@ def excel_santander():
             pages[i].save("Santander_page_"+str(i+1)+".png", "PNG")
             files.append("Santander_page_"+str(i+1)+".png")
 
-        credits = pd.DataFrame()
-        debits = pd.DataFrame()
+        credits_aws = pd.DataFrame()
+        debits_aws = pd.DataFrame()
 
         for f in files:
             image = Image.open(f) # loads the document image with Pillow
-            extractor = Textractor(region_name="ap-south-1") # Initialize textractor client, modify region if required
+            extractor = Textractor(region_name="us-east-1") # Initialize textractor client, modify region if required
             response = extractor.analyze_document(
                 file_source=image,
                 features=[
@@ -1621,38 +1751,50 @@ def excel_santander():
                 if table_title:
                     if table_title.text.startswith('Account Activity'):
                         df=table[0].to_pandas()
-                        credits = pd.concat([credits, df], ignore_index=True)
+                        credits_aws = pd.concat([credits, df], ignore_index=True)
 
-        with pd.ExcelWriter('excel.xlsx', engine='openpyxl') as writer:
-            credits.to_excel(writer, sheet_name='Credit', index=False)
-            debits.to_excel(writer, sheet_name='Debit', index=False)
+        with pd.ExcelWriter('excel2.xlsx', engine='openpyxl') as writer:
+            credits_aws.to_excel(writer, sheet_name='Credit', index=False)
+            debits_aws.to_excel(writer, sheet_name='Debit', index=False)
 
-            workbook = writer.book
+            workbook2 = writer.book
             worksheet1 = writer.sheets['Credit']
             worksheet2 = writer.sheets['Debit']
 
             temp_excel2 = tempfile.NamedTemporaryFile(suffix='.xlsx', delete=False)
-            workbook.save(temp_excel2.name)
+            workbook2.save(temp_excel2.name)
 
+        excel1_buffer = io.BytesIO()
+        workbook1.save(excel1_buffer)
+        excel1_buffer.seek(0)
+        
+        excel2_buffer = io.BytesIO()
+        workbook2.save(excel2_buffer)
+        excel2_buffer.seek(0)
+        
+        # Create a zip file in memory
         zip_buffer = io.BytesIO()
-
         with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
-            zip_file.write(temp_excel.name, 'converted_file_1.xlsx')
-            zip_file.write(temp_excel2.name, 'converted_file_2.xlsx')
-            
+            zip_file.writestr('regex.xlsx', excel1_buffer.getvalue())
+            zip_file.writestr('textract.xlsx', excel2_buffer.getvalue())
+        
         zip_buffer.seek(0)
-
+        
+        # Send the zip file
         return send_file(
-            zip_buffer,
+            zip_buffer, 
             mimetype='application/zip',
             as_attachment=True,
-            download_name='converted_files.zip'
+            download_name='excel_exports.zip'
         )
+    
+    except Exception as e:
+        print("An error occured: {e}")
 
     finally:
         os.remove(temp_path)
-        os.remove(temp_excel)
-        os.remove(temp_excel2)
+        # os.remove(temp_excel)
+        # os.remove(temp_excel2)
         for f in files:
             os.remove(f)
 
@@ -1727,11 +1869,11 @@ def excel_seacoast():
 
         # print(debits)
 
-        with pd.ExcelWriter('excel.xlsx', engine='openpyxl') as writer:
+        with pd.ExcelWriter('excel1.xlsx', engine='openpyxl') as writer:
             credits.to_excel(writer, sheet_name='Credit', index=False)
             debits.to_excel(writer, sheet_name='Debit', index=False)
 
-            workbook = writer.book
+            workbook1 = writer.book
             worksheet1 = writer.sheets['Credit']
             worksheet2 = writer.sheets['Debit']
 
@@ -1742,10 +1884,7 @@ def excel_seacoast():
                 cell.number_format = '##0.00'
         
         temp_excel = tempfile.NamedTemporaryFile(suffix='.xlsx', delete=False)
-        workbook.save(temp_excel.name)
-
-        temp_excel = tempfile.NamedTemporaryFile(suffix='.xlsx', delete=False)
-        workbook.save(temp_excel.name)
+        workbook1.save(temp_excel.name)
 
         pages = convert_from_path(temp_path, dpi=300)
 
@@ -1755,14 +1894,14 @@ def excel_seacoast():
             pages[i].save("Seacoast_page_"+str(i+1)+".png", "PNG")
             files.append("Seacoast_page_"+str(i+1)+".png")
 
-        credits = pd.DataFrame()
-        debits = pd.DataFrame()
+        credits_aws = pd.DataFrame()
+        debits_aws = pd.DataFrame()
 
         transactions = pd.DataFrame()
 
         for f in files:
             image = Image.open(f) # loads the document image with Pillow
-            extractor = Textractor(region_name="ap-south-1") # Initialize textractor client, modify region if required
+            extractor = Textractor(region_name="us-east-1") # Initialize textractor client, modify region if required
             response = extractor.analyze_document(
                 file_source=image,
                 features=[
@@ -1778,50 +1917,62 @@ def excel_seacoast():
                 if table_title:
                     if table_title.text in ['Business Checking*', 'Business Checking']:
                         df=table[0].to_pandas()
-                        transactions = pd.concat([transactions, df], ignore_index=True)
+                        credits_aws = pd.concat([credits_aws, df], ignore_index=True)
 
-        transactions = transactions[transactions.iloc[:,0].str.match(r'^\d{2}-\d{1,2}.*', na=False)].reset_index(drop=True)
-        transactions = transactions.rename(columns={0:'Date', 1: 'Description', 2:'Credit', 3:'Debit'})
-        transactions['Date'] = transactions['Date'].str.replace(r'[-,]', '/', regex=True)
+        # transactions = transactions[transactions.iloc[:,0].str.match(r'^\d{2}-\d{1,2}.*', na=False)].reset_index(drop=True)
+        # transactions = transactions.rename(columns={0:'Date', 1: 'Description', 2:'Credit', 3:'Debit'})
+        # transactions['Date'] = transactions['Date'].str.replace(r'[-,]', '/', regex=True)
         
-        credits = transactions[['Date', 'Description', 'Credit']]
-        debits = transactions[['Date', 'Description', 'Debit']]
+        # credits = transactions[['Date', 'Description', 'Credit']]
+        # debits = transactions[['Date', 'Description', 'Debit']]
 
-        credits = credits[credits['Credit'] != '']
+        # credits = credits[credits['Credit'] != '']
 
-        debits = debits[debits['Debit'] != '']
+        # debits = debits[debits['Debit'] != '']
 
             
-        with pd.ExcelWriter('excel.xlsx', engine='openpyxl') as writer:
-            credits.to_excel(writer, sheet_name='Credit', index=False)
-            debits.to_excel(writer, sheet_name='Debit', index=False)
+        with pd.ExcelWriter('excel2.xlsx', engine='openpyxl') as writer:
+            credits_aws.to_excel(writer, sheet_name='Credit', index=False)
+            debits_aws.to_excel(writer, sheet_name='Debit', index=False)
 
-            workbook = writer.book
+            workbook2 = writer.book
             worksheet1 = writer.sheets['Credit']
             worksheet2 = writer.sheets['Debit']
 
             temp_excel2 = tempfile.NamedTemporaryFile(suffix='.xlsx', delete=False)
-            workbook.save(temp_excel2.name)
+            workbook2.save(temp_excel2.name)
 
+        excel1_buffer = io.BytesIO()
+        workbook1.save(excel1_buffer)
+        excel1_buffer.seek(0)
+        
+        excel2_buffer = io.BytesIO()
+        workbook2.save(excel2_buffer)
+        excel2_buffer.seek(0)
+        
+        # Create a zip file in memory
         zip_buffer = io.BytesIO()
-
         with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
-            zip_file.write(temp_excel.name, 'converted_file_1.xlsx')
-            zip_file.write(temp_excel2.name, 'converted_file_2.xlsx')
-            
-            zip_buffer.seek(0)
-
+            zip_file.writestr('regex.xlsx', excel1_buffer.getvalue())
+            zip_file.writestr('textract.xlsx', excel2_buffer.getvalue())
+        
+        zip_buffer.seek(0)
+        
+        # Send the zip file
         return send_file(
-            zip_buffer,
+            zip_buffer, 
             mimetype='application/zip',
             as_attachment=True,
-            download_name='converted_files.zip'
+            download_name='excel_exports.zip'
         )
+
+    except Exception as e:
+        print("An error occured: {e}")
 
     finally:
         os.remove(temp_path)
-        os.remove(temp_excel)
-        os.remove(temp_excel2)
+        # os.remove(temp_excel)
+        # os.remove(temp_excel2)
         for f in files:
             os.remove(f)
 
@@ -1888,11 +2039,11 @@ def excel_synovus():
 
         # print(debits)
 
-        with pd.ExcelWriter('excel.xlsx', engine='openpyxl') as writer:
+        with pd.ExcelWriter('excel1.xlsx', engine='openpyxl') as writer:
             credits.to_excel(writer, sheet_name='Credit', index=False)
             debits.to_excel(writer, sheet_name='Debit', index=False)
 
-            workbook = writer.book
+            workbook1 = writer.book
             worksheet1 = writer.sheets['Credit']
             worksheet2 = writer.sheets['Debit']
 
@@ -1903,7 +2054,7 @@ def excel_synovus():
                 cell.number_format = '##0.00'
         
         temp_excel = tempfile.NamedTemporaryFile(suffix='.xlsx', delete=False)
-        workbook.save(temp_excel.name)
+        workbook1.save(temp_excel.name)
 
         pages = convert_from_path(temp_path, dpi=300)
 
@@ -1912,12 +2063,12 @@ def excel_synovus():
             pages[i].save("Synovus_page_"+str(i+1)+".png", "PNG")
             files.append("Synovus_page_"+str(i+1)+".png")
 
-        credits = pd.DataFrame()
-        debits = pd.DataFrame()
+        credits_aws = pd.DataFrame()
+        debits_aws = pd.DataFrame()
 
         for f in files:
             image = Image.open(f) # loads the document image with Pillow
-            extractor = Textractor(region_name="ap-south-1") # Initialize textractor client, modify region if required
+            extractor = Textractor(region_name="us-east-1") # Initialize textractor client, modify region if required
             response = extractor.analyze_document(
                 file_source=image,
                 features=[
@@ -1934,42 +2085,54 @@ def excel_synovus():
                     print(table_title.text)
                     if table_title.text in ['Deposits/Other Credits']:
                         df=table[0].to_pandas()
-                        credits = pd.concat([credits, df], ignore_index=True)
+                        credits_aws = pd.concat([credits_aws, df], ignore_index=True)
 
                     if table_title.text in ['Other Debits']:
                         df=table[0].to_pandas()
-                        debits = pd.concat([debits, df], ignore_index=True)
+                        debits_aws = pd.concat([debits_aws, df], ignore_index=True)
 
-        with pd.ExcelWriter('excel.xlsx', engine='openpyxl') as writer:
-            credits.to_excel(writer, sheet_name='Credit', index=False)
-            debits.to_excel(writer, sheet_name='Debit', index=False)
+        with pd.ExcelWriter('excel2.xlsx', engine='openpyxl') as writer:
+            credits_aws.to_excel(writer, sheet_name='Credit', index=False)
+            debits_aws.to_excel(writer, sheet_name='Debit', index=False)
 
-            workbook = writer.book
+            workbook2 = writer.book
             worksheet1 = writer.sheets['Credit']
             worksheet2 = writer.sheets['Debit']
 
             temp_excel2 = tempfile.NamedTemporaryFile(suffix='.xlsx', delete=False)
-            workbook.save(temp_excel2.name)
+            workbook2.save(temp_excel2.name)
 
+        excel1_buffer = io.BytesIO()
+        workbook1.save(excel1_buffer)
+        excel1_buffer.seek(0)
+        
+        excel2_buffer = io.BytesIO()
+        workbook2.save(excel2_buffer)
+        excel2_buffer.seek(0)
+        
+        # Create a zip file in memory
         zip_buffer = io.BytesIO()
-
         with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
-            zip_file.write(temp_excel.name, 'converted_file_1.xlsx')
-            zip_file.write(temp_excel2.name, 'converted_file_2.xlsx')
-            
-            zip_buffer.seek(0)
-
+            zip_file.writestr('regex.xlsx', excel1_buffer.getvalue())
+            zip_file.writestr('textract.xlsx', excel2_buffer.getvalue())
+        
+        zip_buffer.seek(0)
+        
+        # Send the zip file
         return send_file(
-            zip_buffer,
+            zip_buffer, 
             mimetype='application/zip',
             as_attachment=True,
-            download_name='converted_files.zip'
+            download_name='excel_exports.zip'
         )
+    
+    except Exception as e:
+        print("An error occured: {e}")
 
     finally:
         os.remove(temp_path)
-        os.remove(temp_excel)
-        os.remove(temp_excel2)
+        # os.remove(temp_excel)
+        # os.remove(temp_excel2)
         for f in files:
             os.remove(f)
 
@@ -2034,11 +2197,11 @@ def excel_tdbank():
 
         # # print(debits)
 
-        with pd.ExcelWriter('excel.xlsx', engine='openpyxl') as writer:
+        with pd.ExcelWriter('excel1.xlsx', engine='openpyxl') as writer:
             credits.to_excel(writer, sheet_name='Credit', index=False)
         #     debits.to_excel(writer, sheet_name='Debit', index=False)
 
-            workbook = writer.book
+            workbook1 = writer.book
             worksheet1 = writer.sheets['Credit']
         #     worksheet2 = writer.sheets['Debit']
 
@@ -2049,19 +2212,88 @@ def excel_tdbank():
         #         cell.number_format = '##0.00'
 
         temp_excel = tempfile.NamedTemporaryFile(suffix='.xlsx', delete=False)
-        workbook.save(temp_excel.name)
+        workbook1.save(temp_excel.name)
 
-        # Send the file as response
+        pages = convert_from_path(temp_path, dpi=300)
+
+        files = []
+        for i in range(len(pages)):
+            pages[i].save("TD_page_"+str(i+1)+".png", "PNG")
+            files.append("TD_page_"+str(i+1)+".png")
+
+
+        credits_aws = pd.DataFrame()
+        debits_aws = pd.DataFrame()
+
+        for f in files:
+            image = Image.open(f) # loads the document image with Pillow
+            extractor = Textractor(region_name="ap-south-1") # Initialize textractor client, modify region if required
+            response = extractor.analyze_document(
+                file_source=image,
+                features=[
+                    TextractFeatures.TABLES
+                ],
+                save_image=True
+            )
+
+            for i in range(len(response.tables)):
+                table = EntityList(response.tables[i])
+                response.tables[i].visualize()
+                table_title = table[0].title
+                if table_title:
+                    if table_title.text in ['DAILY ACCOUNT ACTIVITY', 'DEPOSIT']:
+                        df=table[0].to_pandas()
+                        credits_aws = pd.concat([credits_aws, df], ignore_index=True)
+
+                    if table_title.text in ['Electronic Payments', 'DAILY ACCOUNT ACTIVITY Electronic Payments (continued)', 'Electronic Payments (continued)', 'Other Withdrawals', 'Service Charges']:
+                        df=table[0].to_pandas()
+                        debits_aws = pd.concat([debits_aws, df], ignore_index=True)
+
+        with pd.ExcelWriter('excel2.xlsx', engine='openpyxl') as writer:
+            credits_aws.to_excel(writer, sheet_name='Credit', index=False)
+            debits_aws.to_excel(writer, sheet_name='Debit', index=False)
+
+            workbook2 = writer.book
+            worksheet1 = writer.sheets['Credit']
+            worksheet2 = writer.sheets['Debit']
+
+            temp_excel2 = tempfile.NamedTemporaryFile(suffix='.xlsx', delete=False)
+            workbook2.save(temp_excel2.name)
+
+        excel1_buffer = io.BytesIO()
+        workbook1.save(excel1_buffer)
+        excel1_buffer.seek(0)
+        
+        excel2_buffer = io.BytesIO()
+        workbook2.save(excel2_buffer)
+        excel2_buffer.seek(0)
+        
+        # Create a zip file in memory
+        zip_buffer = io.BytesIO()
+        with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
+            zip_file.writestr('regex.xlsx', excel1_buffer.getvalue())
+            zip_file.writestr('textract.xlsx', excel2_buffer.getvalue())
+        
+        zip_buffer.seek(0)
+        
+        # Send the zip file
         return send_file(
-            temp_excel.name,
-            mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            zip_buffer, 
+            mimetype='application/zip',
             as_attachment=True,
-            download_name='converted_file.xlsx'
+            download_name='excel_exports.zip'
         )
     
+    except Exception as e:
+        print("An error occured: {e}")
+
     finally:
         os.remove(temp_path)
-        os.remove(temp_excel)
+        # os.remove(temp_excel)
+        # os.remove(temp_excel2)
+        for f in files:
+            os.remove(f)
+        
 
 @app.route('/wellsfargo', methods=['POST'])
 def excel_wellsfargo():
@@ -2127,11 +2359,11 @@ def excel_wellsfargo():
 
         # # print(debits)
 
-        with pd.ExcelWriter('excel.xlsx', engine='openpyxl') as writer:
+        with pd.ExcelWriter('excel1.xlsx', engine='openpyxl') as writer:
             credits.to_excel(writer, sheet_name='Credit', index=False)
         #     debits.to_excel(writer, sheet_name='Debit', index=False)
 
-            workbook = writer.book
+            workbook1 = writer.book
             worksheet1 = writer.sheets['Credit']
         #     worksheet2 = writer.sheets['Debit']
 
@@ -2141,7 +2373,7 @@ def excel_wellsfargo():
         #     for cell in worksheet2['C'][1:]:
         #         cell.number_format = '##0.00'
         temp_excel = tempfile.NamedTemporaryFile(suffix='.xlsx', delete=False)
-        workbook.save(temp_excel.name)
+        workbook1.save(temp_excel.name)
 
         pages = convert_from_path(temp_path, dpi=300)
 
@@ -2151,10 +2383,12 @@ def excel_wellsfargo():
             files.append("WellsFargo_page_"+str(i+1)+".png")
 
         transactions = pd.DataFrame()
+        credits_aws = pd.DataFrame()
+        debits_aws = pd.DataFrame()
 
         for f in files:
             image = Image.open(f) # loads the document image with Pillow
-            extractor = Textractor(region_name="ap-south-1") # Initialize textractor client, modify region if required
+            extractor = Textractor(region_name="us-east-1") # Initialize textractor client, modify region if required
             response = extractor.analyze_document(
                 file_source=image,
                 features=[
@@ -2171,64 +2405,77 @@ def excel_wellsfargo():
                 # print(table_title.text)
                     if "Transaction history" in table_title.text:
                         df=table[0].to_pandas()
+                        credits_aws = pd.concat([credits_aws, df], ignore_index=True)
             
-        df = df[df.iloc[:,0].str.match(r'^\d{2}/\d{1,2}.*', na=False)].reset_index(drop=True)
+        # df = df[df.iloc[:,0].str.match(r'^\d{2}/\d{1,2}.*', na=False)].reset_index(drop=True)
 
-        df.drop(df.columns[5], axis=1, inplace=True)
-        df.drop(df.columns[1], axis=1, inplace=True)
+        # df.drop(df.columns[5], axis=1, inplace=True)
+        # df.drop(df.columns[1], axis=1, inplace=True)
 
-        df = df.rename(columns={df.columns[0]: "Date", df.columns[1]: "Description", df.columns[2]: "Credits", df.columns[3]: "Debits"})
+        # df = df.rename(columns={df.columns[0]: "Date", df.columns[1]: "Description", df.columns[2]: "Credits", df.columns[3]: "Debits"})
 
-        transactions = df[['Date', 'Description', 'Credits', 'Debits']]
+        # transactions = df[['Date', 'Description', 'Credits', 'Debits']]
 
-        credits_list = []
-        debits_list = []
+        # credits_list = []
+        # debits_list = []
 
-        for i in range(len(transactions)):
-            if transactions.iloc[i,2] == '':
-                row = pd.DataFrame(transactions.iloc[i]).T  # Transpose to maintain row structure
-                debits_list.append(row)
-            else:
-                row = pd.DataFrame(transactions.iloc[i]).T  # Transpose to maintain row structure
-                credits_list.append(row)
+        # for i in range(len(transactions)):
+        #     if transactions.iloc[i,2] == '':
+        #         row = pd.DataFrame(transactions.iloc[i]).T  # Transpose to maintain row structure
+        #         debits_list.append(row)
+        #     else:
+        #         row = pd.DataFrame(transactions.iloc[i]).T  # Transpose to maintain row structure
+        #         credits_list.append(row)
 
-        credits = pd.concat(credits_list, ignore_index=True)
-        debits = pd.concat(debits_list, ignore_index=True)
+        # credits = pd.concat(credits_list, ignore_index=True)
+        # debits = pd.concat(debits_list, ignore_index=True)
 
-        debits = debits.drop('Credits', axis=1)
+        # debits = debits.drop('Credits', axis=1)
 
-        credits = credits.drop('Debits', axis=1)
+        # credits = credits.drop('Debits', axis=1)
 
-        with pd.ExcelWriter('excel.xlsx', engine='openpyxl') as writer:
-            credits.to_excel(writer, sheet_name='Credit', index=False)
-            debits.to_excel(writer, sheet_name='Debit', index=False)
+        with pd.ExcelWriter('excel2.xlsx', engine='openpyxl') as writer:
+            credits_aws.to_excel(writer, sheet_name='Credit', index=False)
+            debits_aws.to_excel(writer, sheet_name='Debit', index=False)
 
-            workbook = writer.book
+            workbook2 = writer.book
             worksheet1 = writer.sheets['Credit']
             worksheet2 = writer.sheets['Debit']
 
             temp_excel2 = tempfile.NamedTemporaryFile(suffix='.xlsx', delete=False)
-            workbook.save(temp_excel2.name)
+            workbook2.save(temp_excel2.name)
 
+        excel1_buffer = io.BytesIO()
+        workbook1.save(excel1_buffer)
+        excel1_buffer.seek(0)
+        
+        excel2_buffer = io.BytesIO()
+        workbook2.save(excel2_buffer)
+        excel2_buffer.seek(0)
+        
+        # Create a zip file in memory
         zip_buffer = io.BytesIO()
-
         with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
-            zip_file.write(temp_excel.name, 'converted_file_1.xlsx')
-            zip_file.write(temp_excel2.name, 'converted_file_2.xlsx')
-            
-            zip_buffer.seek(0)
-
+            zip_file.writestr('regex.xlsx', excel1_buffer.getvalue())
+            zip_file.writestr('textract.xlsx', excel2_buffer.getvalue())
+        
+        zip_buffer.seek(0)
+        
+        # Send the zip file
         return send_file(
-            zip_buffer,
+            zip_buffer, 
             mimetype='application/zip',
             as_attachment=True,
-            download_name='converted_files.zip'
+            download_name='excel_exports.zip'
         )
+    
+    except Exception as e:
+        print("An error occured: {e}")
 
     finally:
         os.remove(temp_path)
-        os.remove(temp_excel)
-        os.remove(temp_excel2)
+        # os.remove(temp_excel)
+        # os.remove(temp_excel2)
         for f in files:
             os.remove(f)
 
