@@ -125,7 +125,6 @@ def excel_amex():
         debits_aws = pd.DataFrame()
 
         for f in files:
-            print("New Page")
             image = Image.open(f) # loads the document image with Pillow
             extractor = Textractor(region_name="ap-south-1") # Initialize textractor client, modify region if required
             response = extractor.analyze_document(
@@ -207,8 +206,8 @@ def excel_amex():
 
     finally:
         os.remove(temp_path)
-        os.remove(temp_excel)
-        os.remove(temp_excel2)
+        # os.remove(temp_excel)
+        # os.remove(temp_excel2)
         for f in files:
             os.remove(f)
 
@@ -492,7 +491,7 @@ def excel_boa():
             response.tables[i].visualize()
             table_title = table[0].title
             if table_title:
-                print(table_title.text)
+                # print(table_title.text)
                 if "Deposits" in table_title.text:
                     df=table[0].to_pandas()
                     credits_aws = pd.concat([credits_aws, df], ignore_index=True)
