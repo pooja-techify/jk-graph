@@ -115,7 +115,7 @@ def excel_amex():
         temp_excel = tempfile.NamedTemporaryFile(suffix='.xlsx', delete=False)
         workbook1.save(temp_excel.name)
         
-        print("Starting textract")
+        # print("Starting textract")
         pages = convert_from_path(temp_path, dpi=300)
 
         files = []
@@ -127,7 +127,7 @@ def excel_amex():
         debits_aws = pd.DataFrame()
 
         for f in files:
-            print("New Page")
+            # print("New Page")
             image = Image.open(f) # loads the document image with Pillow
             extractor = Textractor(region_name="us-east-1") # Initialize textractor client, modify region if required
             response = extractor.analyze_document(
@@ -143,7 +143,7 @@ def excel_amex():
                 response.tables[i].visualize()
                 table_title = table[0].title
                 if table_title:
-                    print(table_title)
+                    # print(table_title)
                     if 'Detail' in table_title.text:
                         df=table[0].to_pandas()
                         credits_aws = pd.concat([credits_aws, df], ignore_index=True)
@@ -236,7 +236,6 @@ def excel_amex():
         print("An error occured: {e}")
         
     finally:
-        print("Final block")
         os.remove(temp_path)
        # os.remove(temp_excel)
        # os.remove(temp_excel2)
@@ -347,26 +346,26 @@ def excel_bcb():
                         df=table[0].to_pandas()
                         credits_aws = pd.concat([credits_aws, df], ignore_index=True)
 
-        # df = credits
+        df = credits_aws
 
-        # df1 = df[df.iloc[:,0].str.match(r'^\d{2}/\d{2}.*', na=False)].reset_index(drop=True)
+        df1 = df[df.iloc[:,0].str.match(r'^\d{2}/\d{2}.*', na=False)].reset_index(drop=True)
 
-        #df1[['date', 'description']] = df1[0].str.split(' ', n=1, expand=True)
+        df1[['date', 'description']] = df1[0].str.split(' ', n=1, expand=True)
 
-        #new_df = df1[['date','description', 1, 2]].rename(columns={1: "debit", 2: "credit"})
+        new_df = df1[['date','description', 1, 2]].rename(columns={1: "debit", 2: "credit"})
 
-        #credit_list = []
-        #debit_list = []
+        credit_list = []
+        debit_list = []
 
-        #for i in range(len(new_df)):
-         #   if pd.isna(new_df.iloc[i, -1]):
-          #      debit_list.append(new_df.iloc[i])
+        for i in range(len(new_df)):
+           if pd.isna(new_df.iloc[i, -1]):
+               debit_list.append(new_df.iloc[i])
 
-           # if pd.isna(new_df.iloc[i, -2]):
-            #    credit_list.append(new_df.iloc[i])
+           if pd.isna(new_df.iloc[i, -2]):
+               credit_list.append(new_df.iloc[i])
 
-        #credits_aws = pd.DataFrame(credit_list)[['date', 'description', 'credit']]
-        #debits_aws = pd.DataFrame(debit_list)[['date', 'description', 'debit']]
+        credits_aws = pd.DataFrame(credit_list)[['date', 'description', 'credit']]
+        debits_aws = pd.DataFrame(debit_list)[['date', 'description', 'debit']]
 
         with pd.ExcelWriter('excel2.xlsx', engine='openpyxl') as writer:
             credits_aws.to_excel(writer, sheet_name='Credit', index=False)
@@ -537,7 +536,7 @@ def excel_boa():
             response.tables[i].visualize()
             table_title = table[0].title
             if table_title:
-                print(table_title.text)
+                # print(table_title.text)
                 if "Deposits" in table_title.text:
                     df=table[0].to_pandas()
                     credits_aws = pd.concat([credits_aws, df], ignore_index=True)
@@ -2082,7 +2081,7 @@ def excel_synovus():
                 response.tables[i].visualize()
                 table_title = table[0].title
                 if table_title:
-                    print(table_title.text)
+                    # print(table_title.text)
                     if table_title.text in ['Deposits/Other Credits']:
                         df=table[0].to_pandas()
                         credits_aws = pd.concat([credits_aws, df], ignore_index=True)
@@ -2317,8 +2316,8 @@ def excel_wellsfargo():
         cr_pattern = r'\s(\d{1,2}/\d{1,2})\s+[< ]*([A-Za-z0-9\s\*\-\\\/\#\~]+)\s+([0-9,]+[.]+[0-9]{2})\s'
         # db_pattern = r'(\d{2}/\d{2})\s([A-Za-z 0-9\#]+)\s([-][0-9,]+[.]+[0-9]{2}\s)'
 
-        x = re.findall(cr_pattern, text)
-        print(x)
+        # x = re.findall(cr_pattern, text)
+        # print(x)
 
         credits = []
         # debits = []
@@ -2347,7 +2346,7 @@ def excel_wellsfargo():
             return float(amount.replace(',', ''))
 
         credits = pd.DataFrame(credits)
-        print(credits)
+        # print(credits)
 
         credits['credit'] = credits['credit'].apply(clean_amount)
 
