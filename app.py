@@ -322,6 +322,8 @@ def excel_bcb():
                 save_image=True
                 )
 
+            transactions = pd.DataFrame()
+
             for i in range(len(response.tables)):
                 table = EntityList(response.tables[i])
                 response.tables[i].visualize()
@@ -329,25 +331,23 @@ def excel_bcb():
                 if table_title:
                     if table_title.text in ["ACTIVITY DESCRIPTION"]:
                         df=table[0].to_pandas()
-                        credits_aws = pd.concat([credits_aws, df], ignore_index=True)
+                        transactions = pd.concat([transactions, df], ignore_index=True)
 
-        df = credits_aws
+        df = transactions[transactions.iloc[:,0].str.match(r'^\d{2}/\d{2}.*', na=False)].reset_index(drop=True)
 
-        df1 = df[df.iloc[:,0].str.match(r'^\d{2}/\d{2}.*', na=False)].reset_index(drop=True)
+        df[['date', 'description']] = df[0].str.split(' ', n=1, expand=True)
 
-        df1[['date', 'description']] = df1[0].str.split(' ', n=1, expand=True)
-
-        new_df = df1[['date','description', 1, 2]].rename(columns={1: "debit", 2: "credit"})
+        new_df = df[['date','description', 1, 2]].rename(columns={1: "debit", 2: "credit"})
 
         credit_list = []
         debit_list = []
 
         for i in range(len(new_df)):
             if new_df.iloc[i, -1] == '':
-               debit_list.append(new_df.iloc[i])
+                debit_list.append(new_df.iloc[i])
 
-            else:
-               credit_list.append(new_df.iloc[i])
+            if new_df.iloc[i, -2] == '':
+                credit_list.append(new_df.iloc[i])
 
         credits_aws = pd.DataFrame(credit_list)
         debits_aws = pd.DataFrame(debit_list)
@@ -358,6 +358,7 @@ def excel_bcb():
         debits_aws['debit'] = debits_aws['debit'].astype(str).replace(r'[-,]', '', regex=True)
         debits_aws['debit'] = pd.to_numeric(debits_aws['debit'])
 
+        credits_aws['credit'] = credits_aws['credit'].astype(str).str.replace(r'[$,\s]', '', regex=True)
         credits_aws['credit'] = pd.to_numeric(credits_aws['credit'])
 
         with pd.ExcelWriter('excel2.xlsx', engine='openpyxl') as writer:
@@ -532,18 +533,15 @@ def excel_boa():
                     # print(table_title.text)
                     if "Deposits" in table_title.text:
                         df=table[0].to_pandas()
-                        new_df = df[[0,1,len(df.colums)-1]]
-                        credits_aws = pd.concat([credits_aws, new_df], ignore_index=True)
+                        credits_aws = pd.concat([credits_aws, df], ignore_index=True)
 
                     if "Withdrawals" in table_title.text:
                         df=table[0].to_pandas()
-                        new_df = df[[0,1,len(df.colums)-1]]
-                        debits_aws = pd.concat([debits_aws, new_df], ignore_index=True)
+                        debits_aws = pd.concat([debits_aws, df], ignore_index=True)
 
                     # if "Checks" in table_title.text:
                     #     df=table[0].to_pandas()
                     #     debits_aws = pd.concat([debits_aws, df], ignore_index=True)
-
         df = debits_aws
 
         df1 = df[df.iloc[:,0].str.match(r'^\d{2}/\d{2}/\d{2}', na=False)].reset_index(drop=True)
@@ -554,18 +552,18 @@ def excel_boa():
             for i in range(2, len(df1.columns)-1):
                 new_df['description'] = new_df['description'].astype(str) + ' ' + new_df[ori_columns[i]].astype(str)
 
-        new_df1 = new_df[['date', 'description', 'amount']]
-        new_df1['amount'] = new_df1['amount'].str.replace(r'[-,]', '', regex=True)
-        new_df1['amount'] = pd.to_numeric(new_df['amount'])
+        new_df = new_df[['date', 'description', 'amount']]
+        new_df['amount'] = new_df['amount'].str.replace(r'[-,]', '', regex=True)
+        new_df['amount'] = pd.to_numeric(new_df['amount'])
 
-        debits_aws = new_df1
+        debits_aws = new_df
 
         df = credits_aws
 
         df1 = df[df.iloc[:,0].str.match(r'^\d{2}/\d{2}/\d{2}', na=False)].reset_index(drop=True)
 
         new_df = df1.rename(columns={0: "date", 1: "description", len(df1.columns)-1: "amount"})
-                            
+                                    
         credits_aws = new_df
 
         with pd.ExcelWriter('excel2.xlsx', engine='openpyxl') as writer:
