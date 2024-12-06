@@ -310,6 +310,7 @@ def excel_bcb():
 
         credits_aws = pd.DataFrame()
         debits_aws = pd.DataFrame()
+        transactions = pd.DataFrame()
 
         for f in files:
             image = Image.open(f) # loads the document image with Pillow
@@ -317,12 +318,10 @@ def excel_bcb():
             response = extractor.analyze_document(
                 file_source=image,
                 features=[
-                TextractFeatures.TABLES
-                ],
+                    TextractFeatures.TABLES
+                    ],
                 save_image=True
                 )
-
-            transactions = pd.DataFrame()
 
             for i in range(len(response.tables)):
                 table = EntityList(response.tables[i])
@@ -533,11 +532,13 @@ def excel_boa():
                     # print(table_title.text)
                     if "Deposits" in table_title.text:
                         df=table[0].to_pandas()
-                        credits_aws = pd.concat([credits_aws, df], ignore_index=True)
+                        df1 = df[[0,1,2]].rename(columns={0: "date", 1: "description", len(df1.columns)-1: "amount"})
+                        credits_aws = pd.concat([credits_aws, df1], ignore_index=True)
 
                     if "Withdrawals" in table_title.text:
                         df=table[0].to_pandas()
-                        debits_aws = pd.concat([debits_aws, df], ignore_index=True)
+                        df1 = df[[0,1,2]].rename(columns={0: "date", 1: "description", len(df1.columns)-1: "amount"})
+                        debits_aws = pd.concat([debits_aws, df1], ignore_index=True)
 
                     # if "Checks" in table_title.text:
                     #     df=table[0].to_pandas()
@@ -546,7 +547,6 @@ def excel_boa():
 
         df1 = df[df.iloc[:,0].str.match(r'^\d{2}/\d{2}/\d{2}', na=False)].reset_index(drop=True)
 
-        new_df = df1.rename(columns={0: "date", 1: "description", len(df1.columns)-1: "amount"})
         if len(df1.columns) > 3:
             ori_columns = df1.columns
             for i in range(2, len(df1.columns)-1):
