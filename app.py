@@ -355,10 +355,10 @@ def excel_bcb():
         credits_aws.drop(columns='debit', inplace=True)
         debits_aws.drop(columns='credit', inplace=True)
 
-        debits_aws['amount'] = debits_aws['amount'].astype(str).replace(r'[-,]', '', regex=True)
-        debits_aws['amount'] = pd.to_numeric(debits_aws['amount'])
+        debits_aws['debit'] = debits_aws['debit'].astype(str).replace(r'[-,]', '', regex=True)
+        debits_aws['debit'] = pd.to_numeric(debits_aws['debit'])
 
-        credits_aws['amount'] = pd.to_numeric(credits_aws['amount'])
+        credits_aws['credit'] = pd.to_numeric(credits_aws['credit'])
 
         with pd.ExcelWriter('excel2.xlsx', engine='openpyxl') as writer:
             credits_aws.to_excel(writer, sheet_name='Credit', index=False)
@@ -1435,16 +1435,16 @@ def excel_hab():
 
             for i in range(len(response.tables)):
                 table = EntityList(response.tables[i])
-            response.tables[i].visualize()
-            table_title = table[0].title
-            if table_title:
-                if table_title.text in ['Deposits and Credits', 'DEPOSIT']:
-                    df=table[0].to_pandas()
-                    credits_aws = pd.concat([credits_aws, df], ignore_index=True)
+                response.tables[i].visualize()
+                table_title = table[0].title
+                if table_title:
+                    if table_title.text in ['Deposits and Credits', 'DEPOSIT']:
+                        df=table[0].to_pandas()
+                        credits_aws = pd.concat([credits_aws, df], ignore_index=True)
 
-                if table_title.text in ['Debit(s)', 'DAILY ACCOUNT ACTIVITY Electronic Payments (continued)', 'Electronic Payments (continued)', 'Other Withdrawals', 'Service Charges']:
-                    df=table[0].to_pandas()
-                    debits_aws = pd.concat([debits_aws, df], ignore_index=True)
+                    if table_title.text in ['Debit(s)', 'DAILY ACCOUNT ACTIVITY Electronic Payments (continued)', 'Electronic Payments (continued)', 'Other Withdrawals', 'Service Charges']:
+                        df=table[0].to_pandas()
+                        debits_aws = pd.concat([debits_aws, df], ignore_index=True)
 
         with pd.ExcelWriter('excel2.xlsx', engine='openpyxl') as writer:
             credits_aws.to_excel(writer, sheet_name='Credit', index=False)
@@ -1761,7 +1761,7 @@ def excel_santander():
                 if table_title:
                     if table_title.text.startswith('Account Activity'):
                         df=table[0].to_pandas()
-                        df1 = df[[0,1,2]]
+                        df1 = df[[0,1,2,3]]
                         credits_aws = pd.concat([credits, df1], ignore_index=True)
 
         with pd.ExcelWriter('excel2.xlsx', engine='openpyxl') as writer:
@@ -2104,7 +2104,8 @@ def excel_synovus():
                 transactions.iloc[i, -1] = transactions.iloc[i, transactions.iloc[i].last_valid_index()]
 
         new_df = transactions[[0,1,2,len(transactions.columns)-1]].rename(columns={0: "date", 1: "type", 2: "description", len(transactions.columns)-1: "amount"})
-
+        new_df['date'] = new_df['date'].str.replace('-', '/')
+        
         debits = ['Preauthorized Wd']
         credits = ['Preauthorized Credit']
 
@@ -2269,12 +2270,12 @@ def excel_tdbank():
                 if table_title:
                     if table_title.text in ['DAILY ACCOUNT ACTIVITY', 'DEPOSIT']:
                         df=table[0].to_pandas()
-                        df1 = df[[0,1, len(df.columns)-1]]
+                        df1 = df[[0,1, len(df.columns)-1]].rename(columns={0: "Date", 1: "Description",  len(df.columns)-1: "Credits"})
                         credits_aws = pd.concat([credits_aws, df1], ignore_index=True)
 
                     if table_title.text in ['Electronic Payments', 'DAILY ACCOUNT ACTIVITY Electronic Payments (continued)', 'Electronic Payments (continued)', 'Other Withdrawals', 'Service Charges']:
                         df=table[0].to_pandas()
-                        df1 = df[[0,1, len(df.columns)-1]]
+                        df1 = df[[0,1, len(df.columns)-1]].rename(columns={0: "Date", 1: "Description",  len(df.columns)-1: "Debits"})
                         debits_aws = pd.concat([debits_aws, df1], ignore_index=True)
 
         credits_aws = credits_aws[credits_aws.iloc[:,0].str.match(r'^\d{2}/\d{2}.*', na=False)].reset_index(drop=True)
