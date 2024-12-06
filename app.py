@@ -554,16 +554,16 @@ def excel_boa():
                     #     df=table[0].to_pandas()
                     #     debits_aws = pd.concat([debits_aws, df], ignore_index=True)
 
-        debits_aws = debits_aws[debits_aws.iloc[:,0].str.match(r'^\d{2}/\d{2}/\d{2}', na=False)].reset_index(drop=True)
+        debits_aws1 = debits_aws[debits_aws.iloc[:,0].str.match(r'^\d{2}/\d{2}/\d{2}', na=False)].reset_index(drop=True)
 
-        credits_aws = credits_aws[credits_aws.iloc[:,0].str.match(r'^\d{2}/\d{2}/\d{2}', na=False)].reset_index(drop=True)
+        credits_aws1 = credits_aws[credits_aws.iloc[:,0].str.match(r'^\d{2}/\d{2}/\d{2}', na=False)].reset_index(drop=True)
 
 
-        debits_aws = debits_aws[['date', 'description', 'amount']]
+        debits_aws = debits_aws1[['date', 'description', 'amount']]
         debits_aws['amount'] = debits_aws['amount'].str.replace(r'[-,]', '', regex=True)
         debits_aws['amount'] = pd.to_numeric(debits_aws['amount'])
 
-        credits_aws = credits_aws[['date', 'description', 'amount']]
+        credits_aws = credits_aws1[['date', 'description', 'amount']]
         credits_aws['amount'] = pd.to_numeric(credits_aws['amount'])
 
         with pd.ExcelWriter('excel2.xlsx', engine='openpyxl') as writer:
