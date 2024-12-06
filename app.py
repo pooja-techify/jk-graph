@@ -165,10 +165,10 @@ def excel_amex():
            if df1.iloc[i,0][-1] == '*':
                df1.iloc[i,0] = df1.iloc[i,0][:-1]
            if re.fullmatch(r'\d{2}/\d{2}/\d{2}.+', str(df1.iloc[i, 0])):
+               df1.iloc[i, 1] = df1.iloc[i, 0][8:].strip()
                df1.iloc[i, 0] = df1.iloc[i, 0][0:8]
-               df1.iloc[i, 1] = df1.iloc[i, 1][8:]
 
-        new_df = df1[[0, 1, 4]].rename(columns={0: "date", 1: "description", 4: "amount"})
+        new_df = df1[[0, 1, len(df1.columns)-1]].rename(columns={0: "date", 1: "description", len(df1.columns)-1: "amount"})
 
         new_df['amount'] = new_df['amount'].str.replace(r'[$,]', '', regex=True)
         new_df['amount'] = pd.to_numeric(new_df['amount'])
@@ -216,21 +216,6 @@ def excel_amex():
             as_attachment=True,
             download_name='excel_exports.zip'
         )
-
-        # zip_buffer = io.BytesIO()
-
-        # with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
-        #     zip_file.write(temp_excel.name, 'regex.xlsx')
-        #     zip_file.write(temp_excel2.name, 'textract.xlsx')
-            
-        #     zip_buffer.seek(0)
-
-        # return send_file(
-        #     zip_buffer,
-        #     mimetype='application/zip',
-        #     as_attachment=True,
-        #     download_name='converted_files.zip'
-        # )
 
     except Exception as e:
         print("An error occured: {e}")
@@ -358,14 +343,17 @@ def excel_bcb():
         debit_list = []
 
         for i in range(len(new_df)):
-           if pd.isna(new_df.iloc[i, -1]):
+            if new_df.iloc[i, -1] == '':
                debit_list.append(new_df.iloc[i])
 
-           if pd.isna(new_df.iloc[i, -2]):
+            else:
                credit_list.append(new_df.iloc[i])
 
-        credits_aws = pd.DataFrame(credit_list)[['date', 'description', 'credit']]
-        debits_aws = pd.DataFrame(debit_list)[['date', 'description', 'debit']]
+        credits_aws = pd.DataFrame(credit_list)
+        debits_aws = pd.DataFrame(debit_list)
+
+        credits_aws.drop(columns='debit', inplace=True)
+        debits_aws.drop(columns='credit', inplace=True)
 
         with pd.ExcelWriter('excel2.xlsx', engine='openpyxl') as writer:
             credits_aws.to_excel(writer, sheet_name='Credit', index=False)
@@ -531,23 +519,23 @@ def excel_boa():
                 save_image=True
             )
 
-        for i in range(len(response.tables)):
-            table = EntityList(response.tables[i])
-            response.tables[i].visualize()
-            table_title = table[0].title
-            if table_title:
-                # print(table_title.text)
-                if "Deposits" in table_title.text:
-                    df=table[0].to_pandas()
-                    credits_aws = pd.concat([credits_aws, df], ignore_index=True)
+            for i in range(len(response.tables)):
+                table = EntityList(response.tables[i])
+                response.tables[i].visualize()
+                table_title = table[0].title
+                if table_title:
+                    # print(table_title.text)
+                    if "Deposits" in table_title.text:
+                        df=table[0].to_pandas()
+                        credits_aws = pd.concat([credits_aws, df], ignore_index=True)
 
-                if "Withdrawals" in table_title.text:
-                    df=table[0].to_pandas()
-                    debits_aws = pd.concat([debits_aws, df], ignore_index=True)
+                    if "Withdrawals" in table_title.text:
+                        df=table[0].to_pandas()
+                        debits_aws = pd.concat([debits_aws, df], ignore_index=True)
 
-                if "Checks" in table_title.text:
-                    df=table[0].to_pandas()
-                    debits_aws = pd.concat([debits_aws, df], ignore_index=True)
+                    # if "Checks" in table_title.text:
+                    #     df=table[0].to_pandas()
+                    #     debits_aws = pd.concat([debits_aws, df], ignore_index=True)
 
         df = debits_aws
 
@@ -737,30 +725,37 @@ def excel_capitalone():
                         df=table[0].to_pandas()
                         debits_aws = pd.concat([debits_aws, df], ignore_index=True)
 
-        # df = debits_aws
+        df = debits_aws
 
-        # df1 = df[df.iloc[:,0].str.match(r'^[A-z]{3} \d{1,2}', na=False)].reset_index(drop=True)
+        df1 = df[df.iloc[:,0].str.match(r'^[A-z]{3} \d{1,2}', na=False)].reset_index(drop=True)
 
-        # new_df = df1[[0, 2, 3]].rename(columns={0: "date", 2: "description", 3: "amount"})
+        new_df = df1[[0, 2, 3]].rename(columns={0: "date", 2: "description", 3: "amount"})
 
-        # new_df['amount'] = new_df['amount'].str.replace(r'[$,]', '', regex=True)
-        # new_df['amount'] = pd.to_numeric(new_df['amount'])
+        for i in range(len(new_df)):
+            date = new_df.iloc[i, 0].strip()
+            date_object = datetime.strptime(date, "%b %d")
+            new_df.iloc[i, 0] = date_object.strftime("%m/%d")
 
-        # debit = new_df
+        new_df['amount'] = new_df['amount'].str.replace(r'[$,]', '', regex=True)
+        new_df['amount'] = pd.to_numeric(new_df['amount'])
 
-        # df = credits_aws
+        debits_aws = new_df
 
-        # df1 = df[df.iloc[:,0].str.match(r'^[A-z]{3} \d{1,2}', na=False)].reset_index(drop=True)
+        df = credits_aws
 
-        # df1 = df[df.iloc[:,0].str.match(r'^[A-z]{3} \d{1,2}', na=False)].reset_index(drop=True)
+        df1 = df[df.iloc[:,0].str.match(r'^[A-z]{3} \d{1,2}', na=False)].reset_index(drop=True)
 
-        # new_df = df1[[0, 2, 3]].rename(columns={0: "date", 2: "description", 3: "amount"})
+        new_df = df1[[0, 2, 3]].rename(columns={0: "date", 2: "description", 3: "amount"})
 
-        # new_df['amount'] = new_df['amount'].str.replace(r'[$,]', '', regex=True)
-        # new_df['amount'] = pd.to_numeric(new_df['amount'])
+        for i in range(len(new_df)):
+            date = new_df.iloc[i, 0].strip()
+            date_object = datetime.strptime(date, "%b %d")
+            new_df.iloc[i, 0] = date_object.strftime("%m/%d")
+    
+        new_df['amount'] = new_df['amount'].str.replace(r'[$,]', '', regex=True)
+        new_df['amount'] = pd.to_numeric(new_df['amount'])
 
-        # credit = new_df
-
+        credits_aws = new_df
 
         with pd.ExcelWriter('excel2.xlsx', engine='openpyxl') as writer:
             credits_aws.to_excel(writer, sheet_name='Credit', index=False)
@@ -934,7 +929,7 @@ def excel_chase():
                         for i in range(2, len(df.columns)-1):
                             df[1] = df[1] + ' ' + df[i]
                         df1 = df[[0,1,len(df.columns)-1]].rename(columns={0: "date", 1: "description", len(df.columns)-1: "amount"})
-                        credits_aws = pd.concat([credits_aws, df], ignore_index=True)
+                        credits_aws = pd.concat([credits_aws, df1], ignore_index=True)
 
                 if table_title.text in ['ATM & DEBIT CARD WITHDRAWALS', 'ELECTRONIC WITHDRAWALS', 'FEES']:
                     df=table[0].to_pandas()
@@ -945,15 +940,15 @@ def excel_chase():
                         df1 = df[[0,1,len(df.columns)-1]].rename(columns={0: "date", 1: "description", len(df.columns)-1: "amount"})
                         debits_aws = pd.concat([debits_aws, df1], ignore_index=True)
 
-        # debits['amount'] = debits['amount'].str.replace(r'[$,]', '', regex=True)
-        # debits['amount'] = pd.to_numeric(debits['amount'])
+        debits_aws = debits_aws[debits_aws.iloc[:,0].str.match(r'^\d{2}/\d{2}', na=False)].reset_index(drop=True)
+        credits_aws = credits_aws[credits_aws.iloc[:,0].str.match(r'^\d{2}/\d{2}', na=False)].reset_index(drop=True)
 
-        # credits['amount'] = credits['amount'].str.replace(r'[$,]', '', regex=True)
-        # credits['amount'] = pd.to_numeric(credits['amount'])
+        debits_aws['amount'] = debits_aws['amount'].str.replace(r'[$,]', '', regex=True)
+        debits_aws['amount'] = pd.to_numeric(debits_aws['amount'])
 
-        # debits_aws = debits[debits.iloc[:,0].str.match(r'^\d{2}/\d{2}.*', na=False)].reset_index(drop=True)
-        # credits_aws = credits[debits.iloc[:,0].str.match(r'^\d{2}/\d{2}.*', na=False)].reset_index(drop=True)
-
+        credits_aws['amount'] = credits_aws['amount'].str.replace(r'[$,]', '', regex=True)
+        credits_aws['amount'] = pd.to_numeric(credits['amount'])
+        
         with pd.ExcelWriter('excel2.xlsx', engine='openpyxl') as writer:
             credits_aws.to_excel(writer, sheet_name='Credit', index=False)
             debits_aws.to_excel(writer, sheet_name='Debit', index=False)
