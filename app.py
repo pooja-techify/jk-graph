@@ -1627,7 +1627,12 @@ def excel_regions():
 
         credits_aws = transactions[transactions.iloc[:,0].str.match(r'^\d{2}/\d{1,2}.*', na=False)].reset_index(drop=True)
         credits_aws = credits_aws[~credits_aws.iloc[:,1].str.match(r'^\d', na=False)].reset_index(drop=True)
-        # credits_aws = debits[[0,1,2]] 
+
+        credits_aws = credits_aws[[0,1,2]]
+
+        # credits_aws = transactions[transactions.iloc[:,0].str.match(r'^\d{2}/\d{1,2}.*', na=False)].reset_index(drop=True)
+        # credits_aws = credits_aws[~credits_aws.iloc[:,1].str.match(r'^\d', na=False)].reset_index(drop=True)
+        # credits_aws = credits_aws[[0,1,2]]
         # filtered_transactions = debits_aws[~debits_aws.iloc[:, 1].str.match(r'^\d', na=False)]
         # debits_aws = filtered_transactions
 
