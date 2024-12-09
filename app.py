@@ -1626,6 +1626,8 @@ def excel_regions():
                 transactions = pd.concat([transactions, df], ignore_index=True)
 
         debits_aws = transactions[transactions.iloc[:,0].str.match(r'^\d{2}/\d{1,2}.*', na=False)].reset_index(drop=True)
+        debits = debits_aws[~debits_aws.iloc[:,1].str.match(r'^\d', na=False)].reset_index(drop=True)
+        credits_aws = debits[[0,1,2]] 
         # filtered_transactions = debits_aws[~debits_aws.iloc[:, 1].str.match(r'^\d', na=False)]
         # debits_aws = filtered_transactions
 
@@ -1644,11 +1646,11 @@ def excel_regions():
 
         with pd.ExcelWriter('excel2.xlsx', engine='openpyxl') as writer:
             credits_aws.to_excel(writer, sheet_name='Credit', index=False)
-            debits_aws.to_excel(writer, sheet_name='Debit', index=False)
+            # debits_aws.to_excel(writer, sheet_name='Debit', index=False)
 
             workbook2 = writer.book
             worksheet1 = writer.sheets['Credit']
-            worksheet2 = writer.sheets['Debit']
+            # worksheet2 = writer.sheets['Debit']
 
             temp_excel2 = tempfile.NamedTemporaryFile(suffix='.xlsx', delete=False)
             workbook2.save(temp_excel2.name)
