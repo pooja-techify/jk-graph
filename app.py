@@ -222,8 +222,8 @@ def excel_amex():
         
     finally:
         os.remove(temp_path)
-       # os.remove(temp_excel)
-       # os.remove(temp_excel2)
+        os.remove('excel1.xlsx')
+        os.remove('excel2.xlsx')
         for f in files:
             os.remove(f)
 
@@ -400,8 +400,8 @@ def excel_bcb():
     
     finally:
         os.remove(temp_path)
-        #os.remove(temp_excel)
-        #os.remove(temp_excel2)
+        os.remove('excel1.xlsx')
+        os.remove('excel2.xlsx')
         for f in files:
             os.remove(f)
 
@@ -536,8 +536,7 @@ def excel_boa():
                             ori_columns = df.columns
                             for i in range(2, len(df.columns)-1):
                                 df[1] = df[1].astype(str) + ' ' + df[ori_columns[i]].astype(str)
-                        df1 = df[[0,1,len(df1.columns)-1]].rename(columns={0: "date", 1: "description", len(df1.columns)-1: "amount"})
-
+                        df1 = df[[0,1,len(df.columns)-1]].rename(columns={0: "date", 1: "description", len(df.columns)-1: "amount"})
                         credits_aws = pd.concat([credits_aws, df1], ignore_index=True)
                         
 
@@ -547,7 +546,7 @@ def excel_boa():
                             ori_columns = df.columns
                             for i in range(2, len(df.columns)-1):
                                 df[1] = df[1].astype(str) + ' ' + df[ori_columns[i]].astype(str)
-                        df1 = df[[0,1,len(df1.columns)-1]].rename(columns={0: "date", 1: "description", len(df1.columns)-1: "amount"})
+                        df1 = df[[0,1,len(df.columns)-1]].rename(columns={0: "date", 1: "description", len(df.columns)-1: "amount"})
                         debits_aws = pd.concat([debits_aws, df1], ignore_index=True)
 
                     # if "Checks" in table_title.text:
@@ -561,9 +560,12 @@ def excel_boa():
 
         debits_aws = debits_aws1[['date', 'description', 'amount']]
         debits_aws['amount'] = debits_aws['amount'].str.replace(r'[-,]', '', regex=True)
+        debits_aws['amount'] = debits_aws['amount'].str.strip()
         debits_aws['amount'] = pd.to_numeric(debits_aws['amount'])
 
         credits_aws = credits_aws1[['date', 'description', 'amount']]
+        credits_aws['amount'] = credits_aws['amount'].str.strip()
+        credits_aws['amount'] = credits_aws['amount'].str.replace(r'[-,]', '', regex=True) 
         credits_aws['amount'] = pd.to_numeric(credits_aws['amount'])
 
         with pd.ExcelWriter('excel2.xlsx', engine='openpyxl') as writer:
@@ -600,14 +602,14 @@ def excel_boa():
             as_attachment=True,
             download_name='excel_exports.zip'
         )
-
+    
     except Exception as e:
         print("An error occured: {e}")
         
     finally:
         os.remove(temp_path)
-        # os.remove(temp_excel)
-        # os.remove(temp_excel2)
+        os.remove('excel1.xlsx')
+        os.remove('excel2.xlsx')
         for f in files:
             os.remove(f)
 
@@ -802,11 +804,10 @@ def excel_capitalone():
 
     finally:
         os.remove(temp_path)
-        # os.remove(temp_excel)
-        # os.remove(temp_excel2)
+        os.remove('excel1.xlsx')
+        os.remove('excel2.xlsx')
         for f in files:
-            os.remove(f)   
-
+            os.remove(f)
 
 @app.route('/chase', methods=['POST'])
 def excel_chase():
@@ -933,8 +934,8 @@ def excel_chase():
                     if len(df.columns) > 3:
                         for i in range(2, len(df.columns)-1):
                             df[1] = df[1] + ' ' + df[i]
-                        df1 = df[[0,1,len(df.columns)-1]].rename(columns={0: "date", 1: "description", len(df.columns)-1: "amount"})
-                        credits_aws = pd.concat([credits_aws, df1], ignore_index=True)
+                    df1 = df[[0,1,len(df.columns)-1]].rename(columns={0: "date", 1: "description", len(df.columns)-1: "amount"})
+                    credits_aws = pd.concat([credits_aws, df1], ignore_index=True)
 
                 if table_title.text in ['ATM & DEBIT CARD WITHDRAWALS', 'ELECTRONIC WITHDRAWALS', 'FEES']:
                     df=table[0].to_pandas()
@@ -942,8 +943,8 @@ def excel_chase():
                     if len(df.columns) > 3:
                         for i in range(2, len(df.columns)-1):
                             df[1] = df[1] + ' ' + df[i]
-                        df1 = df[[0,1,len(df.columns)-1]].rename(columns={0: "date", 1: "description", len(df.columns)-1: "amount"})
-                        debits_aws = pd.concat([debits_aws, df1], ignore_index=True)
+                    df1 = df[[0,1,len(df.columns)-1]].rename(columns={0: "date", 1: "description", len(df.columns)-1: "amount"})
+                    debits_aws = pd.concat([debits_aws, df1], ignore_index=True)
 
         debits_aws = debits_aws[debits_aws.iloc[:,0].str.match(r'^\d{2}/\d{2}', na=False)].reset_index(drop=True)
         credits_aws = credits_aws[credits_aws.iloc[:,0].str.match(r'^\d{2}/\d{2}', na=False)].reset_index(drop=True)
@@ -994,8 +995,8 @@ def excel_chase():
 
     finally:
         os.remove(temp_path)
-        # os.remove(temp_excel)
-        # os.remove(temp_excel2)
+        os.remove('excel1.xlsx')
+        os.remove('excel2.xlsx')
         for f in files:
             os.remove(f)
 
@@ -1113,14 +1114,17 @@ def excel_citi():
                         df=table[0].to_pandas()
                         credits_aws = pd.concat([credits_aws, df], ignore_index=True)
 
-        # debits = debits_aws[debits_aws.iloc[:,0].str.match(r'^\d{2}/\d{2}', na=False)].reset_index(drop=True)
-        credits = credits_aws[credits_aws.iloc[:,0].str.match(r'^\d{2}/\d{2}', na=False)].reset_index(drop=True)
+        if len(debits_aws) > 0:
+            debits = debits_aws[debits_aws.iloc[:,0].str.match(r'^\d{2}/\d{2}', na=False)].reset_index(drop=True)
+            debits_aws = debits[[0,1,2]].rename(columns={0: "date", 1: "description", 2: "amount"})
+            debits_aws['amount'] = debits_aws['amount'].str.replace(r'[$,]', '', regex=True)
+            debits_aws['amount'] = pd.to_numeric(debits_aws['amount'])
 
-        # debits_aws = debits[[0,1,2]].rename(columns={0: "date", 1: "description", 2: "amount"})
-        credits_aws = credits[[0,1,3]].rename(columns={0: "date", 1: "description", 3: "amount"})
-
-        # debits_aws['amount'] = pd.to_numeric(debits_aws['amount'])
-        credits_aws['amount'] = pd.to_numeric(credits['amount'])
+        if len(credits_aws) > 0:
+            credits = credits_aws[credits_aws.iloc[:,0].str.match(r'^\d{2}/\d{2}', na=False)].reset_index(drop=True)
+            credits_aws = credits[[0,1,3]].rename(columns={0: "date", 1: "description", 3: "amount"})
+            credits_aws['amount'] = credits_aws['amount'].str.replace(r'[$,]', '', regex=True)
+            credits_aws['amount'] = pd.to_numeric(credits['amount'])
 
         with pd.ExcelWriter('excel2.xlsx', engine='openpyxl') as writer:
             credits_aws.to_excel(writer, sheet_name='Credit', index=False)
@@ -1162,8 +1166,8 @@ def excel_citi():
 
     finally:
         os.remove(temp_path)
-        # os.remove(temp_excel)
-        # os.remove(temp_excel2)
+        os.remove('excel1.xlsx')
+        os.remove('excel2.xlsx')
         for f in files:
             os.remove(f)
         
@@ -1317,8 +1321,8 @@ def excel_citirewards():
         
     finally:
         os.remove(temp_path)
-        # os.remove(temp_excel)
-        # os.remove(temp_excel2)
+        os.remove('excel1.xlsx')
+        os.remove('excel2.xlsx')
         for f in files:
             os.remove(f)
 
@@ -1417,8 +1421,7 @@ def excel_hab():
             pages[i].save("Hab_page_"+str(i+1)+".png", "PNG")
             files.append("Hab_page_"+str(i+1)+".png")
 
-        credits_aws = pd.DataFrame()
-        debits_aws = pd.DataFrame()
+        transactions = pd.DataFrame()
 
         for f in files:
             image = Image.open(f) # loads the document image with Pillow
@@ -1435,15 +1438,36 @@ def excel_hab():
                 table = EntityList(response.tables[i])
                 response.tables[i].visualize()
                 table_title = table[0].title
-                if table_title:
-                    if table_title.text in ['Deposits and Credits', 'DEPOSIT']:
-                        df=table[0].to_pandas()
-                        credits_aws = pd.concat([credits_aws, df], ignore_index=True)
+                df=table[0].to_pandas()
+                df1 = df[df.iloc[:,0].str.match(r'^\d{2}/\d{1,2}.*', na=False)].reset_index(drop=True)
+                for i in range(len(df1)):
+                    j = -1
+                    while df1.iloc[i, -1] == '':
+                        df1.iloc[i, -1] = df1.iloc[i, j-1]
+                        j -= 1
+                df = df1[[0, 1, len(df1.columns)-1]].rename(columns={0: "date", 1: "description", len(df1.columns)-1: "amount"})
+                transactions = pd.concat([transactions, df], ignore_index=True)
 
-                    if table_title.text in ['Debit(s)', 'DAILY ACCOUNT ACTIVITY Electronic Payments (continued)', 'Electronic Payments (continued)', 'Other Withdrawals', 'Service Charges']:
-                        df=table[0].to_pandas()
-                        debits_aws = pd.concat([debits_aws, df], ignore_index=True)
+    
+        credit_list = []
+        debit_list = []
 
+        for i in range(len(transactions)):
+            amount = transactions.iloc[i,-1]
+            if '-' in amount:
+                debit_list.append(transactions.iloc[i])
+            else:
+                credit_list.append(transactions.iloc[i])
+
+        credits_aws = pd.DataFrame(credit_list)
+        debits_aws = pd.DataFrame(debit_list)
+
+        debits_aws['amount'] = debits_aws['amount'].astype(str).replace(r'[-,]', '', regex=True)
+        debits_aws['amount'] = pd.to_numeric(debits_aws['amount'])
+
+        credits_aws['amount'] = credits_aws['amount'].astype(str).str.replace(r'[,]', '', regex=True)
+        credits_aws['amount'] = pd.to_numeric(credits_aws['amount'])
+                                      
         with pd.ExcelWriter('excel2.xlsx', engine='openpyxl') as writer:
             credits_aws.to_excel(writer, sheet_name='Credit', index=False)
             debits_aws.to_excel(writer, sheet_name='Debit', index=False)
@@ -1484,8 +1508,8 @@ def excel_hab():
 
     finally:
         os.remove(temp_path)
-        # os.remove(temp_excel)
-        # os.remove(temp_excel2)
+        os.remove('excel1.xlsx')
+        os.remove('excel2.xlsx')
         for f in files:
             os.remove(f)
 
@@ -1588,7 +1612,7 @@ def excel_regions():
             response = extractor.analyze_document(
                 file_source=image,
                 features=[
-          TextractFeatures.TABLES
+                TextractFeatures.TABLES
                 ],
                 save_image=True
             )
@@ -1604,6 +1628,18 @@ def excel_regions():
                 if table_title.text in ['WITHDRAWALS', 'FEES', 'CHECKS']:
                     df=table[0].to_pandas()
                     debits_aws = pd.concat([debits_aws, df], ignore_index=True)
+
+            if len(debits_aws) > 0:
+                debits_aws = debits_aws[debits_aws.iloc[:,0].str.match(r'^\d{2}/\d{1,2}.*', na=False)].reset_index(drop=True)
+                debits_aws.rename(columns={0: "date", 1: "description", 2: "debits"}, inplace=True)
+                debits_aws['debits'] = debits_aws['debits'].astype(str).replace(r'[,]', '', regex=True)
+                debits_aws['debits'] = pd.to_numeric(debits_aws['debits'])
+
+            if len(credits_aws) > 0:
+                credits_aws = credits_aws[credits_aws.iloc[:,0].str.match(r'^\d{2}/\d{1,2}.*', na=False)].reset_index(drop=True)
+                credits_aws.rename(columns={0: "date", 1: "description", 2: "credits"}, inplace=True)
+                credits_aws['credits'] = credits_aws['credits'].astype(str).replace(r'[,]', '', regex=True)
+                credits_aws['credits'] = pd.to_numeric(credits_aws['credits'])
 
         with pd.ExcelWriter('excel2.xlsx', engine='openpyxl') as writer:
             credits_aws.to_excel(writer, sheet_name='Credit', index=False)
@@ -1645,8 +1681,8 @@ def excel_regions():
 
     finally:
         os.remove(temp_path)
-        # os.remove(temp_excel)
-        # os.remove(temp_excel2)
+        os.remove('excel1.xlsx')
+        os.remove('excel2.xlsx')
         for f in files:
             os.remove(f)
 
@@ -1740,6 +1776,7 @@ def excel_santander():
 
         credits_aws = pd.DataFrame()
         debits_aws = pd.DataFrame()
+        transactions = pd.DataFrame()
 
         for f in files:
             image = Image.open(f) # loads the document image with Pillow
@@ -1759,8 +1796,35 @@ def excel_santander():
                 if table_title:
                     if table_title.text.startswith('Account Activity'):
                         df=table[0].to_pandas()
-                        df1 = df[[0,1,2,3]]
-                        credits_aws = pd.concat([credits, df1], ignore_index=True)
+                        # df1 = df[[0,1,2,3]]
+                        transactions = pd.concat([transactions, df], ignore_index=True)
+
+        transactions[['date', 'description']] = df[0].str.split(' ', n=1, expand=True)
+        transactions = transactions[['date','description',1,2]].rename(columns={1: "credit", 2: "debit"})
+        transactions = transactions[transactions.iloc[:,0].str.match(r'^\d{2}-\d{1,2}.*', na=False)].reset_index(drop=True)
+        transactions['date'] = transactions['date'].str.replace('-', '/')
+
+        credit_list = []
+        debit_list = []
+
+        for i in range(len(transactions)):
+            if transactions.iloc[i, 2] == '':
+                debit_list.append(transactions.iloc[i])
+
+            else:
+                credit_list.append(transactions.iloc[i])
+
+        credits_aws = pd.DataFrame(credit_list)
+        debits_aws = pd.DataFrame(debit_list)
+
+        credits_aws['credit'] = credits_aws['credit'].str.replace(r'[$,]', '', regex=True)
+        credits_aws['credit'] = pd.to_numeric(credits_aws['credit'])
+
+        debits_aws['debit'] = debits_aws['debit'].str.replace(r'[$,]', '', regex=True)
+        debits_aws['debit'] = pd.to_numeric(debits_aws['debit'])
+
+        credits_aws.drop(columns='debit', inplace=True)
+        debits_aws.drop(columns='credit', inplace=True)
 
         with pd.ExcelWriter('excel2.xlsx', engine='openpyxl') as writer:
             credits_aws.to_excel(writer, sheet_name='Credit', index=False)
@@ -1802,8 +1866,8 @@ def excel_santander():
 
     finally:
         os.remove(temp_path)
-        # os.remove(temp_excel)
-        # os.remove(temp_excel2)
+        os.remove('excel1.xlsx')
+        os.remove('excel2.xlsx')
         for f in files:
             os.remove(f)
 
@@ -1905,7 +1969,6 @@ def excel_seacoast():
 
         credits_aws = pd.DataFrame()
         debits_aws = pd.DataFrame()
-
         transactions = pd.DataFrame()
 
         for f in files:
@@ -1926,19 +1989,40 @@ def excel_seacoast():
                 if table_title:
                     if table_title.text in ['Business Checking*', 'Business Checking']:
                         df=table[0].to_pandas()
-                        credits_aws = pd.concat([credits_aws, df], ignore_index=True)
+                        transactions = pd.concat([transactions, df], ignore_index=True)
 
-        # transactions = transactions[transactions.iloc[:,0].str.match(r'^\d{2}-\d{1,2}.*', na=False)].reset_index(drop=True)
-        # transactions = transactions.rename(columns={0:'Date', 1: 'Description', 2:'Credit', 3:'Debit'})
-        # transactions['Date'] = transactions['Date'].str.replace(r'[-,]', '/', regex=True)
-        
-        # credits = transactions[['Date', 'Description', 'Credit']]
-        # debits = transactions[['Date', 'Description', 'Debit']]
+        transactions = transactions[transactions.iloc[:,0].str.match(r'^\d{2}-\d{1,2}.*', na=False)].reset_index(drop=True)
+        transactions = transactions[[0,1,2,3]].rename(columns={0:'date', 1: 'description', 2:'credit', 3:'debit'})
+        transactions['date'] = transactions['date'].str.replace(r'[-,]', '/', regex=True)
+        transactions['credit'] = transactions['credit'].str.replace(r'[$,]', '', regex=True)
+        transactions['debit'] = transactions['debit'].str.replace(r'[-$,]', '', regex=True)
 
-        # credits = credits[credits['Credit'] != '']
+        credit_list = []
+        debit_list = []
 
-        # debits = debits[debits['Debit'] != '']
+        for i in range(len(transactions)):
+            if transactions.iloc[i, 2] == '':
+                debit_list.append(transactions.iloc[i])
 
+            if transactions.iloc[i, 3] == '':
+                credit_list.append(transactions.iloc[i])
+
+        credits = pd.DataFrame(credit_list)
+        debits = pd.DataFrame(debit_list)
+
+        credits_aws = credits[credits['credit'] != '']
+        debits_aws = debits[debits['debit'] != '']
+
+        for index in credits_aws.index:
+            val = credits_aws.loc[index, 'credit'].split(' ')
+            credits_aws.loc[index, 'credit'] = val[0]  
+
+        for index in debits_aws.index:
+            val = debits_aws.loc[index, 'debit'].split(' ')
+            debits_aws.loc[index, 'debit'] = val[0]
+
+        credits_aws.drop(columns='debit', inplace=True)
+        debits_aws.drop(columns='credit', inplace=True)
             
         with pd.ExcelWriter('excel2.xlsx', engine='openpyxl') as writer:
             credits_aws.to_excel(writer, sheet_name='Credit', index=False)
@@ -1980,8 +2064,8 @@ def excel_seacoast():
 
     finally:
         os.remove(temp_path)
-        # os.remove(temp_excel)
-        # os.remove(temp_excel2)
+        os.remove('excel1.xlsx')
+        os.remove('excel2.xlsx')
         for f in files:
             os.remove(f)
 
@@ -2156,8 +2240,8 @@ def excel_synovus():
 
     finally:
         os.remove(temp_path)
-        # os.remove(temp_excel)
-        # os.remove(temp_excel2)
+        os.remove('excel1.xlsx')
+        os.remove('excel2.xlsx')
         for f in files:
             os.remove(f)
 
@@ -2319,8 +2403,8 @@ def excel_tdbank():
 
     finally:
         os.remove(temp_path)
-        # os.remove(temp_excel)
-        # os.remove(temp_excel2)
+        os.remove('excel1.xlsx')
+        os.remove('excel2.xlsx')
         for f in files:
             os.remove(f)
         
@@ -2500,8 +2584,8 @@ def excel_wellsfargo():
 
     finally:
         os.remove(temp_path)
-        # os.remove(temp_excel)
-        # os.remove(temp_excel2)
+        os.remove('excel1.xlsx')
+        os.remove('excel2.xlsx')
         for f in files:
             os.remove(f)
 
