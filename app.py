@@ -1619,33 +1619,34 @@ def excel_regions():
             for i in range(len(response.tables)):
                 table = EntityList(response.tables[i])
                 response.tables[i].visualize()
-                table_title = table[0].title
-                if table_title.text in ['DEPOSITS & CREDITS', 'AUTOMATIC TRANSFERS']:
-                    df=table[0].to_pandas()
-                    credits_aws = pd.concat([credits_aws, df], ignore_index=True)
+                df=table[0].to_pandas()
+                transactions = pd.concat([transactions, df], ignore_index=True)
 
-                if table_title.text in ['WITHDRAWALS', 'FEES', 'CHECKS']:
-                    df=table[0].to_pandas()
-                    debits_aws = pd.concat([debits_aws, df], ignore_index=True)
+        debits_aws = transactions[transactions.iloc[:,0].str.match(r'^\d{2}/\d{1,2}.*', na=False)].reset_index(drop=True)
+
+        debits_aws.rename(columns={0: "date", 1: "description", 2: "debits"}, inplace=True)
+
+        debits_aws.drop(columns=[3], inplace=True)
+
 
         if len(debits_aws) > 0:
-            debits_aws = debits_aws[debits_aws.iloc[:,0].str.match(r'^\d{2}/\d{1,2}.*', na=False)].reset_index(drop=True)
-            debits_aws.rename(columns={0: "date", 1: "description", 2: "debits"}, inplace=True)
+            # debits_aws = debits_aws[debits_aws.iloc[:,0].str.match(r'^\d{2}/\d{1,2}.*', na=False)].reset_index(drop=True)
+            # debits_aws = debits_aws[[0,1,2]].rename(columns={0: "date", 1: "description", 2: "debits"}, inplace=True)
             debits_aws['debits'] = debits_aws['debits'].astype(str).replace(r'[,]', '', regex=True)
             debits_aws['debits'] = pd.to_numeric(debits_aws['debits'])
 
-        if len(credits_aws) > 0:
-            credits_aws = credits_aws[credits_aws.iloc[:,0].str.match(r'^\d{2}/\d{1,2}.*', na=False)].reset_index(drop=True)
-            credits_aws.rename(columns={0: "date", 1: "description", 2: "credits"}, inplace=True)
-            credits_aws['credits'] = credits_aws['credits'].astype(str).replace(r'[,]', '', regex=True)
-            credits_aws['credits'] = pd.to_numeric(credits_aws['credits'])
+        # if len(credits_aws) > 0:
+        #     credits_aws = credits_aws[credits_aws.iloc[:,0].str.match(r'^\d{2}/\d{1,2}.*', na=False)].reset_index(drop=True)
+        #     credits_aws.rename(columns={0: "date", 1: "description", 2: "credits"}, inplace=True)
+        #     credits_aws['credits'] = credits_aws['credits'].astype(str).replace(r'[,]', '', regex=True)
+        #     credits_aws['credits'] = pd.to_numeric(credits_aws['credits'])
 
         with pd.ExcelWriter('excel2.xlsx', engine='openpyxl') as writer:
-            credits_aws.to_excel(writer, sheet_name='Credit', index=False)
+            # credits_aws.to_excel(writer, sheet_name='Credit', index=False)
             debits_aws.to_excel(writer, sheet_name='Debit', index=False)
 
             workbook2 = writer.book
-            worksheet1 = writer.sheets['Credit']
+            # worksheet1 = writer.sheets['Credit']
             worksheet2 = writer.sheets['Debit']
 
             temp_excel2 = tempfile.NamedTemporaryFile(suffix='.xlsx', delete=False)
