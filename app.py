@@ -1626,9 +1626,9 @@ def excel_regions():
                 transactions = pd.concat([transactions, df], ignore_index=True)
 
         credits_aws = transactions[transactions.iloc[:,0].str.match(r'^\d{2}/\d{1,2}.*', na=False)].reset_index(drop=True)
-        credits_aws = credits_aws[~credits_aws.iloc[:,1].str.match(r'^\d', na=False)].reset_index(drop=True)
+        credits_aws_sub = credits_aws[~credits_aws.iloc[:,1].str.match(r'^\d', na=False)].reset_index(drop=True)
 
-        credits_aws = credits_aws[[0,1,2]]
+        credits_aws = credits_aws_sub[[0,1,2]]
 
         # credits_aws = transactions[transactions.iloc[:,0].str.match(r'^\d{2}/\d{1,2}.*', na=False)].reset_index(drop=True)
         # credits_aws = credits_aws[~credits_aws.iloc[:,1].str.match(r'^\d', na=False)].reset_index(drop=True)
@@ -1690,7 +1690,7 @@ def excel_regions():
     finally:
         os.remove(temp_path)
         os.remove('excel1.xlsx')
-        os.remove('excel2.xlsx')
+        # os.remove('excel2.xlsx')
         for f in files:
             os.remove(f)
 
