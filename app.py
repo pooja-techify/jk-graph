@@ -1336,82 +1336,82 @@ def excel_hab():
     uploaded_file.save(temp_path)
 
     try:
-        images = convert_from_path(temp_path)
-        len_images = len(images)
+        # images = convert_from_path(temp_path)
+        # len_images = len(images)
 
-        with open('log.txt', 'w', encoding='utf-8') as f:
-            for i in range(len_images):
-                images[i].save('hab' + str(i) + '.jpg', 'JPEG')
+        # with open('log.txt', 'w', encoding='utf-8') as f:
+        #     for i in range(len_images):
+        #         images[i].save('hab' + str(i) + '.jpg', 'JPEG')
 
-                loader = AmazonTextractPDFLoader("hab" + str(i) + ".jpg")
-                documents = loader.load()
+        #         loader = AmazonTextractPDFLoader("hab" + str(i) + ".jpg")
+        #         documents = loader.load()
 
-                for document in documents:
-                    text = document.page_content
-                    f.write(text + '\n') 
+        #         for document in documents:
+        #             text = document.page_content
+        #             f.write(text + '\n') 
 
-        with open("log.txt", "r") as f:
-            text = f.read()
+        # with open("log.txt", "r") as f:
+        #     text = f.read()
 
-        cr_pattern = r'\n(\d{2}/\d{2})\n\n\n([A-Za-z*]+[A-Za-z 0-9\*\/]+)\n\n\n([0-9,]+[.]+[0-9]+)\n'
-        db_pattern = r'\n(\d{2}/\d{2})\n\n\n([A-Za-z*]+[A-Za-z 0-9\/\*\~\ \\\~\|\.\&]+)\n\n\n([0-9,]+[.]+[0-9]+)[-][SC]*\n'
-        # x = re.findall(db_pattern, text)
-        # print(x)
+        # cr_pattern = r'\n(\d{2}/\d{2})\n\n\n([A-Za-z*]+[A-Za-z 0-9\*\/]+)\n\n\n([0-9,]+[.]+[0-9]+)\n'
+        # db_pattern = r'\n(\d{2}/\d{2})\n\n\n([A-Za-z*]+[A-Za-z 0-9\/\*\~\ \\\~\|\.\&]+)\n\n\n([0-9,]+[.]+[0-9]+)[-][SC]*\n'
+        # # x = re.findall(db_pattern, text)
+        # # print(x)
 
-        credits = []
-        debits = []
+        # credits = []
+        # debits = []
 
-        for match in re.finditer(cr_pattern, text):
-            date = match.group(1)
-            user = match.group(2)
-            credit = match.group(3)
-            credits.append({
-                "date": date,
-                "description": user,
-                "credit": credit
-            })
+        # for match in re.finditer(cr_pattern, text):
+        #     date = match.group(1)
+        #     user = match.group(2)
+        #     credit = match.group(3)
+        #     credits.append({
+        #         "date": date,
+        #         "description": user,
+        #         "credit": credit
+        #     })
 
-        for match in re.finditer(db_pattern, text):
-            date = match.group(1)
-            user = match.group(2)
-            debit = match.group(3)
-            debits.append({
-                "date": date,
-                "description": user,
-                "debit": debit
-            })
+        # for match in re.finditer(db_pattern, text):
+        #     date = match.group(1)
+        #     user = match.group(2)
+        #     debit = match.group(3)
+        #     debits.append({
+        #         "date": date,
+        #         "description": user,
+        #         "debit": debit
+        #     })
 
-        def clean_amount(amount):
-            return float(amount.replace(',', ''))
+        # def clean_amount(amount):
+        #     return float(amount.replace(',', ''))
 
-        credits = pd.DataFrame(credits)
+        # credits = pd.DataFrame(credits)
 
-        credits['credit'] = credits['credit'].apply(clean_amount)
+        # credits['credit'] = credits['credit'].apply(clean_amount)
 
-        # print(credits)
+        # # print(credits)
 
-        debits = pd.DataFrame(debits)
+        # debits = pd.DataFrame(debits)
 
-        debits['debit'] = debits['debit'].apply(clean_amount)
+        # debits['debit'] = debits['debit'].apply(clean_amount)
 
-        # print(debits)
+        # # print(debits)
 
-        with pd.ExcelWriter('excel1.xlsx', engine='openpyxl') as writer:
-            credits.to_excel(writer, sheet_name='Credit', index=False)
-            debits.to_excel(writer, sheet_name='Debit', index=False)
+        # with pd.ExcelWriter('excel1.xlsx', engine='openpyxl') as writer:
+        #     credits.to_excel(writer, sheet_name='Credit', index=False)
+        #     debits.to_excel(writer, sheet_name='Debit', index=False)
 
-            workbook1 = writer.book
-            worksheet1 = writer.sheets['Credit']
-            worksheet2 = writer.sheets['Debit']
+        #     workbook1 = writer.book
+        #     worksheet1 = writer.sheets['Credit']
+        #     worksheet2 = writer.sheets['Debit']
 
-            for cell in worksheet1['C'][1:]:
-                cell.number_format = '##0.00'
+        #     for cell in worksheet1['C'][1:]:
+        #         cell.number_format = '##0.00'
 
-            for cell in worksheet2['C'][1:]:
-                cell.number_format = '##0.00'
+        #     for cell in worksheet2['C'][1:]:
+        #         cell.number_format = '##0.00'
 
-        temp_excel = tempfile.NamedTemporaryFile(suffix='.xlsx', delete=False)
-        workbook1.save(temp_excel.name)
+        # temp_excel = tempfile.NamedTemporaryFile(suffix='.xlsx', delete=False)
+        # workbook1.save(temp_excel.name)
 
         pages = convert_from_path(temp_path, dpi=300)
 
@@ -1478,9 +1478,9 @@ def excel_hab():
             temp_excel2 = tempfile.NamedTemporaryFile(suffix='.xlsx', delete=False)
             workbook2.save(temp_excel2.name)
 
-        excel1_buffer = io.BytesIO()
-        workbook1.save(excel1_buffer)
-        excel1_buffer.seek(0)
+        # excel1_buffer = io.BytesIO()
+        # workbook1.save(excel1_buffer)
+        # excel1_buffer.seek(0)
         
         excel2_buffer = io.BytesIO()
         workbook2.save(excel2_buffer)
@@ -1489,7 +1489,7 @@ def excel_hab():
         # Create a zip file in memory
         zip_buffer = io.BytesIO()
         with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
-            zip_file.writestr('regex.xlsx', excel1_buffer.getvalue())
+            # zip_file.writestr('regex.xlsx', excel1_buffer.getvalue())
             zip_file.writestr('textract.xlsx', excel2_buffer.getvalue())
         
         zip_buffer.seek(0)
@@ -1623,8 +1623,8 @@ def excel_regions():
                 transactions = pd.concat([transactions, df], ignore_index=True)
 
         debits_aws = transactions[transactions.iloc[:,0].str.match(r'^\d{2}/\d{1,2}.*', na=False)].reset_index(drop=True)
-        filtered_transactions = debits_aws[~debits_aws.iloc[:, 1].str.match(r'^\d', na=False)]
-        debits_aws = filtered_transactions
+        # filtered_transactions = debits_aws[~debits_aws.iloc[:, 1].str.match(r'^\d', na=False)]
+        # debits_aws = filtered_transactions
 
 
         # if len(debits_aws) > 0:
@@ -1640,11 +1640,11 @@ def excel_regions():
         # #     credits_aws['credits'] = pd.to_numeric(credits_aws['credits'])
 
         with pd.ExcelWriter('excel2.xlsx', engine='openpyxl') as writer:
-            # credits_aws.to_excel(writer, sheet_name='Credit', index=False)
+            credits_aws.to_excel(writer, sheet_name='Credit', index=False)
             debits_aws.to_excel(writer, sheet_name='Debit', index=False)
 
             workbook2 = writer.book
-            # worksheet1 = writer.sheets['Credit']
+            worksheet1 = writer.sheets['Credit']
             worksheet2 = writer.sheets['Debit']
 
             temp_excel2 = tempfile.NamedTemporaryFile(suffix='.xlsx', delete=False)
