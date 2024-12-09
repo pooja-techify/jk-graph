@@ -928,23 +928,23 @@ def excel_chase():
                 table = EntityList(response.tables[i])
                 response.tables[i].visualize()
                 table_title = table[0].title
+                if table_title:
+                    if table_title.text.startswith('DEPOSIT'):
+                        df=table[0].to_pandas()
+                        if len(df.columns) > 3:
+                            for i in range(2, len(df.columns)-1):
+                                df[1] = df[1] + ' ' + df[i]
+                        df1 = df[[0,1,len(df.columns)-1]].rename(columns={0: "date", 1: "description", len(df.columns)-1: "amount"})
+                        credits_aws = pd.concat([credits_aws, df1], ignore_index=True)
 
-                if table_title.text.startswith('DEPOSIT'):
-                    df=table[0].to_pandas()
-                    if len(df.columns) > 3:
-                        for i in range(2, len(df.columns)-1):
-                            df[1] = df[1] + ' ' + df[i]
-                    df1 = df[[0,1,len(df.columns)-1]].rename(columns={0: "date", 1: "description", len(df.columns)-1: "amount"})
-                    credits_aws = pd.concat([credits_aws, df1], ignore_index=True)
-
-                if table_title.text in ['ATM & DEBIT CARD WITHDRAWALS', 'ELECTRONIC WITHDRAWALS', 'FEES']:
-                    df=table[0].to_pandas()
-                    # print(df)
-                    if len(df.columns) > 3:
-                        for i in range(2, len(df.columns)-1):
-                            df[1] = df[1] + ' ' + df[i]
-                    df1 = df[[0,1,len(df.columns)-1]].rename(columns={0: "date", 1: "description", len(df.columns)-1: "amount"})
-                    debits_aws = pd.concat([debits_aws, df1], ignore_index=True)
+                    if table_title.text in ['ATM & DEBIT CARD WITHDRAWALS', 'ELECTRONIC WITHDRAWALS', 'FEES']:
+                        df=table[0].to_pandas()
+                        # print(df)
+                        if len(df.columns) > 3:
+                            for i in range(2, len(df.columns)-1):
+                                df[1] = df[1] + ' ' + df[i]
+                        df1 = df[[0,1,len(df.columns)-1]].rename(columns={0: "date", 1: "description", len(df.columns)-1: "amount"})
+                        debits_aws = pd.concat([debits_aws, df1], ignore_index=True)
 
         debits_aws = debits_aws[debits_aws.iloc[:,0].str.match(r'^\d{2}/\d{2}', na=False)].reset_index(drop=True)
         credits_aws = credits_aws[credits_aws.iloc[:,0].str.match(r'^\d{2}/\d{2}', na=False)].reset_index(drop=True)
