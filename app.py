@@ -1624,22 +1624,23 @@ def excel_regions():
 
         debits_aws = transactions[transactions.iloc[:,0].str.match(r'^\d{2}/\d{1,2}.*', na=False)].reset_index(drop=True)
 
-        debits_aws.rename(columns={0: "date", 1: "description", 2: "debits"}, inplace=True)
+        filtered_transactions = transactions[~transactions.iloc[:, 1].str.match(r'^\d', na=False)]
 
-        debits_aws.drop(columns=[3], inplace=True)
+        filtered_transactions = debits_aws[~debits_aws.iloc[:, 1].str.match(r'^\d', na=False)]
+        debits_aws = filtered_transactions[[0,1,2]]
 
 
-        if len(debits_aws) > 0:
-            # debits_aws = debits_aws[debits_aws.iloc[:,0].str.match(r'^\d{2}/\d{1,2}.*', na=False)].reset_index(drop=True)
-            # debits_aws = debits_aws[[0,1,2]].rename(columns={0: "date", 1: "description", 2: "debits"}, inplace=True)
-            debits_aws['debits'] = debits_aws['debits'].astype(str).replace(r'[,]', '', regex=True)
-            debits_aws['debits'] = pd.to_numeric(debits_aws['debits'])
+        # if len(debits_aws) > 0:
+        #     # debits_aws = debits_aws[debits_aws.iloc[:,0].str.match(r'^\d{2}/\d{1,2}.*', na=False)].reset_index(drop=True)
+        #     # debits_aws = debits_aws[[0,1,2]].rename(columns={0: "date", 1: "description", 2: "debits"}, inplace=True)
+        #     debits_aws['debits'] = debits_aws['debits'].astype(str).replace(r'[,]', '', regex=True)
+        #     debits_aws['debits'] = pd.to_numeric(debits_aws['debits'])
 
-        # if len(credits_aws) > 0:
-        #     credits_aws = credits_aws[credits_aws.iloc[:,0].str.match(r'^\d{2}/\d{1,2}.*', na=False)].reset_index(drop=True)
-        #     credits_aws.rename(columns={0: "date", 1: "description", 2: "credits"}, inplace=True)
-        #     credits_aws['credits'] = credits_aws['credits'].astype(str).replace(r'[,]', '', regex=True)
-        #     credits_aws['credits'] = pd.to_numeric(credits_aws['credits'])
+        # # if len(credits_aws) > 0:
+        # #     credits_aws = credits_aws[credits_aws.iloc[:,0].str.match(r'^\d{2}/\d{1,2}.*', na=False)].reset_index(drop=True)
+        # #     credits_aws.rename(columns={0: "date", 1: "description", 2: "credits"}, inplace=True)
+        # #     credits_aws['credits'] = credits_aws['credits'].astype(str).replace(r'[,]', '', regex=True)
+        # #     credits_aws['credits'] = pd.to_numeric(credits_aws['credits'])
 
         with pd.ExcelWriter('excel2.xlsx', engine='openpyxl') as writer:
             # credits_aws.to_excel(writer, sheet_name='Credit', index=False)
