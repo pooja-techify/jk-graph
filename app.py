@@ -9,7 +9,6 @@ from flask_cors import CORS
 from langchain_community.document_loaders import AmazonTextractPDFLoader
 from pdf2image import convert_from_path
 import tempfile
-from pdf2image import convert_from_path
 from PIL import Image
 from textractor import Textractor
 from textractor.visualizers.entitylist import EntityList
@@ -1883,10 +1882,12 @@ def excel_seacoast():
     try:
         images = convert_from_path(temp_path)
         len_images = len(images)
+        logfiles = []
 
         with open('log.txt', 'w', encoding='utf-8') as f:
             for i in range(len_images):
                 images[i].save('seacoast' + str(i) + '.jpg', 'JPEG')
+                logfiles.append("Seacoast_page_"+str(i+1)+".png")
 
                 loader = AmazonTextractPDFLoader("seacoast" + str(i) + ".jpg")
                 documents = loader.load()
@@ -1928,15 +1929,27 @@ def excel_seacoast():
             })
 
         def clean_amount(amount):
-            return float(amount.replace(',', ''))
+                    return float(amount.replace(',', ''))
+
+        def sign(amount):
+                    return amount.replace('-', '')
+
+        def date_modify(dates):
+                    return dates.replace('-', '/')
 
         credits = pd.DataFrame(credits)
 
+        credits['date'] = credits['date'].apply(date_modify)
+
         credits['credit'] = credits['credit'].apply(clean_amount)
 
-        # print(credits)
+                # print(credits)
 
         debits = pd.DataFrame(debits)
+
+        debits['date'] = debits['date'].apply(date_modify)
+
+        debits['debit'] = debits['debit'].apply(sign)
 
         debits['debit'] = debits['debit'].apply(clean_amount)
 
@@ -2068,6 +2081,8 @@ def excel_seacoast():
         os.remove('excel2.xlsx')
         for f in files:
             os.remove(f)
+        for l in logfiles:
+            os.remove(l)
 
     
 @app.route('/synovus', methods=['POST'])
