@@ -2001,11 +2001,11 @@ def excel_seacoast():
         debit_list = []
 
         for i in range(len(transactions)):
-            if transactions.iloc[i, 2] == '':
-                debit_list.append(transactions.iloc[i])
+                    if transactions.iloc[i, 2] == '':
+                        debit_list.append(transactions.iloc[i])
 
-            if transactions.iloc[i, 3] == '':
-                credit_list.append(transactions.iloc[i])
+                    if transactions.iloc[i, 3] == '':
+                        credit_list.append(transactions.iloc[i])
 
         credits = pd.DataFrame(credit_list)
         debits = pd.DataFrame(debit_list)
@@ -2014,12 +2014,12 @@ def excel_seacoast():
         debits_aws = debits[debits['debit'] != '']
 
         for index in credits_aws.index:
-            val = credits_aws.loc[index, 'credit'].split(' ')
-            credits_aws.loc[index, 'credit'] = val[0]  
+                    val = credits_aws.loc[index, 'credit'].split(' ')
+                    credits_aws.loc[index, 'credit'] = val[0]  
 
         for index in debits_aws.index:
-            val = debits_aws.loc[index, 'debit'].split(' ')
-            debits_aws.loc[index, 'debit'] = val[0]
+                    val = debits_aws.loc[index, 'debit'].split(' ')
+                    debits_aws.loc[index, 'debit'] = val[0]
 
         credits_aws.drop(columns='debit', inplace=True)
         debits_aws.drop(columns='credit', inplace=True)
