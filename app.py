@@ -1092,6 +1092,7 @@ def excel_citi():
 
         credits_aws = pd.DataFrame()
         debits_aws = pd.DataFrame()
+        transactions = pd.DataFrame()
 
         for f in files:
             image = Image.open(f) # loads the document image with Pillow
@@ -1111,19 +1112,21 @@ def excel_citi():
                 if table_title:
                     if table_title.text in ['CHECKING ACTIVITY']:
                         df=table[0].to_pandas()
-                        credits_aws = pd.concat([credits_aws, df], ignore_index=True)
+                        transactions = pd.concat([transactions, df], ignore_index=True)
 
-        if len(debits_aws) > 0:
-            debits = debits_aws[debits_aws.iloc[:,0].str.match(r'^\d{2}/\d{2}', na=False)].reset_index(drop=True)
-            debits_aws = debits[[0,1,2]].rename(columns={0: "date", 1: "description", 2: "amount"})
-            debits_aws['amount'] = debits_aws['amount'].str.replace(r'[$,]', '', regex=True)
-            debits_aws['amount'] = pd.to_numeric(debits_aws['amount'])
+        credits_aws = transactions[transactions.iloc[:,0].str.match(r'^\d{2}/\d{2}', na=False)].reset_index(drop=True)       
 
-        if len(credits_aws) > 0:
-            credits = credits_aws[credits_aws.iloc[:,0].str.match(r'^\d{2}/\d{2}', na=False)].reset_index(drop=True)
-            credits_aws = credits[[0,1,3]].rename(columns={0: "date", 1: "description", 3: "amount"})
-            credits_aws['amount'] = credits_aws['amount'].str.replace(r'[$,]', '', regex=True)
-            credits_aws['amount'] = pd.to_numeric(credits['amount'])
+        # if len(debits_aws) > 0:
+        #     debits = debits_aws[debits_aws.iloc[:,0].str.match(r'^\d{2}/\d{2}', na=False)].reset_index(drop=True)
+        #     debits_aws = debits[[0,1,2]].rename(columns={0: "date", 1: "description", 2: "amount"})
+        #     debits_aws['amount'] = debits_aws['amount'].str.replace(r'[$,]', '', regex=True)
+        #     debits_aws['amount'] = pd.to_numeric(debits_aws['amount'])
+
+        # if len(credits_aws) > 0:
+        #     credits = credits_aws[credits_aws.iloc[:,0].str.match(r'^\d{2}/\d{2}', na=False)].reset_index(drop=True)
+        #     credits_aws = credits[[0,1,3]].rename(columns={0: "date", 1: "description", 3: "amount"})
+        #     credits_aws['amount'] = credits_aws['amount'].str.replace(r'[$,]', '', regex=True)
+        #     credits_aws['amount'] = pd.to_numeric(credits['amount'])
 
         with pd.ExcelWriter('excel2.xlsx', engine='openpyxl') as writer:
             credits_aws.to_excel(writer, sheet_name='Credit', index=False)
@@ -1507,7 +1510,7 @@ def excel_hab():
 
     finally:
         os.remove(temp_path)
-        os.remove('excel1.xlsx')
+        # os.remove('excel1.xlsx')
         os.remove('excel2.xlsx')
         for f in files:
             os.remove(f)
