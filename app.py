@@ -1606,7 +1606,7 @@ def excel_regions():
             files.append("Regions_page_"+str(i+1)+".png")
 
         credits_aws = pd.DataFrame()
-        debits_aws = pd.DataFrame()
+        # debits_aws = pd.DataFrame()
 
         for f in files:
             image = Image.open(f)
@@ -1625,8 +1625,8 @@ def excel_regions():
                 df=table[0].to_pandas()
                 transactions = pd.concat([transactions, df], ignore_index=True)
 
-        debits_aws = transactions[transactions.iloc[:,0].str.match(r'^\d{2}/\d{1,2}.*', na=False)].reset_index(drop=True)
-        debits = debits_aws[~debits_aws.iloc[:,1].str.match(r'^\d', na=False)].reset_index(drop=True)
+        credits_aws = transactions[transactions.iloc[:,0].str.match(r'^\d{2}/\d{1,2}.*', na=False)].reset_index(drop=True)
+        credits_aws = credits_aws[~credits_aws.iloc[:,1].str.match(r'^\d', na=False)].reset_index(drop=True)
         # credits_aws = debits[[0,1,2]] 
         # filtered_transactions = debits_aws[~debits_aws.iloc[:, 1].str.match(r'^\d', na=False)]
         # debits_aws = filtered_transactions
@@ -1645,7 +1645,7 @@ def excel_regions():
         # #     credits_aws['credits'] = pd.to_numeric(credits_aws['credits'])
 
         with pd.ExcelWriter('excel2.xlsx', engine='openpyxl') as writer:
-            debits.to_excel(writer, sheet_name='Credit', index=False)
+            credits_aws.to_excel(writer, sheet_name='Credit', index=False)
             # debits_aws.to_excel(writer, sheet_name='Debit', index=False)
 
             workbook2 = writer.book
