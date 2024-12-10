@@ -1652,12 +1652,16 @@ def excel_regions():
                 table = EntityList(response.tables[i])
                 response.tables[i].visualize()
                 df=table[0].to_pandas()
-                transactions = pd.concat([transactions, df], ignore_index=True)
-
-        credits_aws = transactions[transactions.iloc[:,0].str.match(r'^\d{2}/\d{1,2}.*', na=False)].reset_index(drop=True)
-        credits_aws_sub = credits_aws[~credits_aws.iloc[:,1].str.match(r'^\d', na=False)].reset_index(drop=True)
-
-        credits_aws = credits_aws_sub[[0,1,2]]
+                df1 = df[df.iloc[:,0].str.match(r'^\d{2}/\d{1,2}.*', na=False)].reset_index(drop=True)
+                df2 = df1[df1.iloc[:,1].str.match(r'^[A-Z].*', na=False)].reset_index(drop=True)
+                if len(df2.columns) > 2:
+                  if df2.shape[0] > 0:
+                      df = df2[[0,1,2]].copy()
+                      df.rename(columns={0: 'Date', 1: 'Description', 2: 'Amount'}, inplace=True)
+                      transactions = pd.concat([transactions, df], ignore_index=True)
+        
+        transactions['Amount'] = transactions['Amount'].astype(str).str.replace(r'[$,]', '', regex=True)
+        transactions['Amount'] = pd.to_numeric(transactions['Amount'])
 
         # credits_aws = transactions[transactions.iloc[:,0].str.match(r'^\d{2}/\d{1,2}.*', na=False)].reset_index(drop=True)
         # credits_aws = credits_aws[~credits_aws.iloc[:,1].str.match(r'^\d', na=False)].reset_index(drop=True)
@@ -1679,11 +1683,11 @@ def excel_regions():
         # #     credits_aws['credits'] = pd.to_numeric(credits_aws['credits'])
 
         with pd.ExcelWriter('excel2.xlsx', engine='openpyxl') as writer:
-            credits_aws.to_excel(writer, sheet_name='Credit', index=False)
+            transactions.to_excel(writer, sheet_name='Transactions', index=False)
             # debits_aws.to_excel(writer, sheet_name='Debit', index=False)
 
             workbook2 = writer.book
-            worksheet1 = writer.sheets['Credit']
+            worksheet1 = writer.sheets['Transactions']
             # worksheet2 = writer.sheets['Debit']
 
             temp_excel2 = tempfile.NamedTemporaryFile(suffix='.xlsx', delete=False)
