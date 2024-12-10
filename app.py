@@ -230,6 +230,8 @@ def excel_amex():
 @app.route('/bcb', methods=['POST'])
 def excel_bcb():
     uploaded_file = request.files.get('file')
+    year = request.form.get('year')
+
     if not uploaded_file:
         return jsonify({'error': 'No file uploaded'}), 400
     
@@ -336,6 +338,13 @@ def excel_bcb():
         df[['date', 'description']] = df[0].str.split(' ', n=1, expand=True)
 
         new_df = df[['date','description', 1, 2]].rename(columns={1: "debit", 2: "credit"})
+
+        for i in range(len(new_df)):
+            date_str = new_df.iloc[i]['date'].strip() 
+            full_date_str = f"{date_str}/{str(year)[-2:]}"
+            formatted_date = datetime.strptime(full_date_str, "%m/%d/%y").strftime("%m/%d/%y")
+            new_df.iloc[i]['date'] = formatted_date
+
 
         credit_list = []
         debit_list = []
@@ -1112,8 +1121,7 @@ def excel_citi():
                 if table_title:
                     if table_title.text in ['CHECKING ACTIVITY']:
                         df=table[0].to_pandas()
-                        df1 = df[[0,1,2]].copy()
-                        df1.rename(columns={0: "date", 1: "description", 2: "amount"})
+                        df1 = df[[0,1,2]].rename(columns={0: "date", 1: "description", 2: "amount"})
                         transactions = pd.concat([transactions, df1], ignore_index=True)
 
         credits_aws = transactions[transactions.iloc[:,0].str.match(r'^\d{2}/\d{2}', na=False)].reset_index(drop=True)       
