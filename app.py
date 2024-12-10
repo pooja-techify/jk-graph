@@ -1282,8 +1282,34 @@ def excel_citirewards():
                 table = EntityList(response.tables[i])
                 response.tables[i].visualize()
                 df=table[0].to_pandas()
-                df1 = df[[1,2,3]]
-                transactions = pd.concat([transactions, df1], ignore_index=True)
+                if len(df.columns) == 3:
+                    df1 = df[df.iloc[:,0].str.match(r'^\d{2}/\d{2}', na=False)].reset_index(drop=True)
+                    df1.rename(columns={0: 'Date', 1: 'Description', 2: 'Amount'}, inplace=True)
+                    transactions = pd.concat([transactions, df1], ignore_index=True)
+                if len(df.columns) > 3:
+                    df1 = df[[1,2,3]].copy()
+                    df1.rename(columns={1: 'Date', 2: 'Description', 3: 'Amount'}, inplace=True)
+                    df1 = df1[df1.iloc[:,0].str.match(r'^\d{2}/\d{2}', na=False)].reset_index(drop=True)
+                    transactions = pd.concat([transactions, df1], ignore_index=True)
+
+        credit_list = []
+        debit_list = []
+        for i in range(len(transactions)):
+            amt = transactions.iloc[i]['Amount']
+            if '-' in amt:
+                debit_list.append(transactions.iloc[i])
+            else:
+                credit_list.append(transactions.iloc[i])
+
+
+        credits_aws = pd.DataFrame(credit_list)
+        debits_aws = pd.DataFrame(debit_list)
+
+        credits_aws['Amount'] = credits_aws['Amount'].str.replace(r'[$,]', '', regex=True)
+        credits_aws['Amount'] = pd.to_numeric(credits_aws['Amount'])
+
+        debits_aws['Amount'] = debits_aws['Amount'].str.replace(r'[-$,]', '', regex=True)
+        debits_aws['Amount'] = pd.to_numeric(debits_aws['Amount'])
 
         with pd.ExcelWriter('excel2.xlsx', engine='openpyxl') as writer:
             transactions.to_excel(writer, sheet_name='Credit', index=False)
