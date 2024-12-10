@@ -1265,6 +1265,7 @@ def excel_citirewards():
 
         credits_aws = pd.DataFrame()
         debits_aws = pd.DataFrame()
+        transactions = pd.DataFrame()
 
         for f in files:
             image = Image.open(f) # loads the document image with Pillow
@@ -1281,11 +1282,12 @@ def excel_citirewards():
                 table = EntityList(response.tables[i])
                 response.tables[i].visualize()
                 df=table[0].to_pandas()
-                credits_aws = pd.concat([credits_aws, df], ignore_index=True)
+                df1 = df[[1,2,3]]
+                transactions = pd.concat([transactions, df1], ignore_index=True)
 
         with pd.ExcelWriter('excel2.xlsx', engine='openpyxl') as writer:
-            credits_aws.to_excel(writer, sheet_name='Credit', index=False)
-            debits_aws.to_excel(writer, sheet_name='Debit', index=False)
+            transactions.to_excel(writer, sheet_name='Credit', index=False)
+            transactions.to_excel(writer, sheet_name='Debit', index=False)
 
             workbook2 = writer.book
             worksheet1 = writer.sheets['Credit']
@@ -1338,7 +1340,7 @@ def excel_hab():
     temp_path = tempfile.mktemp(suffix='.pdf')
     uploaded_file.save(temp_path)
 
-    try:
+    # try:
         # images = convert_from_path(temp_path)
         # len_images = len(images)
 
@@ -1416,6 +1418,7 @@ def excel_hab():
         # temp_excel = tempfile.NamedTemporaryFile(suffix='.xlsx', delete=False)
         # workbook1.save(temp_excel.name)
 
+    try:
         pages = convert_from_path(temp_path, dpi=300)
 
         files = []
@@ -1439,7 +1442,7 @@ def excel_hab():
             for i in range(len(response.tables)):
                 table = EntityList(response.tables[i])
                 response.tables[i].visualize()
-                table_title = table[0].title
+                # table_title = table[0].title
                 df=table[0].to_pandas()
                 df1 = df[df.iloc[:,0].str.match(r'^\d{2}/\d{1,2}.*', na=False)].reset_index(drop=True)
                 for i in range(len(df1)):
@@ -1690,7 +1693,7 @@ def excel_regions():
     finally:
         os.remove(temp_path)
         os.remove('excel1.xlsx')
-        # os.remove('excel2.xlsx')
+        os.remove('excel2.xlsx')
         for f in files:
             os.remove(f)
 
