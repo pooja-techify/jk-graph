@@ -423,7 +423,7 @@ def excel_bcb():
             os.remove(f)
 
 
-@app.route('/boa', methods=['POST'])
+@app.route('/bofa', methods=['POST'])
 def excel_boa():
     uploaded_file = request.files.get('file')
     year = request.form.get('year')
@@ -2325,17 +2325,22 @@ def excel_synovus():
         
         def clean_date(date_format):
             date_str = date_format.strip() 
+            date_str.replace('-','/')
             full_date_str = f"{date_str}/{str(year)[-2:]}"
             formatted_date = datetime.strptime(full_date_str, "%m/%d/%y").strftime("%m/%d/%y")
             return formatted_date
 
         credits = pd.DataFrame(credits)
+        for i in range(len(credits)):
+            credits.iloc[i]['date'] = credits.iloc[i]['date'].replace('-', '/')
+
         credits['credit'] = credits['credit'].apply(clean_amount)
         credits['date'] = credits['date'].apply(clean_date)
 
-        # print(credits)
-
         debits = pd.DataFrame(debits)
+        for i in range(len(debits)):
+            debits.iloc[i]['date'] = debits.iloc[i]['date'].replace('-', '/')
+
         debits['debit'] = debits['debit'].apply(clean_amount)
         debits['date'] = debits['date'].apply(clean_date)
 
