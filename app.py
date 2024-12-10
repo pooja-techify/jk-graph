@@ -23,6 +23,7 @@ CORS(app)
 @app.route('/amex', methods=['POST'])
 def excel_amex():
     uploaded_file = request.files.get('file')
+    year = request.form.get('year')
     if not uploaded_file:
         return jsonify({'error': 'No file uploaded'}), 400
     
@@ -417,6 +418,7 @@ def excel_bcb():
 @app.route('/boa', methods=['POST'])
 def excel_boa():
     uploaded_file = request.files.get('file')
+    year = request.form.get('year')
     if not uploaded_file:
         return jsonify({'error': 'No file uploaded'}), 400
     
@@ -625,6 +627,7 @@ def excel_boa():
 @app.route('/capitalone', methods=['POST'])
 def excel_capitalone():
     uploaded_file = request.files.get('file')
+    year = request.form.get('year')
     if not uploaded_file:
         return jsonify({'error': 'No file uploaded'}), 400
     
@@ -751,6 +754,12 @@ def excel_capitalone():
             date_object = datetime.strptime(date, "%b %d")
             new_df.iloc[i, 0] = date_object.strftime("%m/%d")
 
+        for i in range(len(new_df)):
+            date_str = new_df.iloc[i]['date'].strip() 
+            full_date_str = f"{date_str}/{str(year)[-2:]}"
+            formatted_date = datetime.strptime(full_date_str, "%m/%d/%y").strftime("%m/%d/%y")
+            new_df.iloc[i]['date'] = formatted_date
+
         new_df['amount'] = new_df['amount'].str.replace(r'[$,]', '', regex=True)
         new_df['amount'] = pd.to_numeric(new_df['amount'])
 
@@ -761,11 +770,17 @@ def excel_capitalone():
         df1 = df[df.iloc[:,0].str.match(r'^[A-z]{3} \d{1,2}', na=False)].reset_index(drop=True)
 
         new_df = df1[[0, 2, 3]].rename(columns={0: "date", 2: "description", 3: "amount"})
-
+        
         for i in range(len(new_df)):
             date = new_df.iloc[i, 0].strip()
             date_object = datetime.strptime(date, "%b %d")
             new_df.iloc[i, 0] = date_object.strftime("%m/%d")
+        
+        for i in range(len(new_df)):
+            date_str = new_df.iloc[i]['date'].strip() 
+            full_date_str = f"{date_str}/{str(year)[-2:]}"
+            formatted_date = datetime.strptime(full_date_str, "%m/%d/%y").strftime("%m/%d/%y")
+            new_df.iloc[i]['date'] = formatted_date
     
         new_df['amount'] = new_df['amount'].str.replace(r'[$,]', '', regex=True)
         new_df['amount'] = pd.to_numeric(new_df['amount'])
@@ -820,6 +835,7 @@ def excel_capitalone():
 @app.route('/chase', methods=['POST'])
 def excel_chase():
     uploaded_file = request.files.get('file')
+    year = request.form.get('year')
     if not uploaded_file:
         return jsonify({'error': 'No file uploaded'}), 400
     
@@ -957,6 +973,18 @@ def excel_chase():
         debits_aws = debits_aws[debits_aws.iloc[:,0].str.match(r'^\d{2}/\d{2}', na=False)].reset_index(drop=True)
         credits_aws = credits_aws[credits_aws.iloc[:,0].str.match(r'^\d{2}/\d{2}', na=False)].reset_index(drop=True)
 
+        for i in range(len(debits_aws)):
+            date_str = debits_aws.iloc[i]['date'].strip() 
+            full_date_str = f"{date_str}/{str(year)[-2:]}"
+            formatted_date = datetime.strptime(full_date_str, "%m/%d/%y").strftime("%m/%d/%y")
+            debits_aws.iloc[i]['date'] = formatted_date
+
+        for i in range(len(credits_aws)):
+            date_str = credits_aws.iloc[i]['date'].strip() 
+            full_date_str = f"{date_str}/{str(year)[-2:]}"
+            formatted_date = datetime.strptime(full_date_str, "%m/%d/%y").strftime("%m/%d/%y")
+            credits_aws.iloc[i]['date'] = formatted_date
+
         debits_aws['amount'] = debits_aws['amount'].str.replace(r'[$,]', '', regex=True)
         debits_aws['amount'] = pd.to_numeric(debits_aws['amount'])
 
@@ -1012,6 +1040,7 @@ def excel_chase():
 @app.route('/citi', methods=['POST'])
 def excel_citi():
     uploaded_file = request.files.get('file')
+    year = request.form.get('year')
     if not uploaded_file:
         return jsonify({'error': 'No file uploaded'}), 400
     
@@ -1124,7 +1153,13 @@ def excel_citi():
                         df1 = df[[0,1,2]].rename(columns={0: "date", 1: "description", 2: "amount"})
                         transactions = pd.concat([transactions, df1], ignore_index=True)
 
-        credits_aws = transactions[transactions.iloc[:,0].str.match(r'^\d{2}/\d{2}', na=False)].reset_index(drop=True)       
+        credits_aws = transactions[transactions.iloc[:,0].str.match(r'^\d{2}/\d{2}', na=False)].reset_index(drop=True)   
+
+        for i in range(len(credits_aws)):
+            date_str = credits_aws.iloc[i]['date'].strip() 
+            full_date_str = f"{date_str}/{str(year)[-2:]}"
+            formatted_date = datetime.strptime(full_date_str, "%m/%d/%y").strftime("%m/%d/%y")
+            credits_aws.iloc[i]['date'] = formatted_date    
 
         # if len(debits_aws) > 0:
         #     debits = debits_aws[debits_aws.iloc[:,0].str.match(r'^\d{2}/\d{2}', na=False)].reset_index(drop=True)
@@ -1187,6 +1222,7 @@ def excel_citi():
 @app.route('/citirewards', methods=['POST'])
 def excel_citirewards():
     uploaded_file = request.files.get('file')
+    year = request.form.get('year')
     if not uploaded_file:
         return jsonify({'error': 'No file uploaded'}), 400
     
@@ -1294,13 +1330,19 @@ def excel_citirewards():
                 df=table[0].to_pandas()
                 if len(df.columns) == 3:
                     df1 = df[df.iloc[:,0].str.match(r'^\d{2}/\d{2}', na=False)].reset_index(drop=True)
-                    df1.rename(columns={0: 'Date', 1: 'Description', 2: 'Amount'}, inplace=True)
+                    df1.rename(columns={0: 'date', 1: 'Description', 2: 'Amount'}, inplace=True)
                     transactions = pd.concat([transactions, df1], ignore_index=True)
                 if len(df.columns) > 3:
                     df1 = df[[1,2,3]].copy()
-                    df1.rename(columns={1: 'Date', 2: 'Description', 3: 'Amount'}, inplace=True)
+                    df1.rename(columns={1: 'date', 2: 'Description', 3: 'Amount'}, inplace=True)
                     df1 = df1[df1.iloc[:,0].str.match(r'^\d{2}/\d{2}', na=False)].reset_index(drop=True)
                     transactions = pd.concat([transactions, df1], ignore_index=True)
+
+        for i in range(len(transactions)):
+            date_str = transactions.iloc[i]['date'].strip() 
+            full_date_str = f"{date_str}/{str(year)[-2:]}"
+            formatted_date = datetime.strptime(full_date_str, "%m/%d/%y").strftime("%m/%d/%y")
+            transactions.iloc[i]['date'] = formatted_date
 
         credit_list = []
         debit_list = []
@@ -1370,6 +1412,7 @@ def excel_citirewards():
 @app.route('/hab', methods=['POST'])
 def excel_hab():
     uploaded_file = request.files.get('file')
+    year = request.form.get('year')
     if not uploaded_file:
         return jsonify({'error': 'No file uploaded'}), 400
     
@@ -1489,7 +1532,12 @@ def excel_hab():
                 df = df1[[0, 1, len(df1.columns)-1]].rename(columns={0: "date", 1: "description", len(df1.columns)-1: "amount"})
                 transactions = pd.concat([transactions, df], ignore_index=True)
 
-    
+        for i in range(len(transactions)):
+            date_str = transactions.iloc[i]['date'].strip() 
+            full_date_str = f"{date_str}/{str(year)[-2:]}"
+            formatted_date = datetime.strptime(full_date_str, "%m/%d/%y").strftime("%m/%d/%y")
+            transactions.iloc[i]['date'] = formatted_date
+
         credit_list = []
         debit_list = []
 
@@ -1561,6 +1609,7 @@ def excel_pnc():
 @app.route('/regions', methods=['POST'])
 def excel_regions():
     uploaded_file = request.files.get('file')
+    year = request.form.get('year')
     if not uploaded_file:
         return jsonify({'error': 'No file uploaded'}), 400
     
@@ -1668,9 +1717,15 @@ def excel_regions():
                 if len(df2.columns) > 2:
                   if df2.shape[0] > 0:
                       df = df2[[0,1,2]].copy()
-                      df.rename(columns={0: 'Date', 1: 'Description', 2: 'Amount'}, inplace=True)
+                      df.rename(columns={0: 'date', 1: 'Description', 2: 'Amount'}, inplace=True)
                       transactions = pd.concat([transactions, df], ignore_index=True)
         
+        for i in range(len(transactions)):
+            date_str = transactions.iloc[i]['date'].strip() 
+            full_date_str = f"{date_str}/{str(year)[-2:]}"
+            formatted_date = datetime.strptime(full_date_str, "%m/%d/%y").strftime("%m/%d/%y")
+            transactions.iloc[i]['date'] = formatted_date
+
         transactions['Amount'] = transactions['Amount'].astype(str).str.replace(r'[$,]', '', regex=True)
         transactions['Amount'] = pd.to_numeric(transactions['Amount'])
 
@@ -1741,6 +1796,7 @@ def excel_regions():
 @app.route('/santander', methods=['POST'])
 def excel_santander():
     uploaded_file = request.files.get('file')
+    year = request.form.get('year')
     if not uploaded_file:
         return jsonify({'error': 'No file uploaded'}), 400
     
@@ -1856,6 +1912,12 @@ def excel_santander():
         transactions = transactions[transactions.iloc[:,0].str.match(r'^\d{2}-\d{1,2}.*', na=False)].reset_index(drop=True)
         transactions['date'] = transactions['date'].str.replace('-', '/')
 
+        for i in range(len(transactions)):
+            date_str = transactions.iloc[i]['date'].strip() 
+            full_date_str = f"{date_str}/{str(year)[-2:]}"
+            formatted_date = datetime.strptime(full_date_str, "%m/%d/%y").strftime("%m/%d/%y")
+            transactions.iloc[i]['date'] = formatted_date
+
         credit_list = []
         debit_list = []
 
@@ -1926,6 +1988,7 @@ def excel_santander():
 @app.route('/seacoast', methods=['POST'])
 def excel_seacoast():
     uploaded_file = request.files.get('file')
+    year = request.form.get('year')
     if not uploaded_file:
         return jsonify({'error': 'No file uploaded'}), 400
     
@@ -2063,6 +2126,13 @@ def excel_seacoast():
         transactions['credit'] = transactions['credit'].str.replace(r'[$,]', '', regex=True)
         transactions['debit'] = transactions['debit'].str.replace(r'[-$,]', '', regex=True)
 
+        for i in range(len(transactions)):
+            date_str = transactions.iloc[i]['date'].strip() 
+            full_date_str = f"{date_str}/{str(year)[-2:]}"
+            formatted_date = datetime.strptime(full_date_str, "%m/%d/%y").strftime("%m/%d/%y")
+            transactions.iloc[i]['date'] = formatted_date
+        
+
         credit_list = []
         debit_list = []
 
@@ -2141,6 +2211,7 @@ def excel_seacoast():
 @app.route('/synovus', methods=['POST'])
 def excel_synovus():
     uploaded_file = request.files.get('file')
+    year = request.form.get('year')
     if not uploaded_file:
         return jsonify({'error': 'No file uploaded'}), 400
     
@@ -2260,6 +2331,12 @@ def excel_synovus():
         credits = ['Preauthorized Credit']
 
         for i in range(len(new_df)):
+            date_str = new_df.iloc[i]['date'].strip() 
+            full_date_str = f"{date_str}/{str(year)[-2:]}"
+            formatted_date = datetime.strptime(full_date_str, "%m/%d/%y").strftime("%m/%d/%y")
+            new_df.iloc[i]['date'] = formatted_date
+
+        for i in range(len(new_df)):
             if new_df.iloc[i, 1].strip() in debits:
                 row = pd.DataFrame(new_df.iloc[i])
                 debits_aws = pd.concat([debits_aws, row.T], ignore_index=True)
@@ -2317,6 +2394,7 @@ def excel_synovus():
 @app.route('/tdbank', methods=['POST'])
 def excel_tdbank():
     uploaded_file = request.files.get('file')
+    year = request.form.get('year')
     if not uploaded_file:
         return jsonify({'error': 'No file uploaded'}), 400
     
@@ -2420,16 +2498,28 @@ def excel_tdbank():
                 if table_title:
                     if table_title.text in ['DAILY ACCOUNT ACTIVITY', 'DEPOSIT']:
                         df=table[0].to_pandas()
-                        df1 = df[[0,1, len(df.columns)-1]].rename(columns={0: "Date", 1: "Description",  len(df.columns)-1: "Credits"})
+                        df1 = df[[0,1, len(df.columns)-1]].rename(columns={0: "date", 1: "Description",  len(df.columns)-1: "Credits"})
                         credits_aws = pd.concat([credits_aws, df1], ignore_index=True)
 
                     if table_title.text in ['Electronic Payments', 'DAILY ACCOUNT ACTIVITY Electronic Payments (continued)', 'Electronic Payments (continued)', 'Other Withdrawals', 'Service Charges']:
                         df=table[0].to_pandas()
-                        df1 = df[[0,1, len(df.columns)-1]].rename(columns={0: "Date", 1: "Description",  len(df.columns)-1: "Debits"})
+                        df1 = df[[0,1, len(df.columns)-1]].rename(columns={0: "date", 1: "Description",  len(df.columns)-1: "Debits"})
                         debits_aws = pd.concat([debits_aws, df1], ignore_index=True)
 
         credits_aws = credits_aws[credits_aws.iloc[:,0].str.match(r'^\d{2}/\d{2}.*', na=False)].reset_index(drop=True)
         debits_aws = debits_aws[debits_aws.iloc[:,0].str.match(r'^\d{2}/\d{2}.*', na=False)].reset_index(drop=True)
+
+        for i in range(len(credits_aws)):
+            date_str = credits_aws.iloc[i]['date'].strip() 
+            full_date_str = f"{date_str}/{str(year)[-2:]}"
+            formatted_date = datetime.strptime(full_date_str, "%m/%d/%y").strftime("%m/%d/%y")
+            credits_aws.iloc[i]['date'] = formatted_date
+
+        for i in range(len(debits_aws)):
+            date_str = debits_aws.iloc[i]['date'].strip() 
+            full_date_str = f"{date_str}/{str(year)[-2:]}"
+            formatted_date = datetime.strptime(full_date_str, "%m/%d/%y").strftime("%m/%d/%y")
+            debits_aws.iloc[i]['date'] = formatted_date
 
         with pd.ExcelWriter('excel2.xlsx', engine='openpyxl') as writer:
             credits_aws.to_excel(writer, sheet_name='Credit', index=False)
@@ -2480,6 +2570,7 @@ def excel_tdbank():
 @app.route('/wellsfargo', methods=['POST'])
 def excel_wellsfargo():
     uploaded_file = request.files.get('file')
+    year = request.form.get('year')
     if not uploaded_file:
         return jsonify({'error': 'No file uploaded'}), 400
     
@@ -2525,6 +2616,13 @@ def excel_wellsfargo():
         #         "debit": debit
         #     })
 
+        def clean_date(date_format):
+            date_str = date_format.strip() 
+            full_date_str = f"{date_str}/{str(year)[-2:]}"
+            formatted_date = datetime.strptime(full_date_str, "%m/%d/%y").strftime("%m/%d/%y")
+            return formatted_date
+
+
         def clean_amount(amount):
             return float(amount.replace(',', ''))
 
@@ -2532,6 +2630,7 @@ def excel_wellsfargo():
         # print(credits)
 
         credits['credit'] = credits['credit'].apply(clean_amount)
+        credits['date'] = credits['date'].apply(clean_date)
 
         # # print(credits)
 
@@ -2594,8 +2693,14 @@ def excel_wellsfargo():
         df1.drop(df1.columns[5], axis=1, inplace=True)
         df1.drop(df1.columns[1], axis=1, inplace=True)
 
-        new_df = df1[[0,2,3,4]].rename(columns={df.columns[0]: "Date", df.columns[2]: "Description", df.columns[3]: "Credits", df.columns[4]: "Debits"})
+        new_df = df1[[0,2,3,4]].rename(columns={df.columns[0]: "date", df.columns[2]: "Description", df.columns[3]: "Credits", df.columns[4]: "Debits"})
 
+        for i in range(len(new_df)):
+            date_str = new_df.iloc[i]['date'].strip() 
+            full_date_str = f"{date_str}/{str(year)[-2:]}"
+            formatted_date = datetime.strptime(full_date_str, "%m/%d/%y").strftime("%m/%d/%y")
+            new_df.iloc[i]['date'] = formatted_date
+        
         credit_list = []
         debit_list = []
 
