@@ -1312,8 +1312,8 @@ def excel_citirewards():
         debits_aws['Amount'] = pd.to_numeric(debits_aws['Amount'])
 
         with pd.ExcelWriter('excel2.xlsx', engine='openpyxl') as writer:
-            transactions.to_excel(writer, sheet_name='Credit', index=False)
-            transactions.to_excel(writer, sheet_name='Debit', index=False)
+            credits_aws.to_excel(writer, sheet_name='Credit', index=False)
+            debits_aws.to_excel(writer, sheet_name='Debit', index=False)
 
             workbook2 = writer.book
             worksheet1 = writer.sheets['Credit']
