@@ -1787,25 +1787,6 @@ def excel_regions():
         transactions['Amount'] = transactions['Amount'].astype(str).str.replace(r'[$,]', '', regex=True)
         transactions['Amount'] = pd.to_numeric(transactions['Amount'])
 
-        # credits_aws = transactions[transactions.iloc[:,0].str.match(r'^\d{2}/\d{1,2}.*', na=False)].reset_index(drop=True)
-        # credits_aws = credits_aws[~credits_aws.iloc[:,1].str.match(r'^\d', na=False)].reset_index(drop=True)
-        # credits_aws = credits_aws[[0,1,2]]
-        # filtered_transactions = debits_aws[~debits_aws.iloc[:, 1].str.match(r'^\d', na=False)]
-        # debits_aws = filtered_transactions
-
-
-        # if len(debits_aws) > 0:
-        #     # debits_aws = debits_aws[debits_aws.iloc[:,0].str.match(r'^\d{2}/\d{1,2}.*', na=False)].reset_index(drop=True)
-        #     # debits_aws = debits_aws[[0,1,2]].rename(columns={0: "date", 1: "description", 2: "debits"}, inplace=True)
-        #     debits_aws['debits'] = debits_aws['debits'].astype(str).replace(r'[,]', '', regex=True)
-        #     debits_aws['debits'] = pd.to_numeric(debits_aws['debits'])
-
-        # # if len(credits_aws) > 0:
-        # #     credits_aws = credits_aws[credits_aws.iloc[:,0].str.match(r'^\d{2}/\d{1,2}.*', na=False)].reset_index(drop=True)
-        # #     credits_aws.rename(columns={0: "date", 1: "description", 2: "credits"}, inplace=True)
-        # #     credits_aws['credits'] = credits_aws['credits'].astype(str).replace(r'[,]', '', regex=True)
-        # #     credits_aws['credits'] = pd.to_numeric(credits_aws['credits'])
-
         with pd.ExcelWriter('excel2.xlsx', engine='openpyxl') as writer:
             transactions.to_excel(writer, sheet_name='Transactions', index=False)
             # debits_aws.to_excel(writer, sheet_name='Debit', index=False)
