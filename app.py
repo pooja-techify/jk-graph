@@ -1112,7 +1112,9 @@ def excel_citi():
                 if table_title:
                     if table_title.text in ['CHECKING ACTIVITY']:
                         df=table[0].to_pandas()
-                        transactions = pd.concat([transactions, df], ignore_index=True)
+                        df1 = df[[0,1,2]].copy()
+                        df1.rename(columns={0: "date", 1: "description", 2: "amount"})
+                        transactions = pd.concat([transactions, df1], ignore_index=True)
 
         credits_aws = transactions[transactions.iloc[:,0].str.match(r'^\d{2}/\d{2}', na=False)].reset_index(drop=True)       
 
@@ -1635,6 +1637,7 @@ def excel_regions():
             files.append("Regions_page_"+str(i+1)+".png")
 
         credits_aws = pd.DataFrame()
+        transactions = pd.DataFrame()
         # debits_aws = pd.DataFrame()
 
         for f in files:
