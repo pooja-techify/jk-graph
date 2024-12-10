@@ -278,12 +278,20 @@ def excel_bcb():
 
         def clean_amount(amount):
             return float(amount.replace(',', ''))
+        
+        def clean_date(date_format):
+            date_str = date_format.strip() 
+            full_date_str = f"{date_str}/{str(year)[-2:]}"
+            formatted_date = datetime.strptime(full_date_str, "%m/%d/%y").strftime("%m/%d/%y")
+            return formatted_date
 
         credits = pd.DataFrame(credits)
         credits['credit'] = credits['credit'].apply(clean_amount)
+        credits['date'] = credits['date'].apply(clean_date)
 
         debits = pd.DataFrame(debits)
         debits['debit'] = debits['debit'].apply(clean_amount)
+        debits['date'] = debits['date'].apply(clean_date)
 
         with pd.ExcelWriter('excel1.xlsx', engine='openpyxl') as writer:
             credits.to_excel(writer, sheet_name='Credit', index=False)
@@ -673,14 +681,22 @@ def excel_capitalone():
 
         def clean_amount(amount):
             return float(amount.replace(',', ''))
+        
+        def clean_date(date_format):
+            date_str = date_format.strip() 
+            full_date_str = f"{date_str}/{str(year)[-2:]}"
+            formatted_date = datetime.strptime(full_date_str, "%m/%d/%y").strftime("%m/%d/%y")
+            return formatted_date
 
         credits = pd.DataFrame(credits)
         credits['credit'] = credits['credit'].apply(clean_amount)
+        credits['date'] = credits['date'].apply(clean_date)
 
         # print(credits)
 
         debits = pd.DataFrame(debits)
         debits['debit'] = debits['debit'].apply(clean_amount)
+        debits['date'] = debits['date'].apply(clean_date)
 
         # print(debits)
 
@@ -899,14 +915,22 @@ def excel_chase():
 
         def clean_amount(amount):
             return float(amount.replace(',', ''))
+        
+        def clean_date(date_format):
+            date_str = date_format.strip() 
+            full_date_str = f"{date_str}/{str(year)[-2:]}"
+            formatted_date = datetime.strptime(full_date_str, "%m/%d/%y").strftime("%m/%d/%y")
+            return formatted_date
 
         credits = pd.DataFrame(credits)
         credits['credit'] = credits['credit'].apply(clean_amount)
+        credits['date'] = credits['date'].apply(clean_date)
 
         # print(credits)
 
         debits = pd.DataFrame(debits)
         debits['debit'] = debits['debit'].apply(clean_amount)
+        debits['date'] = debits['date'].apply(clean_date)
 
         # print(debits)
 
@@ -1091,6 +1115,12 @@ def excel_citi():
 
         def clean_amount(amount):
             return float(amount.replace(',', ''))
+        
+        def clean_date(date_format):
+            date_str = date_format.strip() 
+            full_date_str = f"{date_str}/{str(year)[-2:]}"
+            formatted_date = datetime.strptime(full_date_str, "%m/%d/%y").strftime("%m/%d/%y")
+            return formatted_date
 
         # credits = pd.DataFrame(credits)
 
@@ -1101,6 +1131,8 @@ def excel_citi():
         debits = pd.DataFrame(debits)
 
         debits['debit'] = debits['debit'].apply(clean_amount)
+
+        debits['date'] = debits['date'].apply(clean_date)
 
         # # print(debits)
 
@@ -1272,16 +1304,26 @@ def excel_citirewards():
 
         def clean_amount(amount):
             return float(amount.replace(',', ''))
+        
+        def clean_date(date_format):
+            date_str = date_format.strip() 
+            full_date_str = f"{date_str}/{str(year)[-2:]}"
+            formatted_date = datetime.strptime(full_date_str, "%m/%d/%y").strftime("%m/%d/%y")
+            return formatted_date
 
         credits = pd.DataFrame(credits)
 
         credits['credit'] = credits['credit'].apply(clean_amount)
+
+        credits['date'] = credits['date'].apply(clean_date)
 
         # print(credits)
 
         debits = pd.DataFrame(debits)
 
         debits['debit'] = debits['debit'].apply(clean_amount)
+
+        debits['date'] = debits['date'].apply(clean_date)
 
         # print(debits)
 
@@ -1656,10 +1698,20 @@ def excel_regions():
 
         def clean_amount(amount):
             return float(amount.replace(',', ''))
+        
+        def clean_date(date_format):
+            date_str = date_format.strip() 
+            full_date_str = f"{date_str}/{str(year)[-2:]}"
+            formatted_date = datetime.strptime(full_date_str, "%m/%d/%y").strftime("%m/%d/%y")
+            return formatted_date
+
+
 
         credits = pd.DataFrame(credits)
 
         credits['credit'] = credits['credit'].apply(clean_amount)
+
+        credits['date'] = credits['date'].apply(clean_date)
 
         # print(credits)
 
@@ -1843,11 +1895,21 @@ def excel_santander():
 
         def clean_amount(amount):
             return float(amount.replace(',', ''))
+        
+        def clean_date(date_format):
+            date_str = date_format.strip() 
+            full_date_str = f"{date_str}/{str(year)[-2:]}"
+            formatted_date = datetime.strptime(full_date_str, "%m/%d/%y").strftime("%m/%d/%y")
+            return formatted_date
+
+
 
         credits = pd.DataFrame(credits)
         # print(credits)
 
         credits['credit'] = credits['credit'].apply(clean_amount)
+
+        credits['date'] = credits['date'].apply(clean_date)
 
         # # print(credits)
 
@@ -2260,14 +2322,22 @@ def excel_synovus():
 
         def clean_amount(amount):
             return float(amount.replace(',', ''))
+        
+        def clean_date(date_format):
+            date_str = date_format.strip() 
+            full_date_str = f"{date_str}/{str(year)[-2:]}"
+            formatted_date = datetime.strptime(full_date_str, "%m/%d/%y").strftime("%m/%d/%y")
+            return formatted_date
 
         credits = pd.DataFrame(credits)
         credits['credit'] = credits['credit'].apply(clean_amount)
+        credits['date'] = credits['date'].apply(clean_date)
 
         # print(credits)
 
         debits = pd.DataFrame(debits)
         debits['debit'] = debits['debit'].apply(clean_amount)
+        debits['date'] = debits['date'].apply(clean_date)
 
         # print(debits)
 
@@ -2439,10 +2509,17 @@ def excel_tdbank():
 
         def clean_amount(amount):
             return float(amount.replace(',', ''))
+        
+        def clean_date(date_format):
+            date_str = date_format.strip() 
+            full_date_str = f"{date_str}/{str(year)[-2:]}"
+            formatted_date = datetime.strptime(full_date_str, "%m/%d/%y").strftime("%m/%d/%y")
+            return formatted_date
 
         credits = pd.DataFrame(credits)
 
         credits['credit'] = credits['credit'].apply(clean_amount)
+        credits['date'] = credits['date'].apply(clean_date)
 
         # # print(credits)
 
@@ -2632,7 +2709,7 @@ def excel_wellsfargo():
         credits['credit'] = credits['credit'].apply(clean_amount)
         credits['date'] = credits['date'].apply(clean_date)
 
-        # # print(credits)
+        # # print(credits
 
         # debits = pd.DataFrame(debits)
 
