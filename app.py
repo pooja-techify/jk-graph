@@ -1571,35 +1571,39 @@ def excel_hab():
                 response.tables[i].visualize()
                 # table_title = table[0].title
                 df=table[0].to_pandas()
-                df1 = df[df.iloc[:,0].str.match(r'^\d{2}/\d{1,2}.*', na=False)].reset_index(drop=True)
-                for i in range(len(df1)):
-                    j = -1
-                    while df1.iloc[i, -1] == '':
-                        df1.iloc[i, -1] = df1.iloc[i, j-1]
-                        j -= 1
-                df = df1[[0, 1, len(df1.columns)-1]].rename(columns={0: "date", 1: "description", len(df1.columns)-1: "amount"})
-                transactions = pd.concat([transactions, df], ignore_index=True)
+                if len(df.columns) > 2:
+                    df1 = df[df.iloc[:,0].str.match(r'^\d{2}/\d{1,2}.*', na=False)].reset_index(drop=True)
+                    # print(df1)
+                    for i in range(len(df1)):
+                        j = -1
+                        while df1.iloc[i, -1] == '':
+                            df1.iloc[i, -1] = df1.iloc[i, j-1]
+                            j -= 1
+                    df = df1[[0, 1, len(df1.columns)-1]].rename(columns={0: "date", 1: "description", len(df1.columns)-1: "amount"})
+                    # print(df)
+                    transactions = pd.concat([transactions, df], ignore_index=True)
+                
+        trans = transactions[~transactions.iloc[:,1].str.match(r'^[0-9]', na=False)].reset_index(drop=True)
 
-        for i in range(len(transactions)):
-            date_str = transactions.iloc[i]['date'].strip() 
-            full_date_str = f"{date_str}/{str(year)[-2:]}"
-            formatted_date = datetime.strptime(full_date_str, "%m/%d/%y").strftime("%m/%d/%y")
-            transactions.iloc[i]['date'] = formatted_date
+        for i in range(len(trans)):
+                    date_str = trans.iloc[i]['date'].strip()
+                    full_date_str = f"{date_str[:5]}/{str(year)[-2:]}"
+                    formatted_date = datetime.strptime(full_date_str, "%m/%d/%y").strftime("%m/%d/%y")
+                    trans.iloc[i]['date'] = formatted_date
 
-        credit_list = []
-        debit_list = []
+        debits_aws = pd.DataFrame()
+        credits_aws = pd.DataFrame()
 
-        for i in range(len(transactions)):
-            amount = transactions.iloc[i,-1]
+        for i in range(len(trans)):
+            amount = trans.iloc[i]['amount']
             if '-' in amount:
-                debit_list.append(transactions.iloc[i])
+                row = pd.DataFrame(trans.iloc[i]).T
+                debits_aws = pd.concat([debits_aws, row], ignore_index=True)
             else:
-                credit_list.append(transactions.iloc[i])
+                row = pd.DataFrame(trans.iloc[i]).T
+                credits_aws = pd.concat([credits_aws, row], ignore_index=True)
 
-        credits_aws = pd.DataFrame(credit_list)
-        debits_aws = pd.DataFrame(debit_list)
-
-        debits_aws['amount'] = debits_aws['amount'].astype(str).replace(r'[-,]', '', regex=True)
+        debits_aws['amount'] = debits_aws['amount'].astype(str).replace(r'[-,SC]', '', regex=True)
         debits_aws['amount'] = pd.to_numeric(debits_aws['amount'])
 
         credits_aws['amount'] = credits_aws['amount'].astype(str).str.replace(r'[,]', '', regex=True)
