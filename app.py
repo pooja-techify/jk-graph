@@ -685,7 +685,7 @@ def excel_capitalone():
         def clean_date(date_format):
             date_str = date_format.strip() 
             full_date_str = f"{date_str}/{str(year)[-2:]}"
-            formatted_date = datetime.strptime(full_date_str, "%m/%d/%y").strftime("%m/%d/%y")
+            formatted_date = datetime.strptime(full_date_str, "%b %d/%y").strftime("%m/%d/%y")
             return formatted_date
 
         credits = pd.DataFrame(credits)
