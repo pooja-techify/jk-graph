@@ -1000,6 +1000,8 @@ def excel_chase():
                         # print(df1)
                         debits_aws = pd.concat([debits_aws, df1], ignore_index=True)
 
+        print(debits_aws)
+        
         debits_aws = debits_aws[debits_aws.iloc[:,0].str.match(r'^\d{2}/\d{2}', na=False)].reset_index(drop=True)
         credits_aws = credits_aws[credits_aws.iloc[:,0].str.match(r'^\d{2}/\d{2}', na=False)].reset_index(drop=True)
 
@@ -1020,6 +1022,8 @@ def excel_chase():
 
         credits_aws['amount'] = credits_aws['amount'].str.replace(r'[$,]', '', regex=True)
         credits_aws['amount'] = pd.to_numeric(credits_aws['amount'])
+
+        print(debits_aws)
         
         with pd.ExcelWriter('excel2.xlsx', engine='openpyxl') as writer:
             credits_aws.to_excel(writer, sheet_name='Credit', index=False)
