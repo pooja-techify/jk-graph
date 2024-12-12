@@ -2213,6 +2213,12 @@ def excel_seacoast():
 
         credits_aws.drop(columns='debit', inplace=True)
         debits_aws.drop(columns='credit', inplace=True)
+
+        debits_aws['debit'] = debits_aws['debit'].astype(str).replace(r'[-,]', '', regex=True)
+        debits_aws['debit'] = pd.to_numeric(debits_aws['debit'])
+
+        credits_aws['credit'] = credits_aws['credit'].astype(str).str.replace(r'[$,\s]', '', regex=True)
+        credits_aws['credit'] = pd.to_numeric(credits_aws['credit'])
             
         with pd.ExcelWriter('excel2.xlsx', engine='openpyxl') as writer:
             credits_aws.to_excel(writer, sheet_name='Credit', index=False)
