@@ -1888,6 +1888,9 @@ def excel_santander():
         def clean_amount(amount):
             return float(amount.replace(',', ''))
         
+        def format_date(date_format):
+            return date_format.replace('-', '/')
+        
         def clean_date(date_format):
             date_str = date_format.strip() 
             full_date_str = f"{date_str}/{str(year)[-2:]}"
@@ -1900,6 +1903,8 @@ def excel_santander():
         # print(credits)
 
         credits['credit'] = credits['credit'].apply(clean_amount)
+
+        credits['date'] = credits['date'].apply(format_date)
 
         credits['date'] = credits['date'].apply(clean_date)
 
