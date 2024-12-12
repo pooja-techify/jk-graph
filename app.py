@@ -2398,10 +2398,10 @@ def excel_synovus():
         credits = ['Preauthorized Credit']
 
         for i in range(len(new_df)):
-            date_str = new_df.iloc[i]['date'].strip() 
+            date_str = new_df.loc[i, 'date'].strip() 
             full_date_str = f"{date_str}/{str(year)[-2:]}"
             formatted_date = datetime.strptime(full_date_str, "%m/%d/%y").strftime("%m/%d/%y")
-            new_df.iloc[i]['date'] = formatted_date
+            new_df.loc[i, 'date'] = formatted_date
 
         credit_list = []
         debit_list = []
