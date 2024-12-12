@@ -1972,10 +1972,10 @@ def excel_santander():
         transactions['date'] = transactions['date'].str.replace('-', '/')
 
         for i in range(len(transactions)):
-            date_str = transactions.iloc[i]['date'].strip() 
+            date_str = transactions.loc[i, 'date'].strip() 
             full_date_str = f"{date_str}/{str(year)[-2:]}"
             formatted_date = datetime.strptime(full_date_str, "%m/%d/%y").strftime("%m/%d/%y")
-            transactions.iloc[i]['date'] = formatted_date
+            transactions.loc[i, 'date'] = formatted_date
 
         credit_list = []
         debit_list = []
