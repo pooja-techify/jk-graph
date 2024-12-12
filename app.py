@@ -2403,13 +2403,18 @@ def excel_synovus():
             formatted_date = datetime.strptime(full_date_str, "%m/%d/%y").strftime("%m/%d/%y")
             new_df.iloc[i]['date'] = formatted_date
 
+        credit_list = []
+        debit_list = []
+
         for i in range(len(new_df)):
             if new_df.iloc[i, 1].strip() in debits:
-                row = pd.DataFrame(new_df.iloc[i])
-                debits_aws = pd.concat([debits_aws, row.T], ignore_index=True)
+                debit_list.append(new_df.iloc[i])
+
             if new_df.iloc[i, 1].strip() in credits:
-                row = pd.DataFrame(new_df.iloc[i])
-                credits_aws = pd.concat([credits_aws, row.T], ignore_index=True)
+                credit_list.append(new_df.iloc[i])
+
+        credits_aws = pd.DataFrame(credit_list)
+        debits_aws = pd.DataFrame(debit_list)
 
         debits_aws['amount'] = debits_aws['amount'].astype(str).replace(r'[-,]', '', regex=True)
         debits_aws['amount'] = pd.to_numeric(debits_aws['amount'])
