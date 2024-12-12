@@ -1,18 +1,16 @@
 import re
 import os
 import pandas as pd
-import numpy as np
 import pymupdf
-from openpyxl.styles import numbers
 from flask import Flask, request, jsonify, send_file
 from flask_cors import CORS
-from langchain_community.document_loaders import AmazonTextractPDFLoader
+# from langchain_community.document_loaders import AmazonTextractPDFLoader
 from pdf2image import convert_from_path
 import tempfile
 from PIL import Image
 from textractor import Textractor
 from textractor.visualizers.entitylist import EntityList
-from textractor.data.constants import TextractFeatures, Direction, DirectionalFinderType
+from textractor.data.constants import TextractFeatures
 import zipfile
 import io
 from datetime import datetime
@@ -309,7 +307,6 @@ def excel_bcb():
 
         temp_excel = tempfile.NamedTemporaryFile(suffix='.xlsx', delete=False)
         workbook1.save(temp_excel.name)
-
 
         pages = convert_from_path(temp_path, dpi=300)
 
@@ -2793,6 +2790,12 @@ def excel_wellsfargo():
 
         credits_aws.drop(columns='Debits', inplace=True)
         debits_aws.drop(columns='Credits', inplace=True)
+
+        debits_aws['Debits'] = debits_aws['Debits'].astype(str).replace(r'[-,]', '', regex=True)
+        debits_aws['Debits'] = pd.to_numeric(debits_aws['Debits'])
+
+        credits_aws['Credits'] = credits_aws['Credits'].astype(str).str.replace(r'[$,\s]', '', regex=True)
+        credits_aws['Credits'] = pd.to_numeric(credits_aws['Credits'])
 
         with pd.ExcelWriter('excel2.xlsx', engine='openpyxl') as writer:
             credits_aws.to_excel(writer, sheet_name='Credit', index=False)
