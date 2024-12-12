@@ -2595,6 +2595,12 @@ def excel_tdbank():
             formatted_date = datetime.strptime(full_date_str, "%m/%d/%y").strftime("%m/%d/%y")
             debits_aws.iloc[i]['date'] = formatted_date
 
+        debits_aws['Debits'] = debits_aws['Debits'].astype(str).replace(r'[-,]', '', regex=True)
+        debits_aws['Debits'] = pd.to_numeric(debits_aws['Debits'])
+
+        credits_aws['Credits'] = credits_aws['Credits'].astype(str).str.replace(r'[$,\s]', '', regex=True)
+        credits_aws['Credits'] = pd.to_numeric(credits_aws['Credits'])
+
         with pd.ExcelWriter('excel2.xlsx', engine='openpyxl') as writer:
             credits_aws.to_excel(writer, sheet_name='Credit', index=False)
             debits_aws.to_excel(writer, sheet_name='Debit', index=False)
