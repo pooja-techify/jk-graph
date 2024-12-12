@@ -2411,6 +2411,12 @@ def excel_synovus():
                 row = pd.DataFrame(new_df.iloc[i])
                 credits_aws = pd.concat([credits_aws, row.T], ignore_index=True)
 
+        debits_aws['amount'] = debits_aws['amount'].astype(str).replace(r'[-,]', '', regex=True)
+        debits_aws['amount'] = pd.to_numeric(debits_aws['amount'])
+
+        credits_aws['amount'] = credits_aws['amount'].astype(str).str.replace(r'[$,\s]', '', regex=True)
+        credits_aws['amount'] = pd.to_numeric(credits_aws['amount'])
+
         
         with pd.ExcelWriter('excel2.xlsx', engine='openpyxl') as writer:
             credits_aws.to_excel(writer, sheet_name='Credit', index=False)
