@@ -568,20 +568,21 @@ def excel_boa():
                     #     df=table[0].to_pandas()
                     #     debits_aws = pd.concat([debits_aws, df], ignore_index=True)
 
-        debits_aws1 = debits_aws[debits_aws.iloc[:,0].str.match(r'^\d{2}/\d{2}/\d{2}', na=False)].reset_index(drop=True)
+        if (len(debits_aws)) > 0:
+            debits_aws1 = debits_aws[debits_aws.iloc[:,0].str.match(r'^\d{2}/\d{2}/\d{2}', na=False)].reset_index(drop=True)
+            if (len(debits_aws1)) > 0:
+                debits_aws = debits_aws1[['date', 'description', 'amount']]
+                debits_aws['amount'] = debits_aws['amount'].str.replace(r'[-,]', '', regex=True)
+                debits_aws['amount'] = debits_aws['amount'].str.strip()
+                debits_aws['amount'] = pd.to_numeric(debits_aws['amount'])
 
-        credits_aws1 = credits_aws[credits_aws.iloc[:,0].str.match(r'^\d{2}/\d{2}/\d{2}', na=False)].reset_index(drop=True)
-
-
-        debits_aws = debits_aws1[['date', 'description', 'amount']]
-        debits_aws['amount'] = debits_aws['amount'].str.replace(r'[-,]', '', regex=True)
-        debits_aws['amount'] = debits_aws['amount'].str.strip()
-        debits_aws['amount'] = pd.to_numeric(debits_aws['amount'])
-
-        credits_aws = credits_aws1[['date', 'description', 'amount']]
-        credits_aws['amount'] = credits_aws['amount'].str.strip()
-        credits_aws['amount'] = credits_aws['amount'].str.replace(r'[-,]', '', regex=True) 
-        credits_aws['amount'] = pd.to_numeric(credits_aws['amount'])
+        if (len(credits_aws)) > 0:
+            credits_aws1 = credits_aws[credits_aws.iloc[:,0].str.match(r'^\d{2}/\d{2}/\d{2}', na=False)].reset_index(drop=True)
+            if (len(credits_aws1)) > 0:
+                credits_aws = credits_aws1[['date', 'description', 'amount']]
+                credits_aws['amount'] = credits_aws['amount'].str.strip()
+                credits_aws['amount'] = credits_aws['amount'].str.replace(r'[-,]', '', regex=True) 
+                credits_aws['amount'] = pd.to_numeric(credits_aws['amount'])
 
         with pd.ExcelWriter('excel2.xlsx', engine='openpyxl') as writer:
             credits_aws.to_excel(writer, sheet_name='Credit', index=False)
@@ -997,7 +998,7 @@ def excel_chase():
                         # print(df1)
                         debits_aws = pd.concat([debits_aws, df1], ignore_index=True)
 
-        print(debits_aws)
+        # print(debits_aws)
         
         debits_aws = debits_aws[debits_aws.iloc[:,0].str.match(r'^\d{2}/\d{2}', na=False)].reset_index(drop=True)
         credits_aws = credits_aws[credits_aws.iloc[:,0].str.match(r'^\d{2}/\d{2}', na=False)].reset_index(drop=True)
@@ -1020,7 +1021,7 @@ def excel_chase():
         credits_aws['amount'] = credits_aws['amount'].str.replace(r'[$,]', '', regex=True)
         credits_aws['amount'] = pd.to_numeric(credits_aws['amount'])
 
-        print(debits_aws)
+        # print(debits_aws)
         
         with pd.ExcelWriter('excel2.xlsx', engine='openpyxl') as writer:
             credits_aws.to_excel(writer, sheet_name='Credit', index=False)
