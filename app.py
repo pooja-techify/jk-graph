@@ -492,12 +492,14 @@ def excel_boa():
             return float(amount.replace(',', ''))
 
         credits = pd.DataFrame(credits)
-        credits['credit'] = credits['credit'].apply(clean_amount)
+        if len(credits) > 0:
+            credits['credit'] = credits['credit'].apply(clean_amount)
 
         # print(credits)
 
         debits = pd.DataFrame(debits)
-        debits['debit'] = debits['debit'].apply(clean_amount)
+        if len(debits) > 0:
+            debits['debit'] = debits['debit'].apply(clean_amount)
 
         # print(debits)
 
