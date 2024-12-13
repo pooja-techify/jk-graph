@@ -972,27 +972,22 @@ def excel_chase():
                 response.tables[i].visualize()
                 table_title = table[0].title
                 if table_title:
-                    # print(table_title.text)
                     if table_title.text.startswith('DEPOSIT'):
                         df=table[0].to_pandas()
-                        # print(df)
                         if len(df.columns) > 3:
                             for i in range(2, len(df.columns)-1):
                                 df[1] = df[1] + ' ' + df[i]
                         df1 = df[[0,1,len(df.columns)-1]].copy()
                         df1 = df1.rename(columns={0: "date", 1: "description", len(df.columns)-1: "amount"})
-                        # print(df1)
                         credits_aws = pd.concat([credits_aws, df1], ignore_index=True)
 
                     if table_title.text in ['ATM & DEBIT CARD WITHDRAWALS', 'ELECTRONIC WITHDRAWALS', 'FEES']:
                         df=table[0].to_pandas()
-                        # print(df)
                         if len(df.columns) > 3:
                             for i in range(2, len(df.columns)-1):
                                 df[1] = df[1] + ' ' + df[i]
                         df1 = df[[0,1,len(df.columns)-1]].copy()
                         df1 = df1.rename(columns={0: "date", 1: "description", len(df.columns)-1: "amount"})
-                        # print(df1)
                         debits_aws = pd.concat([debits_aws, df1], ignore_index=True)
         
         if (len(debits_aws)) > 0:
@@ -1092,9 +1087,6 @@ def excel_citi():
 
         credits = []
         debits = []
-
-        # x = re.findall(db_pattern, text)
-        # print(x)
 
         # for match in re.finditer(cr_pattern, text):
         #     date = match.group(1)
@@ -1265,9 +1257,6 @@ def excel_citirewards():
 
         credits = []
         debits = []
-
-        # x = re.findall(db_pattern, text)
-        # print(x)
 
         for match in re.finditer(cr_pattern, text):
             date = match.group(2)
@@ -1468,7 +1457,6 @@ def excel_hab():
         # cr_pattern = r'\n(\d{2}/\d{2})\n\n\n([A-Za-z*]+[A-Za-z 0-9\*\/]+)\n\n\n([0-9,]+[.]+[0-9]+)\n'
         # db_pattern = r'\n(\d{2}/\d{2})\n\n\n([A-Za-z*]+[A-Za-z 0-9\/\*\~\ \\\~\|\.\&]+)\n\n\n([0-9,]+[.]+[0-9]+)[-][SC]*\n'
         # # x = re.findall(db_pattern, text)
-        # # print(x)
 
         # credits = []
         # debits = []
@@ -1500,13 +1488,9 @@ def excel_hab():
 
         # credits['credit'] = credits['credit'].apply(clean_amount)
 
-        # # print(credits)
-
         # debits = pd.DataFrame(debits)
 
         # debits['debit'] = debits['debit'].apply(clean_amount)
-
-        # # print(debits)
 
         # with pd.ExcelWriter('excel1.xlsx', engine='openpyxl') as writer:
         #     credits.to_excel(writer, sheet_name='Credit', index=False)
@@ -1555,14 +1539,12 @@ def excel_hab():
                 df=table[0].to_pandas()
                 if len(df.columns) > 2:
                     df1 = df[df.iloc[:,0].str.match(r'^\d{2}/\d{1,2}.*', na=False)].reset_index(drop=True)
-                    # print(df1)
                     for i in range(len(df1)):
                         j = -1
                         while df1.iloc[i, -1] == '':
                             df1.iloc[i, -1] = df1.iloc[i, j-1]
                             j -= 1
                     df = df1[[0, 1, len(df1.columns)-1]].rename(columns={0: "date", 1: "description", len(df1.columns)-1: "amount"})
-                    # print(df)
                     transactions = pd.concat([transactions, df], ignore_index=True)
                 
         if len(transactions) > 0:
@@ -1662,8 +1644,6 @@ def excel_regions():
 
         cr_pattern = r'(\d{2}/\d{2})\s([A-Za-z 0-9\#\-]+)\s([0-9,]+[.]+[0-9]{2}\s)'
         # db_pattern = r'(\d{2}/\d{2})\s([A-Za-z 0-9\#]+)\s([-][0-9,]+[.]+[0-9]{2}\s)'
-        # x = re.findall(cr_pattern, text)
-        # print(x)
 
         credits = []
         # debits = []
@@ -1704,13 +1684,9 @@ def excel_regions():
             credits['credit'] = credits['credit'].apply(clean_amount)
             credits['date'] = credits['date'].apply(clean_date)
 
-        # print(credits)
-
         # debits = pd.DataFrame(debits)
 
         # debits['debit'] = debits['debit'].apply(clean_amount)
-
-        # print(debits)
 
         with pd.ExcelWriter('excel1.xlsx', engine='openpyxl') as writer:
             credits.to_excel(writer, sheet_name='Credit', index=False)
@@ -1840,9 +1816,6 @@ def excel_santander():
 
         cr_pattern = r'(\d{2}-\d{2})\s([A-Za-z][A-Za-z0-9\*\/\.\-\s]+)\n[$]([0-9,]+[.]+[0-9]{2})\s[$][0-9,]+[.]+[0-9]{2}\s'
 
-        # x = re.findall(cr_pattern, text)
-        # print(x)
-
         credits = []
         # # debits = []
 
@@ -1886,13 +1859,9 @@ def excel_santander():
             credits['date'] = credits['date'].apply(format_date)
             credits['date'] = credits['date'].apply(clean_date)
 
-        # # print(credits)
-
         # debits = pd.DataFrame(debits)
 
         # debits['debit'] = debits['debit'].apply(clean_amount)
-
-        # # print(debits)
 
         with pd.ExcelWriter('excel1.xlsx', engine='openpyxl') as writer:
             credits.to_excel(writer, sheet_name='Credit', index=False)
@@ -2058,9 +2027,6 @@ def excel_seacoast():
         # cr_pattern = r'\n(\d{2}-\d{2})\n\n\n([A-Za-z\*\#]+[A-Za-z 0-9\*\/\#]+)\n\n\n([0-9,]+[.]+[0-9]+)\n\n\n[^-]'
         # db_pattern = r'\n(\d{2}-\d{2})\n\n\n([A-Za-z\*\#]+[A-Za-z 0-9\*\/\#]+)\n\n\n([-][0-9,]+[.]+[0-9]+)\n'
 
-        # # x = re.findall(cr_pattern, text)
-        # # print(x)
-
         # credits = []
         # debits = []
 
@@ -2099,8 +2065,6 @@ def excel_seacoast():
 
         # credits['credit'] = credits['credit'].apply(clean_amount)
 
-        #         # print(credits)
-
         # debits = pd.DataFrame(debits)
 
         # debits['date'] = debits['date'].apply(date_modify)
@@ -2108,8 +2072,6 @@ def excel_seacoast():
         # debits['debit'] = debits['debit'].apply(sign)
 
         # debits['debit'] = debits['debit'].apply(clean_amount)
-
-        # # print(debits)
 
         # with pd.ExcelWriter('excel1.xlsx', engine='openpyxl') as writer:
         #     credits.to_excel(writer, sheet_name='Credit', index=False)
@@ -2279,9 +2241,6 @@ def excel_synovus():
         cr_pattern = r'(\d{2}-\d{2})\sPreauthorized Credit\s([A-Za-z 0-9\#]+\s+[A-Za-z 0-9]*)\s([0-9,]+[.]+[0-9]{2})\s'
 
         db_pattern = r'(\d{2}-\d{2})\sPreauthorized Wd\s([A-Za-z 0-9\#\&]+\s+[A-Za-z 0-9]*)\s([0-9,]+[.]+[0-9]{2})\s'
-
-        # x = re.findall(pattern, text)
-        # print(x)
 
         credits = []
         debits = []
@@ -2525,13 +2484,9 @@ def excel_tdbank():
             credits['credit'] = credits['credit'].apply(clean_amount)
             credits['date'] = credits['date'].apply(clean_date)
 
-        # # print(credits)
-
         # debits = pd.DataFrame(debits)
 
         # debits['debit'] = debits['debit'].apply(clean_amount)
-
-        # # print(debits)
 
         with pd.ExcelWriter('excel1.xlsx', engine='openpyxl') as writer:
             credits.to_excel(writer, sheet_name='Credit', index=False)
@@ -2682,9 +2637,6 @@ def excel_wellsfargo():
         cr_pattern = r'\s(\d{1,2}/\d{1,2})\s+[< ]*([A-Za-z0-9\s\*\-\\\/\#\~]+)\s+([0-9,]+[.]+[0-9]{2})\s'
         # db_pattern = r'(\d{2}/\d{2})\s([A-Za-z 0-9\#]+)\s([-][0-9,]+[.]+[0-9]{2}\s)'
 
-        # x = re.findall(cr_pattern, text)
-        # print(x)
-
         credits = []
         # debits = []
 
@@ -2719,18 +2671,13 @@ def excel_wellsfargo():
             return float(amount.replace(',', ''))
 
         credits = pd.DataFrame(credits)
-        # print(credits)
         if len(credits) > 0:
             credits['credit'] = credits['credit'].apply(clean_amount)
             credits['date'] = credits['date'].apply(clean_date)
 
-        # # print(credits
-
         # debits = pd.DataFrame(debits)
 
         # debits['debit'] = debits['debit'].apply(clean_amount)
-
-        # # print(debits)
 
         with pd.ExcelWriter('excel1.xlsx', engine='openpyxl') as writer:
             credits.to_excel(writer, sheet_name='Credit', index=False)
@@ -2775,7 +2722,6 @@ def excel_wellsfargo():
                 response.tables[i].visualize()
                 table_title = table[0].title
                 if table_title:
-                # print(table_title.text)
                     if "Transaction history" in table_title.text:
                         df=table[0].to_pandas()
                         transactions = pd.concat([transactions, df], ignore_index=True)
