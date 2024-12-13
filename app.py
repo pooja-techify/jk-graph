@@ -153,7 +153,7 @@ def excel_amex():
 
         if len(df) > 0:
             df1 = df[df.iloc[:,0].str.match(r'^\d{2}/\d{2}', na=False)].reset_index(drop=True)
-            if (len(df1)) > 0:
+            if len(df1) > 0:
                 df1.iloc[:, 0] = df1.iloc[:, 0].str.strip()
                 for i in range(len(df1)):
                     if pd.isna(df1.iloc[i, -1]):
@@ -567,17 +567,17 @@ def excel_boa():
                     #     df=table[0].to_pandas()
                     #     debits_aws = pd.concat([debits_aws, df], ignore_index=True)
 
-        if (len(debits_aws)) > 0:
+        if len(debits_aws) > 0:
             debits_aws1 = debits_aws[debits_aws.iloc[:,0].str.match(r'^\d{2}/\d{2}/\d{2}', na=False)].reset_index(drop=True)
-            if (len(debits_aws1)) > 0:
+            if len(debits_aws1) > 0:
                 debits_aws = debits_aws1[['date', 'description', 'amount']]
                 debits_aws['amount'] = debits_aws['amount'].str.replace(r'[-,]', '', regex=True)
                 debits_aws['amount'] = debits_aws['amount'].str.strip()
                 debits_aws['amount'] = pd.to_numeric(debits_aws['amount'])
 
-        if (len(credits_aws)) > 0:
+        if len(credits_aws) > 0:
             credits_aws1 = credits_aws[credits_aws.iloc[:,0].str.match(r'^\d{2}/\d{2}/\d{2}', na=False)].reset_index(drop=True)
-            if (len(credits_aws1)) > 0:
+            if len(credits_aws1) > 0:
                 credits_aws = credits_aws1[['date', 'description', 'amount']]
                 credits_aws['amount'] = credits_aws['amount'].str.strip()
                 credits_aws['amount'] = credits_aws['amount'].str.replace(r'[-,]', '', regex=True) 
@@ -990,10 +990,10 @@ def excel_chase():
                         df1 = df1.rename(columns={0: "date", 1: "description", len(df.columns)-1: "amount"})
                         debits_aws = pd.concat([debits_aws, df1], ignore_index=True)
         
-        if (len(debits_aws)) > 0:
+        if len(debits_aws) > 0:
             debits_aws = debits_aws[debits_aws.iloc[:,0].str.match(r'^\d{2}/\d{2}', na=False)].reset_index(drop=True)
         
-        if (len(credits_aws)) > 0:
+        if len(credits_aws) > 0:
             credits_aws = credits_aws[credits_aws.iloc[:,0].str.match(r'^\d{2}/\d{2}', na=False)].reset_index(drop=True)
 
         for i in range(len(debits_aws)):
@@ -1372,11 +1372,11 @@ def excel_citirewards():
         credits_aws = pd.DataFrame(credit_list)
         debits_aws = pd.DataFrame(debit_list)
 
-        if (len(credits_aws)) > 0:
+        if len(credits_aws) > 0:
             credits_aws['Amount'] = credits_aws['Amount'].str.replace(r'[$,]', '', regex=True)
             credits_aws['Amount'] = pd.to_numeric(credits_aws['Amount'])
 
-        if (len(debits_aws)) > 0:
+        if len(debits_aws) > 0:
             debits_aws['Amount'] = debits_aws['Amount'].str.replace(r'[-$,]', '', regex=True)
             debits_aws['Amount'] = pd.to_numeric(debits_aws['Amount'])
 
@@ -1565,11 +1565,11 @@ def excel_hab():
                 row = pd.DataFrame(trans.iloc[i]).T
                 credits_aws = pd.concat([credits_aws, row], ignore_index=True)
 
-        if (len(debits_aws)) > 0:
+        if len(debits_aws) > 0:
             debits_aws['amount'] = debits_aws['amount'].astype(str).replace(r'[-,SC]', '', regex=True)
             debits_aws['amount'] = pd.to_numeric(debits_aws['amount'])
 
-        if (len(credits_aws)) > 0:
+        if len(credits_aws) > 0:
             credits_aws['amount'] = credits_aws['amount'].astype(str).str.replace(r'[,]', '', regex=True)
             credits_aws['amount'] = pd.to_numeric(credits_aws['amount'])
                                       
@@ -1935,14 +1935,14 @@ def excel_santander():
             else:
                 credit_list.append(transactions.iloc[i])
 
-        if (len(credits_aws)) > 0:
+        if len(credits_aws) > 0:
             credits_aws = pd.DataFrame(credit_list)
             credits_aws['credit'] = credits_aws['credit'].str.replace(r'[$,]', '', regex=True)
             credits_aws['credit'] = pd.to_numeric(credits_aws['credit'])
 
             credits_aws.drop(columns='debit', inplace=True)
 
-        if (len(debits_aws)) > 0:
+        if len(debits_aws) > 0:
             debits_aws = pd.DataFrame(debit_list)
             debits_aws['debit'] = debits_aws['debit'].str.replace(r'[$,]', '', regex=True)
             debits_aws['debit'] = pd.to_numeric(debits_aws['debit'])
