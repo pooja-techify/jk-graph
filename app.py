@@ -1930,10 +1930,10 @@ def excel_santander():
         debit_list = []
 
         for i in range(len(transactions)):
-            if transactions.iloc[i, 2] == '':
+            if transactions.iloc[i, 3] != '':
                 debit_list.append(transactions.iloc[i])
 
-            else:
+            if transactions.iloc[i, 2] != '':
                 credit_list.append(transactions.iloc[i])
 
         if len(credit_list) > 0:
