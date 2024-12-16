@@ -1539,7 +1539,7 @@ def excel_hab():
                 # table_title = table[0].title
                 df=table[0].to_pandas()
                 if len(df.columns) > 2:
-                    df1 = df[df.iloc[:,0].str.match(r'^\d{2}/\d{1,2}.*', na=False)].reset_index(drop=True)
+                    df1 = df[df.iloc[:,0].str.match(r'^\d{1,2}/\d{1,2}.*', na=False)].reset_index(drop=True)
                     for i in range(len(df1)):
                         j = -1
                         while df1.iloc[i, -1] == '':
