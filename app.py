@@ -1912,8 +1912,11 @@ def excel_santander():
                 if table_title:
                     if table_title.text.startswith('Account Activity'):
                         df=table[0].to_pandas()
-                        # df1 = df[[0,1,2,3]]
-                        transactions = pd.concat([transactions, df], ignore_index=True)
+                        if len(df.columns) > 4:
+                            for i in range(1, len(df.columns)-3):
+                                df[0] = df[0] + ' ' + df[i]
+                        df1 = df[[0, len(df.columns)-3, len(df.columns)-2]].rename(columns={0: "description", len(df.columns)-3: "credit", len(df.columns)-2: "debit"})
+                        transactions = pd.concat([transactions, df1], ignore_index=True)
 
         if len(transactions) > 0:
             transactions[['date', 'description']] = transactions.iloc[:,0].str.split(' ', n=1, expand=True)
