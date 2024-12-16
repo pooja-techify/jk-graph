@@ -144,10 +144,10 @@ def excel_amex():
                 if table_title:
                     if 'Detail' in table_title.text:
                         df=table[0].to_pandas()
-                        transactions = pd.concat([credits_aws, df], ignore_index=True)
+                        transactions = pd.concat([transactions, df], ignore_index=True)
                     if 'Interest Charged' in table_title.text:
                         df=table[0].to_pandas()
-                        transactions = pd.concat([credits_aws, df], ignore_index=True)
+                        transactions = pd.concat([transactions, df], ignore_index=True)
 
         df = transactions
 
@@ -351,7 +351,7 @@ def excel_bcb():
             date_str = new_df.iloc[i]['date'].strip() 
             full_date_str = f"{date_str}/{str(year)[-2:]}"
             formatted_date = datetime.strptime(full_date_str, "%m/%d/%y").strftime("%m/%d/%y")
-            new_df.iloc[i]['date'] = formatted_date
+            new_df.loc[i, "date"] = formatted_date
 
         credit_list = []
         debit_list = []
@@ -657,13 +657,13 @@ def excel_capitalone():
 
         for match in re.finditer(cr_pattern, text):
             date = match.group(1)
-        user = match.group(3)
-        credit = match.group(5)
-        credits.append({
-            "date": date,
-            "description": user,
-            "credit": credit
-        })
+            user = match.group(3)
+            credit = match.group(5)
+            credits.append({
+                "date": date,
+                "description": user,
+                "credit": credit
+            })
 
 
         for match in re.finditer(db_pattern, text):
@@ -740,21 +740,22 @@ def excel_capitalone():
                 if table_title:
                     if "Credits" in table_title.text:
                         df=table[0].to_pandas()
-                        credits_aw = pd.concat([credits_aw, df], ignore_index=True)
+                        credits_aws = pd.concat([credits_aws, df], ignore_index=True)
 
                     if "Transactions" in table_title.text:
                         df=table[0].to_pandas()
-                        debits_aw = pd.concat([debits_aw, df], ignore_index=True)
+                        debits_aws = pd.concat([debits_aws, df], ignore_index=True)
 
                     if "Fees" in table_title.text:
                         df=table[0].to_pandas()
-                        debits_aw = pd.concat([debits_aw, df], ignore_index=True)
+                        debits_aws = pd.concat([debits_aws, df], ignore_index=True)
 
                     if "Interests Charged" in table_title.text:
                         df=table[0].to_pandas()
-                        debits_aw = pd.concat([debits_aw, df], ignore_index=True)
+                        debits_aws = pd.concat([debits_aws, df], ignore_index=True)
 
-        df = debits_aw
+        df = debits_aws
+        debits_aws = pd.DataFrame()
 
         if len(df) > 0:
             df1 = df[df.iloc[:,0].str.match(r'^[A-z]{3} \d{1,2}', na=False)].reset_index(drop=True)
@@ -769,7 +770,7 @@ def excel_capitalone():
                     date_str = new_df.iloc[i]['date'].strip() 
                     full_date_str = f"{date_str}/{str(year)[-2:]}"
                     formatted_date = datetime.strptime(full_date_str, "%m/%d/%y").strftime("%m/%d/%y")
-                    new_df.iloc[i]['date'] = formatted_date
+                    new_df.loc[i, "date"] = formatted_date
             
             if len(new_df) > 0:
                     new_df['amount'] = new_df['amount'].str.replace(r'[$,]', '', regex=True)
@@ -777,7 +778,7 @@ def excel_capitalone():
 
             debits_aws = new_df
 
-        df = credits_aw
+        df = credits_aws
 
         if len(df) > 0:
             df1 = df[df.iloc[:,0].str.match(r'^[A-z]{3} \d{1,2}', na=False)].reset_index(drop=True)
@@ -792,7 +793,7 @@ def excel_capitalone():
                 date_str = new_df.iloc[i]['date'].strip() 
                 full_date_str = f"{date_str}/{str(year)[-2:]}"
                 formatted_date = datetime.strptime(full_date_str, "%m/%d/%y").strftime("%m/%d/%y")
-                new_df.iloc[i]['date'] = formatted_date
+                new_df.loc[i, "date"] = formatted_date
 
             if len(new_df) > 0:
                 new_df['amount'] = new_df['amount'].str.replace(r'[$,]', '', regex=True)
@@ -1000,13 +1001,13 @@ def excel_chase():
             date_str = debits_aws.iloc[i]['date'].strip() 
             full_date_str = f"{date_str}/{str(year)[-2:]}"
             formatted_date = datetime.strptime(full_date_str, "%m/%d/%y").strftime("%m/%d/%y")
-            debits_aws.iloc[i]['date'] = formatted_date
+            debits_aws.loc[i, "date"] = formatted_date
 
         for i in range(len(credits_aws)):
             date_str = credits_aws.iloc[i]['date'].strip() 
             full_date_str = f"{date_str}/{str(year)[-2:]}"
             formatted_date = datetime.strptime(full_date_str, "%m/%d/%y").strftime("%m/%d/%y")
-            credits_aws.iloc[i]['date'] = formatted_date
+            credits_aws.loc[i, "date"] = formatted_date
 
         if len(debits_aws) > 0:
             debits_aws['amount'] = debits_aws['amount'].str.replace(r'[$,]', '', regex=True)
@@ -1184,7 +1185,7 @@ def excel_citi():
             date_str = credits_aws.iloc[i]['date'].strip() 
             full_date_str = f"{date_str}/{str(year)[-2:]}"
             formatted_date = datetime.strptime(full_date_str, "%m/%d/%y").strftime("%m/%d/%y")
-            credits_aws.iloc[i]['date'] = formatted_date    
+            credits_aws.loc[i, "date"] = formatted_date
 
         with pd.ExcelWriter('excel2.xlsx', engine='openpyxl') as writer:
             credits_aws.to_excel(writer, sheet_name='Credit', index=False)
@@ -1356,7 +1357,7 @@ def excel_citirewards():
             date_str = transactions.iloc[i]['date'].strip() 
             full_date_str = f"{date_str}/{str(year)[-2:]}"
             formatted_date = datetime.strptime(full_date_str, "%m/%d/%y").strftime("%m/%d/%y")
-            transactions.iloc[i]['date'] = formatted_date
+            transactions.loc[i, "date"] = formatted_date
 
         credit_list = []
         debit_list = []
@@ -1554,7 +1555,7 @@ def excel_hab():
             date_str = trans.iloc[i]['date'].strip()
             full_date_str = f"{date_str[:5]}/{str(year)[-2:]}"
             formatted_date = datetime.strptime(full_date_str, "%m/%d/%y").strftime("%m/%d/%y")
-            trans.iloc[i]['date'] = formatted_date
+            trans.loc[i, "date"] = formatted_date
 
         for i in range(len(trans)):
             amount = trans.iloc[i]['amount']
@@ -1743,7 +1744,7 @@ def excel_regions():
             date_str = transactions.iloc[i]['date'].strip() 
             full_date_str = f"{date_str}/{str(year)[-2:]}"
             formatted_date = datetime.strptime(full_date_str, "%m/%d/%y").strftime("%m/%d/%y")
-            transactions.iloc[i]['date'] = formatted_date
+            transactions.loc[i, "date"] = formatted_date
 
         if len(transactions) > 0:
             transactions['Amount'] = transactions['Amount'].astype(str).str.replace(r'[$,]', '', regex=True)
@@ -1923,7 +1924,7 @@ def excel_santander():
             date_str = transactions.loc[i, 'date'].strip() 
             full_date_str = f"{date_str}/{str(year)[-2:]}"
             formatted_date = datetime.strptime(full_date_str, "%m/%d/%y").strftime("%m/%d/%y")
-            transactions.loc[i, 'date'] = formatted_date
+            transactions.loc[i, "date"] = formatted_date
 
         credit_list = []
         debit_list = []
@@ -2133,7 +2134,7 @@ def excel_seacoast():
             date_str = transactions.loc[i, 'date'].strip() 
             full_date_str = f"{date_str}/{str(year)[-2:]}"
             formatted_date = datetime.strptime(full_date_str, "%m/%d/%y").strftime("%m/%d/%y")
-            transactions.loc[i, 'date'] = formatted_date
+            transactions.loc[i, "date"] = formatted_date
         
         credit_list = []
         debit_list = []
@@ -2355,7 +2356,7 @@ def excel_synovus():
             date_str = new_df.loc[i, 'date'].strip() 
             full_date_str = f"{date_str}/{str(year)[-2:]}"
             formatted_date = datetime.strptime(full_date_str, "%m/%d/%y").strftime("%m/%d/%y")
-            new_df.loc[i, 'date'] = formatted_date
+            new_df.loc[i, "date"] = formatted_date
 
         credit_list = []
         debit_list = []
@@ -2552,13 +2553,13 @@ def excel_tdbank():
             date_str = credits_aws.iloc[i]['date'].strip() 
             full_date_str = f"{date_str}/{str(year)[-2:]}"
             formatted_date = datetime.strptime(full_date_str, "%m/%d/%y").strftime("%m/%d/%y")
-            credits_aws.iloc[i]['date'] = formatted_date
+            credits_aws.loc[i, "date"] = formatted_date
 
         for i in range(len(debits_aws)):
             date_str = debits_aws.iloc[i]['date'].strip() 
             full_date_str = f"{date_str}/{str(year)[-2:]}"
             formatted_date = datetime.strptime(full_date_str, "%m/%d/%y").strftime("%m/%d/%y")
-            debits_aws.iloc[i]['date'] = formatted_date
+            debits_aws.loc[i, "date"] = formatted_date
 
         if len(debits_aws) > 0:
             debits_aws['Debits'] = debits_aws['Debits'].astype(str).replace(r'[-,]', '', regex=True)
@@ -2739,7 +2740,7 @@ def excel_wellsfargo():
             date_str = new_df.iloc[i]['date'].strip() 
             full_date_str = f"{date_str}/{str(year)[-2:]}"
             formatted_date = datetime.strptime(full_date_str, "%m/%d/%y").strftime("%m/%d/%y")
-            new_df.iloc[i]['date'] = formatted_date
+            new_df.loc[i, "date"] = formatted_date
         
         credit_list = []
         debit_list = []
