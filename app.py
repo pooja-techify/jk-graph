@@ -247,8 +247,8 @@ def excel_bcb():
         with open("log.txt", "r") as f:
             text = f.read()
 
-        cr_pattern = r'(\d{2}/\d{2})\s([A-Za-z0-9\&\#\*\s]+)\s([0-9,]+[.]+[0-9]+)\s*([0-9,]+[.][0-9]{2})\s'
-        db_pattern = r'(\d{2}/\d{2})\s([A-Za-z0-9\&\#\*\s]+)\s([0-9,]+[.]+[0-9]+)[-]\s*([0-9,]+[.][0-9]{2})\s'
+        cr_pattern = r'(\d{1,2}/\d{2})\s([A-Za-z0-9\&\'\#\*\s]+)\s([0-9,]+[.]+[0-9]+)\s*([0-9,]+[.][0-9]{2})\s'
+        db_pattern = r'(\d{1,2}/\d{2})\s([A-Za-z0-9\&\'\#\*\s]+)\s([0-9,]+[.]+[0-9]+)[-]\s*([0-9,]+[.][0-9]{2})\s'
 
         credits = []
         debits = []
@@ -341,7 +341,7 @@ def excel_bcb():
                         transactions = pd.concat([transactions, df], ignore_index=True)
 
         if len(transactions) > 0:
-            df = transactions[transactions.iloc[:,0].str.match(r'^\d{2}/\d{2}.*', na=False)].reset_index(drop=True)
+            df = transactions[transactions.iloc[:,0].str.match(r'^\d{1,2}/\d{2}.*', na=False)].reset_index(drop=True)
 
         if len(df) > 0:
             df[['date', 'description']] = df[0].str.split(' ', n=1, expand=True)
