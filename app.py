@@ -1917,10 +1917,10 @@ def excel_santander():
                                 df[0] = df[0] + ' ' + df[i]
                         df1 = df[[0, len(df.columns)-3, len(df.columns)-2]].rename(columns={0: "description", len(df.columns)-3: "credit", len(df.columns)-2: "debit"})
                         transactions = pd.concat([transactions, df1], ignore_index=True)
-
+                        
         if len(transactions) > 0:
             transactions[['date', 'description']] = transactions.iloc[:,0].str.split(' ', n=1, expand=True)
-            transactions = transactions[['date','description',1,2]].rename(columns={1: "credit", 2: "debit"})
+            transactions = transactions[['date','description','credit','debit']]
             transactions = transactions[transactions.iloc[:,0].str.match(r'^\d{2}-\d{1,2}.*', na=False)].reset_index(drop=True)
             transactions['date'] = transactions['date'].str.replace('-', '/')
 
