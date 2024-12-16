@@ -1553,7 +1553,8 @@ def excel_hab():
 
         for i in range(len(trans)):
             date_str = trans.iloc[i]['date'].strip()
-            full_date_str = f"{date_str[:5]}/{str(year)[-2:]}"
+            date_string = date_str.split(' ')
+            full_date_str = f"{date_string[0]}/{str(year)[-2:]}"
             formatted_date = datetime.strptime(full_date_str, "%m/%d/%y").strftime("%m/%d/%y")
             trans.loc[i, "date"] = formatted_date
 
