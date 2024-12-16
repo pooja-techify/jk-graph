@@ -1915,7 +1915,7 @@ def excel_santander():
                         transactions = pd.concat([transactions, df], ignore_index=True)
 
         if len(transactions) > 0:
-            transactions[['date', 'description']] = df[0].str.split(' ', n=1, expand=True)
+            transactions[['date', 'description']] = transactions.iloc[:,0].str.split(' ', n=1, expand=True)
             transactions = transactions[['date','description',1,2]].rename(columns={1: "credit", 2: "debit"})
             transactions = transactions[transactions.iloc[:,0].str.match(r'^\d{2}-\d{1,2}.*', na=False)].reset_index(drop=True)
             transactions['date'] = transactions['date'].str.replace('-', '/')
