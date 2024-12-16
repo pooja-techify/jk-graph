@@ -1936,14 +1936,14 @@ def excel_santander():
             else:
                 credit_list.append(transactions.iloc[i])
 
-        if len(credits_aws) > 0:
+        if len(credit_list) > 0:
             credits_aws = pd.DataFrame(credit_list)
             credits_aws['credit'] = credits_aws['credit'].str.replace(r'[$,]', '', regex=True)
             credits_aws['credit'] = pd.to_numeric(credits_aws['credit'])
 
             credits_aws.drop(columns='debit', inplace=True)
 
-        if len(debits_aws) > 0:
+        if len(debit_list) > 0:
             debits_aws = pd.DataFrame(debit_list)
             debits_aws['debit'] = debits_aws['debit'].str.replace(r'[$,]', '', regex=True)
             debits_aws['debit'] = pd.to_numeric(debits_aws['debit'])
