@@ -338,7 +338,15 @@ def excel_bcb():
                 if table_title:
                     if table_title.text in ["ACTIVITY DESCRIPTION"]:
                         df=table[0].to_pandas()
+                        for i in range(2, len(transactions)):
+                            val = df.iloc[i][0]
+                            if not re.match(r'^\d{1,2}/\d{2}', val):
+                                for j in range(len(df.columns)):
+                                    df.loc[i-1, 0] += ' ' + df.iloc[i][j]
+                                df.iloc[i,0].strip()
                         transactions = pd.concat([transactions, df], ignore_index=True)
+
+        
 
         if len(transactions) > 0:
             df = transactions[transactions.iloc[:,0].str.match(r'^\d{1,2}/\d{2}.*', na=False)].reset_index(drop=True)
