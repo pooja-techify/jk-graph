@@ -14,6 +14,12 @@ from textractor.data.constants import TextractFeatures
 import zipfile
 import io
 from datetime import datetime
+from typing import Optional, Sequence, List
+import pandas as pd # type: ignore
+from google.api_core.client_options import ClientOptions # type: ignore
+from google.cloud import documentai # type: ignore
+import re
+
 
 app = Flask(__name__)
 CORS(app)
@@ -603,6 +609,176 @@ def excel_boa():
             temp_excel2 = tempfile.NamedTemporaryFile(suffix='.xlsx', delete=False)
             workbook2.save(temp_excel2.name)
 
+        project_id = 'techify-446309'
+        location = 'us'
+        processor_id = '567c2df93ddea10e'
+        processor_version = 'rc'
+        file_path = temp_path
+        mime_type = 'application/pdf'
+
+        def clean_description(text: str) -> str:
+            """
+            Clean description by removing quotation marks only if they appear at both start and end
+            """
+            if text.startswith('"') and text.endswith('"'):
+                return text[1:-1]
+            return text
+        
+        def is_valid_date_format(date_str: str) -> bool:
+            """
+            Validate if the date string matches mm/dd/yy format.
+            Returns True if the date is valid, False otherwise.
+            """
+            date_pattern = r'\d{2}/\d{2}/\d{2}'
+            
+            if not re.match(date_pattern, date_str):
+                return False
+            else:
+                return True
+            
+        def parse_amount(amount_str: str) -> float:
+            clean_amount = amount_str.replace('$', '').replace(',', '').replace('"', '').strip()
+            
+            try:
+                return float(clean_amount)
+            except ValueError:
+                print(f"Warning: Could not parse amount: {amount_str}")
+                return 0.0
+
+        def print_table_rows(
+            table_rows: Sequence[documentai.Document.Page.Table.TableRow], text: str
+        ) -> None:
+            for table_row in table_rows:
+                row_text = ""
+                for cell in table_row.cells:
+                    cell_text = layout_to_text(cell.layout, text)
+                    row_text += f"{repr(cell_text.strip())} | "
+                print(row_text)
+
+        def process_document(
+            project_id: str,
+            location: str,
+            processor_id: str,
+            processor_version: str,
+            file_path: str,
+            mime_type: str,
+            process_options: Optional[documentai.ProcessOptions] = None,
+        ) -> documentai.Document:
+            
+            client = documentai.DocumentProcessorServiceClient(
+                client_options=ClientOptions(
+                    api_endpoint=f"{location}-documentai.googleapis.com"
+                )
+            )
+
+            name = client.processor_version_path(
+                project_id, location, processor_id, processor_version
+            )
+
+            with open(file_path, "rb") as image:
+                image_content = image.read()
+
+            request = documentai.ProcessRequest(
+                name=name,
+                raw_document=documentai.RawDocument(content=image_content, mime_type=mime_type),
+                process_options=process_options,
+            )
+
+            result = client.process_document(request=request)
+
+            return result.document
+
+        def layout_to_text(layout: documentai.Document.Page.Layout, text: str) -> str:
+            """
+            Document AI identifies text in different parts of the document by their
+            offsets in the entirety of the document's text. This function converts
+            offsets to a string.
+            """
+            return "".join(
+                text[int(segment.start_index) : int(segment.end_index)]
+                for segment in layout.text_anchor.text_segments
+            )
+
+        document = process_document(
+                project_id, location, processor_id, processor_version, file_path, mime_type
+            )
+
+        text = document.text
+        print(f"There are {len(document.pages)} page(s) in this document.")
+
+        all_credit_rows = []
+        all_debit_rows = []
+        headers = None
+
+        for page in document.pages:
+            print(f"\n\n**** Page {page.page_number} ****")
+            print(f"\nFound {len(page.tables)} table(s):")
+
+            for table in page.tables:
+                num_columns = len(table.header_rows[0].cells)
+                if num_columns == 3:
+                    num_rows = len(table.body_rows)
+                    print(f"Table with {num_columns} columns and {num_rows} rows:")
+                        
+                    if headers is None:
+                        headers = []
+                        for cell in table.header_rows[0].cells:
+                            header_text = layout_to_text(cell.layout, text).strip()
+                            headers.append(header_text)
+                        print("Columns:", headers)
+
+                    if headers[0].lower() == 'date':
+                        for row in table.body_rows:
+                            row_data = []
+                            for cell in row.cells:
+                                cell_text = layout_to_text(cell.layout, text).strip()
+                                row_data.append(cell_text)
+
+                            if is_valid_date_format(row_data[0]):
+                                row_data[1] = clean_description(row_data[1])
+                                    
+                                amount = parse_amount(row_data[2])
+                                    
+                                if amount >= 0:
+                                    row_data[2] = str(amount)  # Clean amount string
+                                    all_credit_rows.append(row_data)
+                                elif amount < 0:
+                                    row_data[2] = str(abs(amount))  # Clean amount string
+                                    all_debit_rows.append(row_data)
+                            else:
+                                print(f"Skipping row with invalid date format: {row_data[0]}")
+
+
+        if all_credit_rows:
+            credit_df = pd.DataFrame(all_credit_rows, columns=headers)
+            credit_df[headers[1]] = credit_df[headers[1]].apply(clean_description)
+            credit_df[headers[2]] = credit_df[headers[2]].str.replace('"', '')
+            credit_df[headers[2]] = pd.to_numeric(credit_df[headers[2]], errors='coerce')
+                # credit_df.to_excel(writer, sheet_name='Credits', index=False)
+        print(f"Total credit transactions processed: {len(all_credit_rows)}")
+            
+        if all_debit_rows:
+            debit_df = pd.DataFrame(all_debit_rows, columns=headers)
+            debit_df[headers[1]] = debit_df[headers[1]].apply(clean_description)
+            debit_df[headers[2]] = debit_df[headers[2]].str.replace('"', '')
+            debit_df[headers[2]] = pd.to_numeric(debit_df[headers[2]], errors='coerce')
+                # debit_df.to_excel(writer, sheet_name='Debits', index=False)
+        print(f"Total debit transactions processed: {len(all_debit_rows)}")
+            
+        if not (all_credit_rows or all_debit_rows):
+            print("No valid transactions found in any table")
+
+        with pd.ExcelWriter('excel3.xlsx', engine='openpyxl') as writer:
+            credit_df.to_excel(writer, sheet_name='Credit', index=False)
+            debit_df.to_excel(writer, sheet_name='Debit', index=False)
+
+            workbook3 = writer.book
+            worksheet1 = writer.sheets['Credit']
+            worksheet2 = writer.sheets['Debit']
+
+            temp_excel3 = tempfile.NamedTemporaryFile(suffix='.xlsx', delete=False)
+            workbook3.save(temp_excel3.name)
+
         excel1_buffer = io.BytesIO()
         workbook1.save(excel1_buffer)
         excel1_buffer.seek(0)
@@ -610,12 +786,17 @@ def excel_boa():
         excel2_buffer = io.BytesIO()
         workbook2.save(excel2_buffer)
         excel2_buffer.seek(0)
+
+        excel3_buffer = io.BytesIO()
+        workbook3.save(excel3_buffer)
+        excel3_buffer.seek(0)
         
         # Create a zip file in memory
         zip_buffer = io.BytesIO()
         with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
             zip_file.writestr('regex.xlsx', excel1_buffer.getvalue())
             zip_file.writestr('textract.xlsx', excel2_buffer.getvalue())
+            zip_file.writestr('docai.xlsx', excel3_buffer.getvalue())
         
         zip_buffer.seek(0)
         
@@ -634,6 +815,7 @@ def excel_boa():
         os.remove(temp_path)
         os.remove('excel1.xlsx')
         os.remove('excel2.xlsx')
+        os.remove('excel3.xlsx')
         for f in files:
             os.remove(f)
 
