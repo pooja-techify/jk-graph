@@ -1262,8 +1262,8 @@ def excel_citirewards():
         with open("log.txt", "r") as f:
             text = f.read()
 
-        cr_pattern = r'(\d{2}/\d{2})*\s(\d{2}/\d{2})\s([A-Za-z0-9\s\,\'\#\.\*\-]+)\s[-][$]([0-9,]+[.][0-9]{2})'
-        db_pattern = r'(\d{2}/\d{2})*\s(\d{2}/\d{2})\s([A-Za-z0-9\s\,\'\#\.\*\-]+)\s[$]([0-9,]+[.][0-9]{2})'
+        cr_pattern = r'(\d{2}/\d{2})*\s(\d{2}/\d{2})\s([A-Za-z0-9\s\,\'\_\#\.\*\-]+)\s[-][$]([0-9,]+[.][0-9]{2})'
+        db_pattern = r'(\d{2}/\d{2})*\s(\d{2}/\d{2})\s([A-Za-z0-9\s\,\'\_\#\.\*\-]+)\s[$]([0-9,]+[.][0-9]{2})'
 
         credits = []
         debits = []
@@ -1533,7 +1533,7 @@ def excel_hab():
 
         for f in files:
             image = Image.open(f) # loads the document image with Pillow
-            extractor = Textractor(region_name="us-east-1") # Initialize textractor client, modify region if required
+            extractor = Textractor(region_name="ap-south-1") # Initialize textractor client, modify region if required
             response = extractor.analyze_document(
                 file_source=image,
                 features=[
@@ -1541,40 +1541,33 @@ def excel_hab():
                 ],
                 save_image=True
             )
-
+            # print(len(response.tables))
             for i in range(len(response.tables)):
                 table = EntityList(response.tables[i])
                 response.tables[i].visualize()
-                # table_title = table[0].title
                 df=table[0].to_pandas()
-                if len(df.columns) > 2:
-                    df1 = df[df.iloc[:,0].str.match(r'^\d{1,2}/\d{1,2}.*', na=False)].reset_index(drop=True)
-                    for i in range(len(df1)):
-                        j = -1
-                        while df1.iloc[i, -1] == '':
-                            df1.iloc[i, -1] = df1.iloc[i, j-1]
-                            j -= 1
-                    df = df1[[0, 1, len(df1.columns)-1]].rename(columns={0: "date", 1: "description", len(df1.columns)-1: "amount"})
-                    transactions = pd.concat([transactions, df], ignore_index=True)
-                
-        if len(transactions) > 0:
-            trans = transactions[~transactions.iloc[:,1].str.match(r'^[0-9]', na=False)].reset_index(drop=True)
+                # print(df)
+                for i in range(len(df)):
+                    j = -2
+                    while df.iloc[i, -1] == '':
+                        df.iloc[i, -1] = df.iloc[i, j]
+                        j -= 1
 
-        for i in range(len(trans)):
-            date_str = trans.iloc[i]['date'].strip()
-            date_string = date_str.split(' ')
-            full_date_str = f"{date_string[0]}/{str(year)[-2:]}"
-            formatted_date = datetime.strptime(full_date_str, "%m/%d/%y").strftime("%m/%d/%y")
-            trans.loc[i, "date"] = formatted_date
+                if len(df.columns) >= 3:
+                    df1 = df[[0,1,len(df.columns)-1]].rename(columns={0: "date", 1: "description", len(df.columns)-1: "amount"})
+                    transactions = pd.concat([transactions, df1], ignore_index=True)
 
-        for i in range(len(trans)):
-            amount = trans.iloc[i]['amount']
-            if '-' in amount:
-                row = pd.DataFrame(trans.iloc[i]).T
-                debits_aws = pd.concat([debits_aws, row], ignore_index=True)
-            else:
-                row = pd.DataFrame(trans.iloc[i]).T
-                credits_aws = pd.concat([credits_aws, row], ignore_index=True)
+        transaction = transactions[transactions.iloc[:,0].str.match(r'^\d{2}/\d{2}', na=False)].reset_index(drop=True)
+        transaction['date'] = transaction['date'].str.extract(r'(\d{2}/\d{2})')
+        transaction['amount'] = transaction['amount'].str.extract(r'(-{0,1}[0-9,]*.\d{2}-{0,1})')
+
+        for i in range(len(transaction)):
+            if 'Check' in transaction.iloc[i,1]:
+                debits_aws = pd.concat([debits_aws, transaction.iloc[[i]]], ignore_index=True)
+            elif '-' in transaction.iloc[i,2] and re.match(r'^[A-Za-z]', transaction.iloc[i,1]):
+                debits_aws = pd.concat([debits_aws, transaction.iloc[[i]]], ignore_index=True)
+            elif re.match(r'^[A-Za-z]', transaction.iloc[i,1]):
+                credits_aws = pd.concat([credits_aws, transaction.iloc[[i]]], ignore_index=True)
 
         if len(debits_aws) > 0:
             debits_aws['amount'] = debits_aws['amount'].astype(str).replace(r'[-,SC]', '', regex=True)
