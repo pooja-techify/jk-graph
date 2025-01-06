@@ -16,8 +16,8 @@ import io
 from datetime import datetime
 from typing import Optional, Sequence, List
 import pandas as pd # type: ignore
-from google.api_core.client_options import ClientOptions # type: ignore
-from google.cloud import documentai # type: ignore
+# from google.api_core.client_options import ClientOptions # type: ignore
+# from google.cloud import documentai # type: ignore
 import re
 
 
