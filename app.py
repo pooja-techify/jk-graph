@@ -630,6 +630,9 @@ def excel_boa():
     try:
         logger.debug("Block 3")
 
+        credit_df = pd.DataFrame()
+        debit_df = pd.DataFrame()
+
         project_id = 'techify-446309'
         location = 'us'
         processor_id = '567c2df93ddea10e'
