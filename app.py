@@ -447,167 +447,179 @@ def excel_boa():
     temp_path = tempfile.mktemp(suffix='.pdf')
     uploaded_file.save(temp_path)
 
-    try:
-        doc = pymupdf.open(temp_path)
-        with open('log.txt', 'w', encoding='utf-8') as f:
-            for page in doc:
-                text = page.get_text()
-                f.write(text + '\n')
+    # try:
+    #     print("Block 1")
+    #     doc = pymupdf.open(temp_path)
+    #     with open('log.txt', 'w', encoding='utf-8') as f:
+    #         for page in doc:
+    #             text = page.get_text()
+    #             f.write(text + '\n')
 
-        with open("log.txt", "r") as f:
-            text = f.read()
+    #     with open("log.txt", "r") as f:
+    #         text = f.read()
 
-        cr_pattern = r'(\d{2}/\d{2}/\d{2})\s([A-Za-z][A-Za-z0-9\"\'\;\:\#\*\-\&\/ ]+[.|\s][A-Za-z0-9\"\'\;\:\#\*\-\&\/ ]*)\s([0-9,]+[.][0-9]{2})'
-        cr_pattern2 = r'(\d{2}/\d{2}/\d{2})\s([0-9]+)[*]?\s([0-9,]+[.][0-9]{2})'
-        db_pattern = r'(\d{2}/\d{2}/\d{2})\s([A-Za-z][A-Za-z0-9\"\'\;\:\#\*\-\&\/ ]+[.|\s][A-Za-z0-9\"\'\;\:\#\*\-\&\/ ]*)\s[-]([0-9,]+[.][0-9]{2})'
-        db_pattern2 = r'(\d{2}/\d{2}/\d{2})\s([0-9]+)[*]?\s[-]([0-9,]+[.][0-9]{2})'
+    #     cr_pattern = r'(\d{2}/\d{2}/\d{2})\s([A-Za-z][A-Za-z0-9\"\'\;\:\#\*\-\&\/ ]+[.|\s][A-Za-z0-9\"\'\;\:\#\*\-\&\/ ]*)\s([0-9,]+[.][0-9]{2})'
+    #     cr_pattern2 = r'(\d{2}/\d{2}/\d{2})\s([0-9]+)[*]?\s([0-9,]+[.][0-9]{2})'
+    #     db_pattern = r'(\d{2}/\d{2}/\d{2})\s([A-Za-z][A-Za-z0-9\"\'\;\:\#\*\-\&\/ ]+[.|\s][A-Za-z0-9\"\'\;\:\#\*\-\&\/ ]*)\s[-]([0-9,]+[.][0-9]{2})'
+    #     db_pattern2 = r'(\d{2}/\d{2}/\d{2})\s([0-9]+)[*]?\s[-]([0-9,]+[.][0-9]{2})'
 
-        credits = []
-        debits = []
+    #     credits = []
+    #     debits = []
 
-        for match in re.finditer(cr_pattern, text):
-            date = match.group(1)
-            user = match.group(2)
-            credit = match.group(3)
-            credits.append({
-                "date": date,
-                "description": user,
-                "credit": credit
-            })
+    #     for match in re.finditer(cr_pattern, text):
+    #         date = match.group(1)
+    #         user = match.group(2)
+    #         credit = match.group(3)
+    #         credits.append({
+    #             "date": date,
+    #             "description": user,
+    #             "credit": credit
+    #         })
 
-        for match in re.finditer(cr_pattern2, text):
-            date = match.group(1)
-            user = match.group(2)
-            credit = match.group(3)
-            credits.append({
-                "date": date,
-                "description": user,
-                "credit": credit
-            })
+    #     for match in re.finditer(cr_pattern2, text):
+    #         date = match.group(1)
+    #         user = match.group(2)
+    #         credit = match.group(3)
+    #         credits.append({
+    #             "date": date,
+    #             "description": user,
+    #             "credit": credit
+    #         })
 
-        for match in re.finditer(db_pattern, text):
-            date = match.group(1)
-            user = match.group(2)
-            debit = match.group(3)
-            debits.append({
-                "date": date,
-                "description": user,
-                "debit": debit
-            })
+    #     for match in re.finditer(db_pattern, text):
+    #         date = match.group(1)
+    #         user = match.group(2)
+    #         debit = match.group(3)
+    #         debits.append({
+    #             "date": date,
+    #             "description": user,
+    #             "debit": debit
+    #         })
 
-        for match in re.finditer(db_pattern2, text):
-            date = match.group(1)
-            user = match.group(2)
-            debit = match.group(3)
-            debits.append({
-                "date": date,
-                "description": user,
-                "debit": debit
-            })
+    #     for match in re.finditer(db_pattern2, text):
+    #         date = match.group(1)
+    #         user = match.group(2)
+    #         debit = match.group(3)
+    #         debits.append({
+    #             "date": date,
+    #             "description": user,
+    #             "debit": debit
+    #         })
 
-        def clean_amount(amount):
-            return float(amount.replace(',', ''))
+    #     def clean_amount(amount):
+    #         return float(amount.replace(',', ''))
 
-        credits = pd.DataFrame(credits)
-        if len(credits) > 0:
-            credits['credit'] = credits['credit'].apply(clean_amount)
+    #     credits = pd.DataFrame(credits)
+    #     if len(credits) > 0:
+    #         credits['credit'] = credits['credit'].apply(clean_amount)
 
-        debits = pd.DataFrame(debits)
-        if len(debits) > 0:
-            debits['debit'] = debits['debit'].apply(clean_amount)
+    #     debits = pd.DataFrame(debits)
+    #     if len(debits) > 0:
+    #         debits['debit'] = debits['debit'].apply(clean_amount)
 
-        with pd.ExcelWriter('excel1.xlsx', engine='openpyxl') as writer:
-            credits.to_excel(writer, sheet_name='Credit', index=False)
-            debits.to_excel(writer, sheet_name='Debit', index=False)
+    #     with pd.ExcelWriter('excel1.xlsx', engine='openpyxl') as writer:
+    #         credits.to_excel(writer, sheet_name='Credit', index=False)
+    #         debits.to_excel(writer, sheet_name='Debit', index=False)
 
-            workbook1 = writer.book
-            worksheet1 = writer.sheets['Credit']
-            worksheet2 = writer.sheets['Debit']
+    #         workbook1 = writer.book
+    #         worksheet1 = writer.sheets['Credit']
+    #         worksheet2 = writer.sheets['Debit']
 
-            for cell in worksheet1['C'][1:]:
-                cell.number_format = '##0.00'
+    #         for cell in worksheet1['C'][1:]:
+    #             cell.number_format = '##0.00'
 
-            for cell in worksheet2['C'][1:]:
-                cell.number_format = '##0.00'
+    #         for cell in worksheet2['C'][1:]:
+    #             cell.number_format = '##0.00'
+    
+    #     temp_excel = tempfile.NamedTemporaryFile(suffix='.xlsx', delete=False)
+    #     workbook1.save(temp_excel.name)
 
-        temp_excel = tempfile.NamedTemporaryFile(suffix='.xlsx', delete=False)
-        workbook1.save(temp_excel.name)
+    # except Exception as e:
+    #     print("An error occured: {e}")
 
-        pages = convert_from_path(temp_path, dpi=300)
+    # try:
+    #     print("Block 2")
+    #     pages = convert_from_path(temp_path, dpi=300)
 
-        files = []
-        for i in range(len(pages)):
-            pages[i].save("BOA_page_"+str(i+1)+".png", "PNG")
-            files.append("BOA_page_"+str(i+1)+".png")
+    #     files = []
+    #     for i in range(len(pages)):
+    #         pages[i].save("BOA_page_"+str(i+1)+".png", "PNG")
+    #         files.append("BOA_page_"+str(i+1)+".png")
 
-        credits_aws = pd.DataFrame()
-        debits_aws = pd.DataFrame()
+    #     credits_aws = pd.DataFrame()
+    #     debits_aws = pd.DataFrame()
 
-        for f in files:
-            image = Image.open(f) # loads the document image with Pillow
-            extractor = Textractor(region_name="us-east-1") # Initialize textractor client, modify region if required
-            response = extractor.analyze_document(
-                file_source=image,
-                features=[
-                    TextractFeatures.TABLES
-                ],
-                save_image=True
-            )
+    #     for f in files:
+    #         image = Image.open(f) # loads the document image with Pillow
+    #         extractor = Textractor(region_name="us-east-1") # Initialize textractor client, modify region if required
+    #         response = extractor.analyze_document(
+    #             file_source=image,
+    #             features=[
+    #                 TextractFeatures.TABLES
+    #             ],
+    #             save_image=True
+    #         )
 
-            for i in range(len(response.tables)):
-                table = EntityList(response.tables[i])
-                response.tables[i].visualize()
-                table_title = table[0].title
-                if table_title:
-                    if "Deposits" in table_title.text:
-                        df=table[0].to_pandas()
-                        if len(df.columns) > 3:
-                            ori_columns = df.columns
-                            for i in range(2, len(df.columns)-1):
-                                df[1] = df[1].astype(str) + ' ' + df[ori_columns[i]].astype(str)
-                        df1 = df[[0,1,len(df.columns)-1]].rename(columns={0: "date", 1: "description", len(df.columns)-1: "amount"})
-                        credits_aws = pd.concat([credits_aws, df1], ignore_index=True)
+    #         for i in range(len(response.tables)):
+    #             table = EntityList(response.tables[i])
+    #             response.tables[i].visualize()
+    #             table_title = table[0].title
+    #             if table_title:
+    #                 if "Deposits" in table_title.text:
+    #                     df=table[0].to_pandas()
+    #                     if len(df.columns) > 3:
+    #                         ori_columns = df.columns
+    #                         for i in range(2, len(df.columns)-1):
+    #                             df[1] = df[1].astype(str) + ' ' + df[ori_columns[i]].astype(str)
+    #                     df1 = df[[0,1,len(df.columns)-1]].rename(columns={0: "date", 1: "description", len(df.columns)-1: "amount"})
+    #                     credits_aws = pd.concat([credits_aws, df1], ignore_index=True)
                         
 
-                    if "Withdrawals" in table_title.text:
-                        df=table[0].to_pandas()
-                        if len(df.columns) > 3:
-                            ori_columns = df.columns
-                            for i in range(2, len(df.columns)-1):
-                                df[1] = df[1].astype(str) + ' ' + df[ori_columns[i]].astype(str)
-                        df1 = df[[0,1,len(df.columns)-1]].rename(columns={0: "date", 1: "description", len(df.columns)-1: "amount"})
-                        debits_aws = pd.concat([debits_aws, df1], ignore_index=True)
+    #                 if "Withdrawals" in table_title.text:
+    #                     df=table[0].to_pandas()
+    #                     if len(df.columns) > 3:
+    #                         ori_columns = df.columns
+    #                         for i in range(2, len(df.columns)-1):
+    #                             df[1] = df[1].astype(str) + ' ' + df[ori_columns[i]].astype(str)
+    #                     df1 = df[[0,1,len(df.columns)-1]].rename(columns={0: "date", 1: "description", len(df.columns)-1: "amount"})
+    #                     debits_aws = pd.concat([debits_aws, df1], ignore_index=True)
 
-                    # if "Checks" in table_title.text:
-                    #     df=table[0].to_pandas()
-                    #     debits_aws = pd.concat([debits_aws, df], ignore_index=True)
+    #                 # if "Checks" in table_title.text:
+    #                 #     df=table[0].to_pandas()
+    #                 #     debits_aws = pd.concat([debits_aws, df], ignore_index=True)
 
-        if len(debits_aws) > 0:
-            debits_aws1 = debits_aws[debits_aws.iloc[:,0].str.match(r'^\d{2}/\d{2}/\d{2}', na=False)].reset_index(drop=True)
-            if len(debits_aws1) > 0:
-                debits_aws = debits_aws1[['date', 'description', 'amount']]
-                debits_aws['amount'] = debits_aws['amount'].str.replace(r'[-,]', '', regex=True)
-                debits_aws['amount'] = debits_aws['amount'].str.strip()
-                debits_aws['amount'] = pd.to_numeric(debits_aws['amount'])
+    #     if len(debits_aws) > 0:
+    #         debits_aws1 = debits_aws[debits_aws.iloc[:,0].str.match(r'^\d{2}/\d{2}/\d{2}', na=False)].reset_index(drop=True)
+    #         if len(debits_aws1) > 0:
+    #             debits_aws = debits_aws1[['date', 'description', 'amount']]
+    #             debits_aws['amount'] = debits_aws['amount'].str.replace(r'[-,]', '', regex=True)
+    #             debits_aws['amount'] = debits_aws['amount'].str.strip()
+    #             debits_aws['amount'] = pd.to_numeric(debits_aws['amount'])
 
-        if len(credits_aws) > 0:
-            credits_aws1 = credits_aws[credits_aws.iloc[:,0].str.match(r'^\d{2}/\d{2}/\d{2}', na=False)].reset_index(drop=True)
-            if len(credits_aws1) > 0:
-                credits_aws = credits_aws1[['date', 'description', 'amount']]
-                credits_aws['amount'] = credits_aws['amount'].str.strip()
-                credits_aws['amount'] = credits_aws['amount'].str.replace(r'[-,]', '', regex=True) 
-                credits_aws['amount'] = pd.to_numeric(credits_aws['amount'])
+    #     if len(credits_aws) > 0:
+    #         credits_aws1 = credits_aws[credits_aws.iloc[:,0].str.match(r'^\d{2}/\d{2}/\d{2}', na=False)].reset_index(drop=True)
+    #         if len(credits_aws1) > 0:
+    #             credits_aws = credits_aws1[['date', 'description', 'amount']]
+    #             credits_aws['amount'] = credits_aws['amount'].str.strip()
+    #             credits_aws['amount'] = credits_aws['amount'].str.replace(r'[-,]', '', regex=True) 
+    #             credits_aws['amount'] = pd.to_numeric(credits_aws['amount'])
 
-        with pd.ExcelWriter('excel2.xlsx', engine='openpyxl') as writer:
-            credits_aws.to_excel(writer, sheet_name='Credit', index=False)
-            debits_aws.to_excel(writer, sheet_name='Debit', index=False)
+    #     with pd.ExcelWriter('excel2.xlsx', engine='openpyxl') as writer:
+    #         credits_aws.to_excel(writer, sheet_name='Credit', index=False)
+    #         debits_aws.to_excel(writer, sheet_name='Debit', index=False)
 
-            workbook2 = writer.book
-            worksheet1 = writer.sheets['Credit']
-            worksheet2 = writer.sheets['Debit']
+    #         workbook2 = writer.book
+    #         worksheet1 = writer.sheets['Credit']
+    #         worksheet2 = writer.sheets['Debit']
 
-            temp_excel2 = tempfile.NamedTemporaryFile(suffix='.xlsx', delete=False)
-            workbook2.save(temp_excel2.name)
+    #         temp_excel2 = tempfile.NamedTemporaryFile(suffix='.xlsx', delete=False)
+    #         workbook2.save(temp_excel2.name)
+    
+    # except Exception as e:
+    #     print("An error occured: {e}")
+
+    try:
+        print("Block 3")
 
         project_id = 'techify-446309'
         location = 'us'
@@ -644,16 +656,6 @@ def excel_boa():
             except ValueError:
                 print(f"Warning: Could not parse amount: {amount_str}")
                 return 0.0
-
-        def print_table_rows(
-            table_rows: Sequence[documentai.Document.Page.Table.TableRow], text: str
-        ) -> None:
-            for table_row in table_rows:
-                row_text = ""
-                for cell in table_row.cells:
-                    cell_text = layout_to_text(cell.layout, text)
-                    row_text += f"{repr(cell_text.strip())} | "
-                print(row_text)
 
         def process_document(
             project_id: str,
@@ -784,7 +786,11 @@ def excel_boa():
 
             temp_excel3 = tempfile.NamedTemporaryFile(suffix='.xlsx', delete=False)
             workbook3.save(temp_excel3.name)
+    
+    except Exception as e:
+        print("An error occured: {e}")
 
+    try:
         excel1_buffer = io.BytesIO()
         workbook1.save(excel1_buffer)
         excel1_buffer.seek(0)
@@ -793,16 +799,16 @@ def excel_boa():
         workbook2.save(excel2_buffer)
         excel2_buffer.seek(0)
 
-        excel3_buffer = io.BytesIO()
-        workbook3.save(excel3_buffer)
-        excel3_buffer.seek(0)
+        # excel3_buffer = io.BytesIO()
+        # workbook3.save(excel3_buffer)
+        # excel3_buffer.seek(0)
         
         # Create a zip file in memory
         zip_buffer = io.BytesIO()
         with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
             zip_file.writestr('regex.xlsx', excel1_buffer.getvalue())
             zip_file.writestr('textract.xlsx', excel2_buffer.getvalue())
-            zip_file.writestr('docai.xlsx', excel3_buffer.getvalue())
+            # zip_file.writestr('docai.xlsx', excel3_buffer.getvalue())
         
         zip_buffer.seek(0)
         
