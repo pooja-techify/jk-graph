@@ -20,6 +20,7 @@ from google.api_core.client_options import ClientOptions # type: ignore
 from google.cloud import documentai # type: ignore
 import re
 import logging
+from google.oauth2 import service_account
 
 logging.basicConfig(filename="newfile.log",
                     format='%(asctime)s %(message)s',
@@ -635,6 +636,7 @@ def excel_boa():
         processor_version = 'rc'
         file_path = temp_path
         mime_type = 'application/pdf'
+        credentials_path = '/home/ubuntu/pdf-excel/techify.json'
 
         def clean_description(text: str) -> str:
             """
@@ -672,10 +674,17 @@ def excel_boa():
             processor_version: str,
             file_path: str,
             mime_type: str,
+            credentials_path: str,
             process_options: Optional[documentai.ProcessOptions] = None,
         ) -> documentai.Document:
             
+            credentials = service_account.Credentials.from_service_account_file(
+                credentials_path,
+                scopes=['https://www.googleapis.com/auth/cloud-platform']
+    )
+            
             client = documentai.DocumentProcessorServiceClient(
+                credentials=credentials,
                 client_options=ClientOptions(
                     api_endpoint=f"{location}-documentai.googleapis.com"
                 )
@@ -712,7 +721,7 @@ def excel_boa():
         logger.debug("Starting doc ai")
         
         document = process_document(
-                project_id, location, processor_id, processor_version, file_path, mime_type
+                project_id, location, processor_id, processor_version, file_path, mime_type, credentials_path
             )
         
         logger.debug("Checkpoint 1")
