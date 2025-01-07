@@ -788,7 +788,7 @@ def excel_boa():
             workbook3.save(temp_excel3.name)
     
     except Exception as e:
-        print("An error occured: {e}")
+        print("An error occured: ", e)
 
     try:
         # excel1_buffer = io.BytesIO()
