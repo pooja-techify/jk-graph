@@ -19,7 +19,15 @@ import pandas as pd # type: ignore
 from google.api_core.client_options import ClientOptions # type: ignore
 from google.cloud import documentai # type: ignore
 import re
+import logging
 
+logging.basicConfig(filename="newfile.log",
+                    format='%(asctime)s %(message)s',
+                    filemode='w')
+
+logger = logging.getLogger()
+
+logger.setLevel(logging.DEBUG)
 
 app = Flask(__name__)
 CORS(app)
@@ -619,7 +627,7 @@ def excel_boa():
     #     print("An error occured: {e}")
 
     try:
-        print("Block 3")
+        logger.debug("Block 3")
 
         project_id = 'techify-446309'
         location = 'us'
@@ -654,7 +662,7 @@ def excel_boa():
             try:
                 return float(clean_amount)
             except ValueError:
-                print(f"Warning: Could not parse amount: {amount_str}")
+                logger.debug(f"Warning: Could not parse amount: {amount_str}")
                 return 0.0
 
         def process_document(
@@ -701,22 +709,22 @@ def excel_boa():
                 for segment in layout.text_anchor.text_segments
             )
 
-        print("Starting doc ai")
+        logger.debug("Starting doc ai")
         
         document = process_document(
                 project_id, location, processor_id, processor_version, file_path, mime_type
             )
         
-        print("Checkpoint 1")
+        logger.debug("Checkpoint 1")
 
         text = document.text
-        print(f"There are {len(document.pages)} page(s) in this document.")
+        logger.debug(f"There are {len(document.pages)} page(s) in this document.")
 
         all_credit_rows = []
         all_debit_rows = []
         headers = None
 
-        print("Checkpoint 2")
+        logger.debug("Checkpoint 2")
 
         for page in document.pages:
             print(f"\n\n**** Page {page.page_number} ****")
@@ -733,7 +741,7 @@ def excel_boa():
                         for cell in table.header_rows[0].cells:
                             header_text = layout_to_text(cell.layout, text).strip()
                             headers.append(header_text)
-                        print("Columns:", headers)
+                        logger.debug("Columns:", headers)
 
                     if headers[0].lower() == 'date':
                         for row in table.body_rows:
@@ -754,7 +762,7 @@ def excel_boa():
                                     row_data[2] = str(abs(amount))  # Clean amount string
                                     all_debit_rows.append(row_data)
                             else:
-                                print(f"Skipping row with invalid date format: {row_data[0]}")
+                                logger.debug(f"Skipping row with invalid date format: {row_data[0]}")
 
 
         if all_credit_rows:
@@ -763,7 +771,7 @@ def excel_boa():
             credit_df[headers[2]] = credit_df[headers[2]].str.replace('"', '')
             credit_df[headers[2]] = pd.to_numeric(credit_df[headers[2]], errors='coerce')
                 # credit_df.to_excel(writer, sheet_name='Credits', index=False)
-        print(f"Total credit transactions processed: {len(all_credit_rows)}")
+        logger.debug(f"Total credit transactions processed: {len(all_credit_rows)}")
             
         if all_debit_rows:
             debit_df = pd.DataFrame(all_debit_rows, columns=headers)
@@ -771,10 +779,10 @@ def excel_boa():
             debit_df[headers[2]] = debit_df[headers[2]].str.replace('"', '')
             debit_df[headers[2]] = pd.to_numeric(debit_df[headers[2]], errors='coerce')
                 # debit_df.to_excel(writer, sheet_name='Debits', index=False)
-        print(f"Total debit transactions processed: {len(all_debit_rows)}")
+        logger.debug(f"Total debit transactions processed: {len(all_debit_rows)}")
             
         if not (all_credit_rows or all_debit_rows):
-            print("No valid transactions found in any table")
+            logger.debug("No valid transactions found in any table")
 
         with pd.ExcelWriter('excel3.xlsx', engine='openpyxl') as writer:
             credit_df.to_excel(writer, sheet_name='Credit', index=False)
@@ -788,7 +796,7 @@ def excel_boa():
             workbook3.save(temp_excel3.name)
     
     except Exception as e:
-        print("An error occured: ", e)
+        logger.debug("An error occured: ", e)
 
     try:
         # excel1_buffer = io.BytesIO()
@@ -821,7 +829,7 @@ def excel_boa():
         )
     
     except Exception as e:
-        print("An error occured: {e}")
+        print("An error occured: ", e)
         
     finally:
         os.remove(temp_path)
