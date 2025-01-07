@@ -16,8 +16,8 @@ import io
 from datetime import datetime
 from typing import Optional, Sequence, List
 import pandas as pd # type: ignore
-# from google.api_core.client_options import ClientOptions # type: ignore
-# from google.cloud import documentai # type: ignore
+from google.api_core.client_options import ClientOptions # type: ignore
+from google.cloud import documentai # type: ignore
 import re
 
 
@@ -699,9 +699,13 @@ def excel_boa():
                 for segment in layout.text_anchor.text_segments
             )
 
+        print("Starting doc ai")
+        
         document = process_document(
                 project_id, location, processor_id, processor_version, file_path, mime_type
             )
+        
+        print("Checkpoint 1")
 
         text = document.text
         print(f"There are {len(document.pages)} page(s) in this document.")
@@ -709,6 +713,8 @@ def excel_boa():
         all_credit_rows = []
         all_debit_rows = []
         headers = None
+
+        print("Checkpoint 2")
 
         for page in document.pages:
             print(f"\n\n**** Page {page.page_number} ****")
@@ -815,7 +821,7 @@ def excel_boa():
         os.remove(temp_path)
         os.remove('excel1.xlsx')
         os.remove('excel2.xlsx')
-        os.remove('excel3.xlsx')
+        # os.remove('excel3.xlsx')
         for f in files:
             os.remove(f)
 
@@ -1723,12 +1729,12 @@ def excel_hab():
                 ],
                 save_image=True
             )
-            # print(len(response.tables))
+
             for i in range(len(response.tables)):
                 table = EntityList(response.tables[i])
                 response.tables[i].visualize()
                 df=table[0].to_pandas()
-                # print(df)
+
                 for i in range(len(df)):
                     j = -2
                     while df.iloc[i, -1] == '':
