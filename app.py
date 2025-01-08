@@ -2104,7 +2104,8 @@ def excel_hab():
                 df=table[0].to_pandas()
                 # print(df)
 
-                transaction = df[df.iloc[:,0].str.match(r'^\d{1,2}/\d{2}', na=False)].reset_index(drop=True)
+                if len(df.columns) >= 3:
+                    transaction = df[df.iloc[:,0].str.match(r'^\d{1,2}/\d{2}', na=False)].reset_index(drop=True)
                 # print(transaction)
 
                 for i in range(len(transaction)):
