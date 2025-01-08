@@ -2075,79 +2075,6 @@ def excel_hab():
     temp_path = tempfile.mktemp(suffix='.pdf')
     uploaded_file.save(temp_path)
 
-    # try:
-        # images = convert_from_path(temp_path)
-        # len_images = len(images)
-
-        # with open('log.txt', 'w', encoding='utf-8') as f:
-        #     for i in range(len_images):
-        #         images[i].save('hab' + str(i) + '.jpg', 'JPEG')
-
-        #         loader = AmazonTextractPDFLoader("hab" + str(i) + ".jpg")
-        #         documents = loader.load()
-
-        #         for document in documents:
-        #             text = document.page_content
-        #             f.write(text + '\n') 
-
-        # with open("log.txt", "r") as f:
-        #     text = f.read()
-
-        # cr_pattern = r'\n(\d{2}/\d{2})\n\n\n([A-Za-z*]+[A-Za-z 0-9\*\/]+)\n\n\n([0-9,]+[.]+[0-9]+)\n'
-        # db_pattern = r'\n(\d{2}/\d{2})\n\n\n([A-Za-z*]+[A-Za-z 0-9\/\*\~\ \\\~\|\.\&]+)\n\n\n([0-9,]+[.]+[0-9]+)[-][SC]*\n'
-        # # x = re.findall(db_pattern, text)
-
-        # credits = []
-        # debits = []
-
-        # for match in re.finditer(cr_pattern, text):
-        #     date = match.group(1)
-        #     user = match.group(2)
-        #     credit = match.group(3)
-        #     credits.append({
-        #         "date": date,
-        #         "description": user,
-        #         "credit": credit
-        #     })
-
-        # for match in re.finditer(db_pattern, text):
-        #     date = match.group(1)
-        #     user = match.group(2)
-        #     debit = match.group(3)
-        #     debits.append({
-        #         "date": date,
-        #         "description": user,
-        #         "debit": debit
-        #     })
-
-        # def clean_amount(amount):
-        #     return float(amount.replace(',', ''))
-
-        # credits = pd.DataFrame(credits)
-
-        # credits['credit'] = credits['credit'].apply(clean_amount)
-
-        # debits = pd.DataFrame(debits)
-
-        # debits['debit'] = debits['debit'].apply(clean_amount)
-
-        # with pd.ExcelWriter('excel1.xlsx', engine='openpyxl') as writer:
-        #     credits.to_excel(writer, sheet_name='Credit', index=False)
-        #     debits.to_excel(writer, sheet_name='Debit', index=False)
-
-        #     workbook1 = writer.book
-        #     worksheet1 = writer.sheets['Credit']
-        #     worksheet2 = writer.sheets['Debit']
-
-        #     for cell in worksheet1['C'][1:]:
-        #         cell.number_format = '##0.00'
-
-        #     for cell in worksheet2['C'][1:]:
-        #         cell.number_format = '##0.00'
-
-        # temp_excel = tempfile.NamedTemporaryFile(suffix='.xlsx', delete=False)
-        # workbook1.save(temp_excel.name)
-
     try:
         pages = convert_from_path(temp_path, dpi=300)
 
@@ -2186,8 +2113,8 @@ def excel_hab():
                     df1 = df[[0,1,len(df.columns)-1]].rename(columns={0: "date", 1: "description", len(df.columns)-1: "amount"})
                     transactions = pd.concat([transactions, df1], ignore_index=True)
 
-        transaction = transactions[transactions.iloc[:,0].str.match(r'^\d{2}/\d{2}', na=False)].reset_index(drop=True)
-        transaction['date'] = transaction['date'].str.extract(r'(\d{2}/\d{2})')
+        transaction = transactions[transactions.iloc[:,0].str.match(r'^\d{1,2}/\d{2}', na=False)].reset_index(drop=True)
+        transaction['date'] = transaction['date'].str.extract(r'(\d{1,2}/\d{2})')
         transaction['amount'] = transaction['amount'].str.extract(r'(-{0,1}[0-9,]*.\d{2}-{0,1})')
 
         for i in range(len(transaction)):
@@ -2220,9 +2147,6 @@ def excel_hab():
     except Exception as e:
         logger.debug("An error occured: ", e)
 
-        # excel1_buffer = io.BytesIO()
-        # workbook1.save(excel1_buffer)
-        # excel1_buffer.seek(0)
     try:    
         excel2_buffer = io.BytesIO()
         workbook2.save(excel2_buffer)
@@ -2231,7 +2155,6 @@ def excel_hab():
         # Create a zip file in memory
         zip_buffer = io.BytesIO()
         with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
-            # zip_file.writestr('regex.xlsx', excel1_buffer.getvalue())
             zip_file.writestr('textract.xlsx', excel2_buffer.getvalue())
         
         zip_buffer.seek(0)
@@ -2249,7 +2172,6 @@ def excel_hab():
 
     finally:
         os.remove(temp_path)
-        # os.remove('excel1.xlsx')
         os.remove('excel2.xlsx')
         for f in files:
             os.remove(f)
