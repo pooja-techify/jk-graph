@@ -349,7 +349,7 @@ def excel_bcb():
 
         for f in files:
             image = Image.open(f) # loads the document image with Pillow
-            extractor = Textractor(region_name="us-east-1") # Initialize textractor client, modify region if required
+            extractor = Textractor(region_name="ap-south-1") # Initialize textractor client, modify region if required
             response = extractor.analyze_document(
                 file_source=image,
                 features=[
