@@ -2104,23 +2104,24 @@ def excel_hab():
                 df=table[0].to_pandas()
                 # print(df)
 
-                if len(df.columns) >= 3:
-                    transaction = df[df.iloc[:,0].str.match(r'^\d{1,2}/\d{2}', na=False)].reset_index(drop=True)
-                # print(transaction)
+                transaction = pd.DataFrame()
 
-                for i in range(len(transaction)):
-                    j = -2
-                    while transaction.iloc[i, -1] == '':
-                        transaction.iloc[i, -1] = transaction.iloc[i, j]
-                        j -= 1
-                # print(transaction)
+            if len(df.columns) >= 3:
+                transaction = df[df.iloc[:,0].str.match(r'^\d{1,2}/\d{2}', na=False)].reset_index(drop=True)
 
-                if len(transaction.columns) >= 3:
-                    df1 = transaction[[0,1,len(transaction.columns)-1]].rename(columns={0: "date", 1: "description", len(transaction.columns)-1: "amount"})
-                    # print(df1)
-                    transactions = pd.concat([transactions, df1], ignore_index=True)
+            for i in range(len(transaction)):
+                j = -2
+                while transaction.iloc[i, -1] == '':
+                    transaction.iloc[i, -1] = transaction.iloc[i, j]
+                    j -= 1
+            # print(transaction)
 
-        # transaction = transactions[transactions.iloc[:,0].str.match(r'^\d{1,2}/\d{2}', na=False)].reset_index(drop=True)
+            if len(transaction.columns) >= 3:
+                df1 = transaction[[0,1,len(transaction.columns)-1]].rename(columns={0: "date", 1: "description", len(transaction.columns)-1: "amount"})
+                # print(df1)
+                transactions = pd.concat([transactions, df1], ignore_index=True)
+
+        transaction = transactions[transactions.iloc[:,0].str.match(r'^\d{1,2}/\d{2}', na=False)].reset_index(drop=True)
         transaction['date'] = transaction['date'].str.extract(r'(\d{1,2}/\d{2})')
         transaction['amount'] = transaction['amount'].str.extract(r'(-{0,1}[0-9,]*.\d{2}-{0,1})')
 
