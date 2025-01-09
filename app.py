@@ -2277,64 +2277,64 @@ def excel_regions():
     except Exception as e:
         logger.debug("An error occured: ", e)
 
-    try:
-        pages = convert_from_path(temp_path, dpi=300)
+    # try:
+    #     pages = convert_from_path(temp_path, dpi=300)
 
-        files = []
-        for i in range(len(pages)):
-            pages[i].save("Regions_page_"+str(i+1)+".png", "PNG")   
-            files.append("Regions_page_"+str(i+1)+".png")
+    #     files = []
+    #     for i in range(len(pages)):
+    #         pages[i].save("Regions_page_"+str(i+1)+".png", "PNG")   
+    #         files.append("Regions_page_"+str(i+1)+".png")
 
-        credits_aws = pd.DataFrame()
-        transactions = pd.DataFrame()
-        # debits_aws = pd.DataFrame()
+    #     credits_aws = pd.DataFrame()
+    #     transactions = pd.DataFrame()
+    #     # debits_aws = pd.DataFrame()
 
-        for f in files:
-            image = Image.open(f)
-            extractor = Textractor(region_name="us-east-1")
-            response = extractor.analyze_document(
-                file_source=image,
-                features=[
-                TextractFeatures.TABLES
-                ],
-                save_image=True
-            )
+    #     for f in files:
+    #         image = Image.open(f)
+    #         extractor = Textractor(region_name="us-east-1")
+    #         response = extractor.analyze_document(
+    #             file_source=image,
+    #             features=[
+    #             TextractFeatures.TABLES
+    #             ],
+    #             save_image=True
+    #         )
 
-            for i in range(len(response.tables)):
-                table = EntityList(response.tables[i])
-                response.tables[i].visualize()
-                df=table[0].to_pandas()
-                df1 = df[df.iloc[:,0].str.match(r'^\d{2}/\d{1,2}.*', na=False)].reset_index(drop=True)
-                df2 = df1[df1.iloc[:,1].str.match(r'^[A-Z].*', na=False)].reset_index(drop=True)
-                if len(df2.columns) > 2:
-                  if df2.shape[0] > 0:
-                      df = df2[[0,1,2]].copy()
-                      df.rename(columns={0: 'date', 1: 'Description', 2: 'Amount'}, inplace=True)
-                      transactions = pd.concat([transactions, df], ignore_index=True)
+    #         for i in range(len(response.tables)):
+    #             table = EntityList(response.tables[i])
+    #             response.tables[i].visualize()
+    #             df=table[0].to_pandas()
+    #             df1 = df[df.iloc[:,0].str.match(r'^\d{2}/\d{1,2}.*', na=False)].reset_index(drop=True)
+    #             df2 = df1[df1.iloc[:,1].str.match(r'^[A-Z].*', na=False)].reset_index(drop=True)
+    #             if len(df2.columns) > 2:
+    #               if df2.shape[0] > 0:
+    #                   df = df2[[0,1,2]].copy()
+    #                   df.rename(columns={0: 'date', 1: 'Description', 2: 'Amount'}, inplace=True)
+    #                   transactions = pd.concat([transactions, df], ignore_index=True)
         
-        for i in range(len(transactions)):
-            date_str = transactions.iloc[i]['date'].strip() 
-            full_date_str = f"{date_str}/{str(year)[-2:]}"
-            formatted_date = datetime.strptime(full_date_str, "%m/%d/%y").strftime("%m/%d/%y")
-            transactions.loc[i, "date"] = formatted_date
+    #     for i in range(len(transactions)):
+    #         date_str = transactions.iloc[i]['date'].strip() 
+    #         full_date_str = f"{date_str}/{str(year)[-2:]}"
+    #         formatted_date = datetime.strptime(full_date_str, "%m/%d/%y").strftime("%m/%d/%y")
+    #         transactions.loc[i, "date"] = formatted_date
 
-        if len(transactions) > 0:
-            transactions['Amount'] = transactions['Amount'].astype(str).str.replace(r'[$,]', '', regex=True)
-            transactions['Amount'] = pd.to_numeric(transactions['Amount'])
+    #     if len(transactions) > 0:
+    #         transactions['Amount'] = transactions['Amount'].astype(str).str.replace(r'[$,]', '', regex=True)
+    #         transactions['Amount'] = pd.to_numeric(transactions['Amount'])
 
-        with pd.ExcelWriter('excel2.xlsx', engine='openpyxl') as writer:
-            transactions.to_excel(writer, sheet_name='Transactions', index=False)
-            # debits_aws.to_excel(writer, sheet_name='Debit', index=False)
+    #     with pd.ExcelWriter('excel2.xlsx', engine='openpyxl') as writer:
+    #         transactions.to_excel(writer, sheet_name='Transactions', index=False)
+    #         # debits_aws.to_excel(writer, sheet_name='Debit', index=False)
 
-            workbook2 = writer.book
-            worksheet1 = writer.sheets['Transactions']
-            # worksheet2 = writer.sheets['Debit']
+    #         workbook2 = writer.book
+    #         worksheet1 = writer.sheets['Transactions']
+    #         # worksheet2 = writer.sheets['Debit']
 
-            temp_excel2 = tempfile.NamedTemporaryFile(suffix='.xlsx', delete=False)
-            workbook2.save(temp_excel2.name)
+    #         temp_excel2 = tempfile.NamedTemporaryFile(suffix='.xlsx', delete=False)
+    #         workbook2.save(temp_excel2.name)
 
-    except Exception as e:
-        logger.debug("An error occured: ", e)
+    # except Exception as e:
+    #     logger.debug("An error occured: ", e)
 
     
     # try:
@@ -2529,9 +2529,9 @@ def excel_regions():
         workbook1.save(excel1_buffer)
         excel1_buffer.seek(0)
         
-        excel2_buffer = io.BytesIO()
-        workbook2.save(excel2_buffer)
-        excel2_buffer.seek(0)
+        # excel2_buffer = io.BytesIO()
+        # workbook2.save(excel2_buffer)
+        # excel2_buffer.seek(0)
 
         # excel3_buffer = io.BytesIO()
         # workbook3.save(excel3_buffer)
@@ -2541,7 +2541,7 @@ def excel_regions():
         zip_buffer = io.BytesIO()
         with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
             zip_file.writestr('regex.xlsx', excel1_buffer.getvalue())
-            zip_file.writestr('textract.xlsx', excel2_buffer.getvalue())
+            # zip_file.writestr('textract.xlsx', excel2_buffer.getvalue())
             # zip_file.writestr('docai.xlsx', excel3_buffer.getvalue())
         
         zip_buffer.seek(0)
@@ -2560,10 +2560,10 @@ def excel_regions():
     finally:
         os.remove(temp_path)
         os.remove('excel1.xlsx')
-        os.remove('excel2.xlsx')
-        os.remove('excel3.xlsx')
-        for f in files:
-            os.remove(f)
+        # os.remove('excel2.xlsx')
+        # os.remove('excel3.xlsx')
+        # for f in files:
+        #     os.remove(f)
 
 @app.route('/santander', methods=['POST'])
 def excel_santander():
