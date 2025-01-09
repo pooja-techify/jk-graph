@@ -2560,8 +2560,8 @@ def excel_regions():
     finally:
         os.remove(temp_path)
         # os.remove('excel1.xlsx')
-        # os.remove('excel2.xlsx')
-        os.remove('excel3.xlsx')
+        os.remove('excel2.xlsx')
+        # os.remove('excel3.xlsx')
         # for f in files:
         #     os.remove(f)
 
