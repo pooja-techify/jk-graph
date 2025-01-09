@@ -2086,7 +2086,6 @@ def excel_hab():
             pages[i].save("Hab_page_"+str(i+1)+".png", "PNG")
             files.append("Hab_page_"+str(i+1)+".png")
 
-        transactions = pd.DataFrame()
         debits_aws = pd.DataFrame()
         credits_aws = pd.DataFrame()
 
@@ -2122,9 +2121,9 @@ def excel_hab():
             if len(transaction.columns) >= 3:
                 df1 = transaction[[0,1,len(transaction.columns)-1]].rename(columns={0: "date", 1: "description", len(transaction.columns)-1: "amount"})
                 # print(df1)
-                transactions = pd.concat([transactions, df1], ignore_index=True)
+                transaction = pd.concat([transaction, df1], ignore_index=True)
 
-        transaction = transactions[transactions.iloc[:,0].str.match(r'^\d{1,2}/\d{2}', na=False)].reset_index(drop=True)
+        transaction = transaction[transaction.iloc[:,0].str.match(r'^\d{1,2}/\d{2}', na=False)].reset_index(drop=True)
         transaction['date'] = transaction['date'].str.extract(r'(\d{1,2}/\d{2})')
         transaction['amount'] = transaction['amount'].str.extract(r'(-{0,1}[0-9,]*.\d{2}-{0,1})')
 
