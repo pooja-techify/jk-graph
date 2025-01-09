@@ -2201,140 +2201,140 @@ def excel_regions():
     temp_path = tempfile.mktemp(suffix='.pdf')
     uploaded_file.save(temp_path)
 
-    try:
-        doc = pymupdf.open(temp_path)
-        with open('log.txt', 'w', encoding='utf-8') as f:
-            for page in doc:
-                text = page.get_text()
-                f.write(text + '\n')
-
-        with open("log.txt", "r") as f:
-            text = f.read()
-
-        cr_pattern = r'(\d{2}/\d{2})\s([A-Za-z 0-9\#\-]+)\s([0-9,]+[.]+[0-9]{2}\s)'
-        # db_pattern = r'(\d{2}/\d{2})\s([A-Za-z 0-9\#]+)\s([-][0-9,]+[.]+[0-9]{2}\s)'
-
-        credits = []
-        # debits = []
-
-        for match in re.finditer(cr_pattern, text):
-            date = match.group(1)
-            user = match.group(2)
-            credit = match.group(3)
-            credits.append({
-                "date": date,
-                "description": user,
-                "credit": credit
-            })
-
-        # for match in re.finditer(db_pattern, text):
-        #     date = match.group(1)
-        #     user = match.group(2)
-        #     debit = match.group(3)
-        #     debits.append({
-        #         "date": date,
-        #         "description": user,
-        #         "debit": debit
-        #     })
-
-        def clean_amount(amount):
-            return float(amount.replace(',', ''))
-        
-        def clean_date(date_format):
-            date_str = date_format.strip() 
-            full_date_str = f"{date_str}/{str(year)[-2:]}"
-            formatted_date = datetime.strptime(full_date_str, "%m/%d/%y").strftime("%m/%d/%y")
-            return formatted_date
-
-
-
-        credits = pd.DataFrame(credits)
-        if len(credits) > 0:
-            credits['credit'] = credits['credit'].apply(clean_amount)
-            credits['date'] = credits['date'].apply(clean_date)
-
-        # debits = pd.DataFrame(debits)
-
-        # debits['debit'] = debits['debit'].apply(clean_amount)
-
-        with pd.ExcelWriter('excel1.xlsx', engine='openpyxl') as writer:
-            credits.to_excel(writer, sheet_name='Credit', index=False)
-            # debits.to_excel(writer, sheet_name='Debit', index=False)
-
-            workbook1 = writer.book
-            worksheet1 = writer.sheets['Credit']
-            # worksheet2 = writer.sheets['Debit']
-
-            for cell in worksheet1['C'][1:]:
-                cell.number_format = '##0.00'
-
-            # for cell in worksheet2['C'][1:]:
-                # cell.number_format = '##0.00'
-
-        temp_excel = tempfile.NamedTemporaryFile(suffix='.xlsx', delete=False)
-        workbook1.save(temp_excel.name)
-
-    except Exception as e:
-        logger.debug("An error occured: ", e)
-
     # try:
-    #     pages = convert_from_path(temp_path, dpi=300)
+    #     doc = pymupdf.open(temp_path)
+    #     with open('log.txt', 'w', encoding='utf-8') as f:
+    #         for page in doc:
+    #             text = page.get_text()
+    #             f.write(text + '\n')
 
-    #     files = []
-    #     for i in range(len(pages)):
-    #         pages[i].save("Regions_page_"+str(i+1)+".png", "PNG")   
-    #         files.append("Regions_page_"+str(i+1)+".png")
+    #     with open("log.txt", "r") as f:
+    #         text = f.read()
 
-    #     credits_aws = pd.DataFrame()
-    #     transactions = pd.DataFrame()
-    #     # debits_aws = pd.DataFrame()
+    #     cr_pattern = r'(\d{2}/\d{2})\s([A-Za-z 0-9\#\-]+)\s([0-9,]+[.]+[0-9]{2}\s)'
+    #     # db_pattern = r'(\d{2}/\d{2})\s([A-Za-z 0-9\#]+)\s([-][0-9,]+[.]+[0-9]{2}\s)'
 
-    #     for f in files:
-    #         image = Image.open(f)
-    #         extractor = Textractor(region_name="us-east-1")
-    #         response = extractor.analyze_document(
-    #             file_source=image,
-    #             features=[
-    #             TextractFeatures.TABLES
-    #             ],
-    #             save_image=True
-    #         )
+    #     credits = []
+    #     # debits = []
 
-    #         for i in range(len(response.tables)):
-    #             table = EntityList(response.tables[i])
-    #             response.tables[i].visualize()
-    #             df=table[0].to_pandas()
-    #             df1 = df[df.iloc[:,0].str.match(r'^\d{2}/\d{1,2}.*', na=False)].reset_index(drop=True)
-    #             df2 = df1[df1.iloc[:,1].str.match(r'^[A-Z].*', na=False)].reset_index(drop=True)
-    #             if len(df2.columns) > 2:
-    #               if df2.shape[0] > 0:
-    #                   df = df2[[0,1,2]].copy()
-    #                   df.rename(columns={0: 'date', 1: 'Description', 2: 'Amount'}, inplace=True)
-    #                   transactions = pd.concat([transactions, df], ignore_index=True)
+    #     for match in re.finditer(cr_pattern, text):
+    #         date = match.group(1)
+    #         user = match.group(2)
+    #         credit = match.group(3)
+    #         credits.append({
+    #             "date": date,
+    #             "description": user,
+    #             "credit": credit
+    #         })
+
+    #     # for match in re.finditer(db_pattern, text):
+    #     #     date = match.group(1)
+    #     #     user = match.group(2)
+    #     #     debit = match.group(3)
+    #     #     debits.append({
+    #     #         "date": date,
+    #     #         "description": user,
+    #     #         "debit": debit
+    #     #     })
+
+    #     def clean_amount(amount):
+    #         return float(amount.replace(',', ''))
         
-    #     for i in range(len(transactions)):
-    #         date_str = transactions.iloc[i]['date'].strip() 
+    #     def clean_date(date_format):
+    #         date_str = date_format.strip() 
     #         full_date_str = f"{date_str}/{str(year)[-2:]}"
     #         formatted_date = datetime.strptime(full_date_str, "%m/%d/%y").strftime("%m/%d/%y")
-    #         transactions.loc[i, "date"] = formatted_date
+    #         return formatted_date
 
-    #     if len(transactions) > 0:
-    #         transactions['Amount'] = transactions['Amount'].astype(str).str.replace(r'[$,]', '', regex=True)
-    #         transactions['Amount'] = pd.to_numeric(transactions['Amount'])
 
-    #     with pd.ExcelWriter('excel2.xlsx', engine='openpyxl') as writer:
-    #         transactions.to_excel(writer, sheet_name='Transactions', index=False)
-    #         # debits_aws.to_excel(writer, sheet_name='Debit', index=False)
 
-    #         workbook2 = writer.book
-    #         worksheet1 = writer.sheets['Transactions']
+    #     credits = pd.DataFrame(credits)
+    #     if len(credits) > 0:
+    #         credits['credit'] = credits['credit'].apply(clean_amount)
+    #         credits['date'] = credits['date'].apply(clean_date)
+
+    #     # debits = pd.DataFrame(debits)
+
+    #     # debits['debit'] = debits['debit'].apply(clean_amount)
+
+    #     with pd.ExcelWriter('excel1.xlsx', engine='openpyxl') as writer:
+    #         credits.to_excel(writer, sheet_name='Credit', index=False)
+    #         # debits.to_excel(writer, sheet_name='Debit', index=False)
+
+    #         workbook1 = writer.book
+    #         worksheet1 = writer.sheets['Credit']
     #         # worksheet2 = writer.sheets['Debit']
 
-    #         temp_excel2 = tempfile.NamedTemporaryFile(suffix='.xlsx', delete=False)
-    #         workbook2.save(temp_excel2.name)
+    #         for cell in worksheet1['C'][1:]:
+    #             cell.number_format = '##0.00'
+
+    #         # for cell in worksheet2['C'][1:]:
+    #             # cell.number_format = '##0.00'
+
+    #     temp_excel = tempfile.NamedTemporaryFile(suffix='.xlsx', delete=False)
+    #     workbook1.save(temp_excel.name)
 
     # except Exception as e:
     #     logger.debug("An error occured: ", e)
+
+    try:
+        pages = convert_from_path(temp_path, dpi=500)
+
+        files = []
+        for i in range(len(pages)):
+            pages[i].save("Regions_page_"+str(i+1)+".png", "PNG")   
+            files.append("Regions_page_"+str(i+1)+".png")
+
+        credits_aws = pd.DataFrame()
+        transactions = pd.DataFrame()
+        # debits_aws = pd.DataFrame()
+
+        for f in files:
+            image = Image.open(f)
+            extractor = Textractor(region_name="us-east-1")
+            response = extractor.analyze_document(
+                file_source=image,
+                features=[
+                TextractFeatures.TABLES
+                ],
+                save_image=True
+            )
+
+            for i in range(len(response.tables)):
+                table = EntityList(response.tables[i])
+                response.tables[i].visualize()
+                df=table[0].to_pandas()
+                df1 = df[df.iloc[:,0].str.match(r'^\d{2}/\d{1,2}.*', na=False)].reset_index(drop=True)
+                df2 = df1[df1.iloc[:,1].str.match(r'^[A-Z].*', na=False)].reset_index(drop=True)
+                if len(df2.columns) > 2:
+                  if df2.shape[0] > 0:
+                      df = df2[[0,1,2]].copy()
+                      df.rename(columns={0: 'date', 1: 'Description', 2: 'Amount'}, inplace=True)
+                      transactions = pd.concat([transactions, df], ignore_index=True)
+        
+        for i in range(len(transactions)):
+            date_str = transactions.iloc[i]['date'].strip() 
+            full_date_str = f"{date_str}/{str(year)[-2:]}"
+            formatted_date = datetime.strptime(full_date_str, "%m/%d/%y").strftime("%m/%d/%y")
+            transactions.loc[i, "date"] = formatted_date
+
+        if len(transactions) > 0:
+            transactions['Amount'] = transactions['Amount'].astype(str).str.replace(r'[$,]', '', regex=True)
+            transactions['Amount'] = pd.to_numeric(transactions['Amount'])
+
+        with pd.ExcelWriter('excel2.xlsx', engine='openpyxl') as writer:
+            transactions.to_excel(writer, sheet_name='Transactions', index=False)
+            # debits_aws.to_excel(writer, sheet_name='Debit', index=False)
+
+            workbook2 = writer.book
+            worksheet1 = writer.sheets['Transactions']
+            # worksheet2 = writer.sheets['Debit']
+
+            temp_excel2 = tempfile.NamedTemporaryFile(suffix='.xlsx', delete=False)
+            workbook2.save(temp_excel2.name)
+
+    except Exception as e:
+        logger.debug("An error occured: ", e)
 
     
     # try:
@@ -2525,13 +2525,13 @@ def excel_regions():
     #     logger.debug("An error occured: ", e)
 
     try:
-        excel1_buffer = io.BytesIO()
-        workbook1.save(excel1_buffer)
-        excel1_buffer.seek(0)
+        # excel1_buffer = io.BytesIO()
+        # workbook1.save(excel1_buffer)
+        # excel1_buffer.seek(0)
         
-        # excel2_buffer = io.BytesIO()
-        # workbook2.save(excel2_buffer)
-        # excel2_buffer.seek(0)
+        excel2_buffer = io.BytesIO()
+        workbook2.save(excel2_buffer)
+        excel2_buffer.seek(0)
 
         # excel3_buffer = io.BytesIO()
         # workbook3.save(excel3_buffer)
@@ -2540,8 +2540,8 @@ def excel_regions():
         # Create a zip file in memory
         zip_buffer = io.BytesIO()
         with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
-            zip_file.writestr('regex.xlsx', excel1_buffer.getvalue())
-            # zip_file.writestr('textract.xlsx', excel2_buffer.getvalue())
+            # zip_file.writestr('regex.xlsx', excel1_buffer.getvalue())
+            zip_file.writestr('textract.xlsx', excel2_buffer.getvalue())
             # zip_file.writestr('docai.xlsx', excel3_buffer.getvalue())
         
         zip_buffer.seek(0)
@@ -2559,8 +2559,8 @@ def excel_regions():
         
     finally:
         os.remove(temp_path)
-        os.remove('excel1.xlsx')
-        # os.remove('excel2.xlsx')
+        # os.remove('excel1.xlsx')
+        os.remove('excel2.xlsx')
         # os.remove('excel3.xlsx')
         # for f in files:
         #     os.remove(f)
