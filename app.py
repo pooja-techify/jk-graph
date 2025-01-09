@@ -2669,24 +2669,24 @@ def excel_regions():
         logger.debug("An error occured: ", e)
 
     try:
-        # excel1_buffer = io.BytesIO()
-        # workbook1.save(excel1_buffer)
-        # excel1_buffer.seek(0)
+        excel1_buffer = io.BytesIO()
+        workbook1.save(excel1_buffer)
+        excel1_buffer.seek(0)
         
         excel2_buffer = io.BytesIO()
         workbook2.save(excel2_buffer)
         excel2_buffer.seek(0)
 
-        # excel3_buffer = io.BytesIO()
-        # workbook3.save(excel3_buffer)
-        # excel3_buffer.seek(0)
+        excel3_buffer = io.BytesIO()
+        workbook3.save(excel3_buffer)
+        excel3_buffer.seek(0)
         
         # Create a zip file in memory
         zip_buffer = io.BytesIO()
         with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
-            # zip_file.writestr('regex.xlsx', excel1_buffer.getvalue())
+            zip_file.writestr('regex.xlsx', excel1_buffer.getvalue())
             zip_file.writestr('textract.xlsx', excel2_buffer.getvalue())
-            # zip_file.writestr('docai.xlsx', excel3_buffer.getvalue())
+            zip_file.writestr('docai.xlsx', excel3_buffer.getvalue())
         
         zip_buffer.seek(0)
         
@@ -2703,11 +2703,11 @@ def excel_regions():
         
     finally:
         os.remove(temp_path)
-        # os.remove('excel1.xlsx')
+        os.remove('excel1.xlsx')
         os.remove('excel2.xlsx')
-        # os.remove('excel3.xlsx')
-        # for f in files:
-        #     os.remove(f)
+        os.remove('excel3.xlsx')
+        for f in files:
+            os.remove(f)
 
 @app.route('/santander', methods=['POST'])
 def excel_santander():
