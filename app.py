@@ -2130,9 +2130,9 @@ def excel_hab():
         for i in range(len(transactions)):
             if 'Check' in transactions.iloc[i,1]:
                 debits_aws = pd.concat([debits_aws, transactions.iloc[[i]]], ignore_index=True)
-            elif '-' in transactions.iloc[i,2] and re.match(r'^[A-Za-z]', transactions.iloc[i,1]):
+            elif '-' in transactions.iloc[i,2] and re.match(r'[A-Za-z0-9* ]*[A-Za-z]', transactions.iloc[i,1]):
                 debits_aws = pd.concat([debits_aws, transactions.iloc[[i]]], ignore_index=True)
-            elif re.match(r'^[A-Za-z]', transactions.iloc[i,1]):
+            elif re.match(r'^[A-Za-z0-9* ]*[A-Za-z]', transactions.iloc[i,1]):
                 credits_aws = pd.concat([credits_aws, transactions.iloc[[i]]], ignore_index=True)
 
         if len(debits_aws) > 0:
