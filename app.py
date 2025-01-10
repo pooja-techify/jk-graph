@@ -2079,7 +2079,7 @@ def excel_hab():
     uploaded_file.save(temp_path)
 
     try:
-        pages = convert_from_path(temp_path, dpi=300)
+        pages = convert_from_path(temp_path, dpi=500)
 
         files = []
         for i in range(len(pages)):
@@ -2088,6 +2088,7 @@ def excel_hab():
 
         debits_aws = pd.DataFrame()
         credits_aws = pd.DataFrame()
+        transactions = pd.DataFrame()
 
         for f in files:
             image = Image.open(f) # loads the document image with Pillow
@@ -2104,9 +2105,8 @@ def excel_hab():
                 table = EntityList(response.tables[i])
                 response.tables[i].visualize()
                 df=table[0].to_pandas()
-                # print(df)
-
                 transaction = pd.DataFrame()
+                # print(df)
 
             if len(df.columns) >= 3:
                 transaction = df[df.iloc[:,0].str.match(r'^\d{1,2}/\d{2}', na=False)].reset_index(drop=True)
@@ -2121,19 +2121,19 @@ def excel_hab():
             if len(transaction.columns) >= 3:
                 df1 = transaction[[0,1,len(transaction.columns)-1]].rename(columns={0: "date", 1: "description", len(transaction.columns)-1: "amount"})
                 # print(df1)
-                transaction = pd.concat([transaction, df1], ignore_index=True)
+                transactions = pd.concat([transactions, df1], ignore_index=True)
 
-        transaction = transaction[transaction.iloc[:,0].str.match(r'^\d{1,2}/\d{2}', na=False)].reset_index(drop=True)
-        transaction['date'] = transaction['date'].str.extract(r'(\d{1,2}/\d{2})')
-        transaction['amount'] = transaction['amount'].str.extract(r'(-{0,1}[0-9,]*.\d{2}-{0,1})')
+        transactions = transactions[transactions.iloc[:,0].str.match(r'^\d{1,2}/\d{2}', na=False)].reset_index(drop=True)
+        transactions['date'] = transactions['date'].str.extract(r'(\d{1,2}/\d{2})')
+        transactions['amount'] = transactions['amount'].str.extract(r'(-{0,1}[0-9,]*.\d{2}-{0,1})')
 
-        for i in range(len(transaction)):
-            if 'Check' in transaction.iloc[i,1]:
-                debits_aws = pd.concat([debits_aws, transaction.iloc[[i]]], ignore_index=True)
-            elif '-' in transaction.iloc[i,2] and re.match(r'^[A-Za-z]', transaction.iloc[i,1]):
-                debits_aws = pd.concat([debits_aws, transaction.iloc[[i]]], ignore_index=True)
-            elif re.match(r'^[A-Za-z]', transaction.iloc[i,1]):
-                credits_aws = pd.concat([credits_aws, transaction.iloc[[i]]], ignore_index=True)
+        for i in range(len(transactions)):
+            if 'Check' in transactions.iloc[i,1]:
+                debits_aws = pd.concat([debits_aws, transactions.iloc[[i]]], ignore_index=True)
+            elif '-' in transactions.iloc[i,2] and re.match(r'^[A-Za-z]', transactions.iloc[i,1]):
+                debits_aws = pd.concat([debits_aws, transactions.iloc[[i]]], ignore_index=True)
+            elif re.match(r'^[A-Za-z]', transactions.iloc[i,1]):
+                credits_aws = pd.concat([credits_aws, transactions.iloc[[i]]], ignore_index=True)
 
         if len(debits_aws) > 0:
             debits_aws['amount'] = debits_aws['amount'].astype(str).replace(r'[-,SC]', '', regex=True)
