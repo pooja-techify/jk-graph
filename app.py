@@ -2479,33 +2479,24 @@ def excel_regions():
                             rows.append(row_data)
 
                         for r in rows:
-                            if 'FEES' in r[0]:
-                                # print(r)
-                                x = re.search(r'(\d{2}/\d{2})\n(.*)\n([0-9,]*.\d{2})', r[0])
+                            x = re.search(r'(\d{2}/\d{2})\n(.*)\n([0-9,]*.\d{2})', r[0])
                                             
-                                dates = []
-                                descriptions = []
-                                amounts = []    
+                            dates = []
+                            descriptions = []
+                            amounts = []    
 
-                                dates.append(x.group(1))
-                                descriptions.append(x.group(2))
-                                amounts.append(x.group(3))
+                            dates.append(x.group(1))
+                            descriptions.append(x.group(2))
+                            amounts.append(x.group(3))
 
-                                df = pd.DataFrame({
-                                    'date': dates,
-                                    'description': descriptions,
-                                    'amount': amounts
-                                })
+                            df = pd.DataFrame({
+                                'date': dates,
+                                'description': descriptions,
+                                'amount': amounts
+                            })
 
-                                # print(df)
-
-                                debits_df = pd.concat([debits_df, df])  
-
-                            elif 'Analysis Charge' in df['description']:
+                            if 'Analysis Charge' in descriptions[0]:
                                 debits_df = pd.concat([debits_df, df])
-
-                            else:
-                                credits_df = pd.concat([credits_df, df])
 
                                             
                     if num_columns == 2:
@@ -2547,7 +2538,7 @@ def excel_regions():
 
                                 df = pd.DataFrame({
                                     'date': dates,
-                                    'description': descriptions,
+                                    'description': descriptions[0],
                                     'amount': amount
                                 })
 
@@ -2556,7 +2547,7 @@ def excel_regions():
                                 if 'check' in headers[1].lower():
                                     debits_df = pd.concat([debits_df, df])
 
-                                elif 'Analysis Charge' in df['description']:
+                                elif 'Analysis Charge' in descriptions:
                                     debits_df = pd.concat([debits_df, df])
 
                                 else:
@@ -2610,7 +2601,7 @@ def excel_regions():
                                 if 'check' in headers[1].lower():
                                     debits_df = pd.concat([debits_df, df])
                                         
-                                elif 'Analysis Charge' in df['description']:
+                                elif 'Analysis Charge' in descriptions[0]:
                                     debits_df = pd.concat([debits_df, df])
 
                                 else:
