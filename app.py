@@ -1382,7 +1382,7 @@ def excel_chase():
         logger.debug("An error occured: ", e)
 
     try:
-        pages = convert_from_path(temp_path, dpi=1000)
+        pages = convert_from_path(temp_path, dpi=500)
 
         files = []
         for i in range(len(pages)):
@@ -1429,6 +1429,19 @@ def excel_chase():
                         # print(df1)
                         debits_aws = pd.concat([debits_aws, df1], ignore_index=True)
 
+                    if table_title.text in ['CHECKS PAID']:
+                        df=table[0].to_pandas()
+                        # print(df)
+                        if len(df.columns) > 3:
+                            for i in range(1, len(df.columns)-2):
+                                df[0] = df[0] + ' ' + df[i]
+                        df1 = df[[0,len(df.columns)-2,len(df.columns)-1]].copy()
+                        df1 = df1.rename(columns={len(df.columns)-2: "date", 0: "description", len(df.columns)-1: "amount"})
+                        # print(df1)
+                        debits_aws = pd.concat([debits_aws, df1], ignore_index=True)
+
+        debits_aws = debits_aws[['date', 'description', 'amount']]
+
         if len(debits_aws) > 0:
             debits_aws.iloc[:,0] = debits_aws.iloc[:,0].str.extract(r'(\d{2}/\d{2})')
             debits_aws = debits_aws[debits_aws.iloc[:,0].str.contains(r'\d{2}/\d{2}', na=False)].reset_index(drop=True)
@@ -1444,19 +1457,19 @@ def excel_chase():
             debits_aws.loc[i, "date"] = formatted_date
 
         for i in range(len(credits_aws)):
-            date_str = credits_aws.iloc[i]['date'].strip() 
+            date_str = credits_aws.iloc[i]['date'].strip()
             full_date_str = f"{date_str}/{str(year)[-2:]}"
             formatted_date = datetime.strptime(full_date_str, "%m/%d/%y").strftime("%m/%d/%y")
             credits_aws.loc[i, "date"] = formatted_date
 
         if len(debits_aws) > 0:
-            debits_aws['amount'] = debits_aws['amount'].str.extract(r'([0-9,]*.\d{2})')
-            debits_aws['amount'] = debits_aws['amount'].str.replace(r',', '')
+            debits_aws['amount'] = debits_aws['amount'].str.replace(r'[$,]', '', regex=True)
+            debits_aws['amount'] = debits_aws['amount'].str.extract(r'([0-9,]*\.\d{2})')
             debits_aws['amount'] = pd.to_numeric(debits_aws['amount'])
 
         if len(credits_aws) > 0:
-            credits_aws['amount'] = credits_aws['amount'].str.extract(r'([0-9,]*.\d{2})')
-            credits_aws['amount'] = credits_aws['amount'].str.replace(r',', '')
+            credits_aws['amount'] = credits_aws['amount'].str.replace(r'[$,]', '', regex=True)
+            credits_aws['amount'] = credits_aws['amount'].str.extract(r'([0-9]*.\d{2})')
             credits_aws['amount'] = pd.to_numeric(credits_aws['amount'])
         
         with pd.ExcelWriter('excel2.xlsx', engine='openpyxl') as writer:
