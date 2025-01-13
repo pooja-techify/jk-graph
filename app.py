@@ -1426,15 +1426,17 @@ def excel_chase():
                                 df[1] = df[1] + ' ' + df[i]
                         df1 = df[[0,1,len(df.columns)-1]].copy()
                         df1 = df1.rename(columns={0: "date", 1: "description", len(df.columns)-1: "amount"})
-                        print(df1)
+                        # print(df1)
                         debits_aws = pd.concat([debits_aws, df1], ignore_index=True)
 
         if len(debits_aws) > 0:
-            debits_aws = debits_aws[debits_aws.iloc[:,0].str.match(r'^\d{2}/\d{2}', na=False)].reset_index(drop=True)
-        
+            debits_aws.iloc[:,0] = debits_aws.iloc[:,0].str.extract(r'(\d{2}/\d{2})')
+            debits_aws = debits_aws[debits_aws.iloc[:,0].str.contains(r'\d{2}/\d{2}', na=False)].reset_index(drop=True)
+                
         if len(credits_aws) > 0:
-            credits_aws = credits_aws[credits_aws.iloc[:,0].str.match(r'^\d{2}/\d{2}', na=False)].reset_index(drop=True)
-            
+            credits_aws.iloc[:,0] = credits_aws.iloc[:,0].str.extract(r'(\d{2}/\d{2})')
+            credits_aws = credits_aws[credits_aws.iloc[:,0].str.contains(r'\d{2}/\d{2}', na=False)].reset_index(drop=True)      
+
         for i in range(len(debits_aws)):
             date_str = debits_aws.iloc[i]['date'].strip() 
             full_date_str = f"{date_str}/{str(year)[-2:]}"
@@ -1448,11 +1450,13 @@ def excel_chase():
             credits_aws.loc[i, "date"] = formatted_date
 
         if len(debits_aws) > 0:
-            debits_aws['amount'] = debits_aws['amount'].str.replace(r'[$,]', '', regex=True)
+            debits_aws['amount'] = debits_aws['amount'].str.extract(r'([0-9,]*.\d{2})')
+            debits_aws['amount'] = debits_aws['amount'].str.replace(r',', '')
             debits_aws['amount'] = pd.to_numeric(debits_aws['amount'])
 
         if len(credits_aws) > 0:
-            credits_aws['amount'] = credits_aws['amount'].str.replace(r'[$,]', '', regex=True)
+            credits_aws['amount'] = credits_aws['amount'].str.extract(r'([0-9,]*.\d{2})')
+            credits_aws['amount'] = credits_aws['amount'].str.replace(r',', '')
             credits_aws['amount'] = pd.to_numeric(credits_aws['amount'])
         
         with pd.ExcelWriter('excel2.xlsx', engine='openpyxl') as writer:
