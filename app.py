@@ -336,7 +336,7 @@ def excel_bcb():
         logger.debug("An error occured: ", e)
 
     try:
-        pages = convert_from_path(temp_path, dpi=700)
+        pages = convert_from_path(temp_path, dpi=1000)
 
         files = []
         for i in range(len(pages)):
