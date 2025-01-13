@@ -2497,7 +2497,7 @@ def excel_regions():
                                     'amount': amounts
                                 })
 
-                                if 'Analysis Charge' in descriptions[0]:
+                                if 'Analysis' in descriptions[0]:
                                     debits_df = pd.concat([debits_df, df])
 
                                             
@@ -2549,7 +2549,7 @@ def excel_regions():
                                 if 'check' in headers[1].lower():
                                     debits_df = pd.concat([debits_df, df])
 
-                                elif 'Analysis Charge' in descriptions:
+                                elif 'Analysis' in descriptions[0]:
                                     debits_df = pd.concat([debits_df, df])
 
                                 else:
@@ -2603,7 +2603,7 @@ def excel_regions():
                                     if 'check' in headers[1].lower():
                                         debits_df = pd.concat([debits_df, df])
                                             
-                                    elif 'Analysis Charge' in descriptions:
+                                    elif 'Analysis' in descriptions[0]:
                                         debits_df = pd.concat([debits_df, df])
 
                                     else:
