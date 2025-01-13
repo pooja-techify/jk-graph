@@ -2383,6 +2383,7 @@ def excel_regions():
             
             try:
                 return float(clean_amount)
+            
             except ValueError:
                 print(f"Warning: Could not parse amount: {amount_str}")
                 return 0.0
@@ -2596,12 +2597,12 @@ def excel_regions():
                                     'amount': amounts
                                 })
 
-                                # print(df)
+                                print(df)
 
                                 if 'check' in headers[1].lower():
                                     debits_df = pd.concat([debits_df, df])
                                         
-                                elif 'Analysis Charge' in descriptions[0]:
+                                elif 'Analysis Charge' in descriptions:
                                     debits_df = pd.concat([debits_df, df])
 
                                 else:
