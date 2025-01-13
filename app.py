@@ -134,7 +134,7 @@ def excel_amex():
         logger.debug("An error occured: ", e)
     
     try: 
-        pages = convert_from_path(temp_path, dpi=300)
+        pages = convert_from_path(temp_path, dpi=700)
 
         files = []
         for i in range(len(pages)):
@@ -336,7 +336,7 @@ def excel_bcb():
         logger.debug("An error occured: ", e)
 
     try:
-        pages = convert_from_path(temp_path, dpi=1000)
+        pages = convert_from_path(temp_path, dpi=700)
 
         files = []
         for i in range(len(pages)):
@@ -564,7 +564,7 @@ def excel_boa():
 
     try:
         logger.debug("Block 2")
-        pages = convert_from_path(temp_path, dpi=300)
+        pages = convert_from_path(temp_path, dpi=700)
 
         files = []
         for i in range(len(pages)):
@@ -956,7 +956,7 @@ def excel_capitalone():
 
     
     try:
-        pages = convert_from_path(temp_path, dpi=300)
+        pages = convert_from_path(temp_path, dpi=700)
 
         files = []
         for i in range(len(pages)):
@@ -1382,7 +1382,7 @@ def excel_chase():
         logger.debug("An error occured: ", e)
 
     try:
-        pages = convert_from_path(temp_path, dpi=500)
+        pages = convert_from_path(temp_path, dpi=700)
 
         files = []
         for i in range(len(pages)):
@@ -1609,7 +1609,7 @@ def excel_citi():
         logger.debug("An error occured: ", e)
 
     try:
-        pages = convert_from_path(temp_path, dpi=300)
+        pages = convert_from_path(temp_path, dpi=700)
 
         files = []
         for i in range(len(pages)):
@@ -1971,7 +1971,7 @@ def excel_citirewards():
         logger.debug("An error occured: ", e)
 
     try:
-        pages = convert_from_path(temp_path, dpi=300)
+        pages = convert_from_path(temp_path, dpi=700)
 
         files = []
         for i in range(len(pages)):
@@ -2096,7 +2096,7 @@ def excel_hab():
     uploaded_file.save(temp_path)
 
     try:
-        pages = convert_from_path(temp_path, dpi=500)
+        pages = convert_from_path(temp_path, dpi=700)
 
         files = []
         for i in range(len(pages)):
@@ -2296,7 +2296,7 @@ def excel_regions():
         logger.debug("An error occured: ", e)
 
     try:
-        pages = convert_from_path(temp_path, dpi=500)
+        pages = convert_from_path(temp_path, dpi=700)
 
         files = []
         for i in range(len(pages)):
@@ -2355,11 +2355,322 @@ def excel_regions():
         logger.debug("An error occured: ", e)
 
     
+    # try:
+    #     logger.debug("Block 3")
+
+    #     credits_df = pd.DataFrame()
+    #     debits_df = pd.DataFrame()
+
+    #     project_id = 'techify-446309'
+    #     location = 'us'
+    #     processor_id = '567c2df93ddea10e'
+    #     processor_version = 'rc'
+    #     file_path = temp_path
+    #     mime_type = 'application/pdf'
+    #     credentials_path = '/home/ubuntu/pdf-excel/techify.json'
+
+    #     def is_valid_date_format(date_str: str) -> bool:
+    #         """
+    #         Validate if the date string matches mm/dd/yy format.
+    #         Returns True if the date is valid, False otherwise.
+    #         """
+    #         date_pattern = r'\d{2}/\d{2}'
+            
+    #         if not re.match(date_pattern, date_str):
+    #             return False
+    #         else:
+    #             return True
+            
+    #     def parse_amount(amount_str: str) -> float:
+
+    #         amount = re.search(r'[0-9,]+\.[0-9]{2}', amount_str).group()
+
+    #         clean_amount = amount.replace('$', '').replace(',', '').strip()
+            
+    #         try:
+    #             return float(clean_amount)
+    #         except ValueError:
+    #             print(f"Warning: Could not parse amount: {amount_str}")
+    #             return 0.0
+
+    #     def process_document(
+    #         project_id: str,
+    #         location: str,
+    #         processor_id: str,
+    #         processor_version: str,
+    #         file_path: str,
+    #         mime_type: str,
+    #         credentials_path: str,
+    #         process_options: Optional[documentai.ProcessOptions] = None,
+    #     ) -> documentai.Document:
+            
+    #         credentials = service_account.Credentials.from_service_account_file(
+    #             credentials_path,
+    #             scopes=['https://www.googleapis.com/auth/cloud-platform']
+    #         )
+                
+    #         client = documentai.DocumentProcessorServiceClient(
+    #             credentials=credentials,
+    #             client_options=ClientOptions(
+    #                 api_endpoint=f"{location}-documentai.googleapis.com"
+    #             )
+    #         )
+
+    #         name = client.processor_version_path(
+    #             project_id, location, processor_id, processor_version
+    #         )
+
+    #         with open(file_path, "rb") as image:
+    #             image_content = image.read()
+
+    #         request = documentai.ProcessRequest(
+    #             name=name,
+    #             raw_document=documentai.RawDocument(content=image_content, mime_type=mime_type),
+    #             process_options=process_options,
+    #         )
+
+    #         result = client.process_document(request=request)
+
+    #         return result.document
+
+    #     def layout_to_text(layout: documentai.Document.Page.Layout, text: str) -> str:
+    #         """
+    #         Document AI identifies text in different parts of the document by their
+    #         offsets in the entirety of the document's text. This function converts
+    #         offsets to a string.
+    #         """
+    #         return "".join(
+    #             text[int(segment.start_index) : int(segment.end_index)]
+    #             for segment in layout.text_anchor.text_segments
+    #         )
+
+    #     document = process_document(
+    #             project_id, location, processor_id, processor_version, file_path, mime_type, credentials_path
+    #         )
+
+    #     text = document.text
+    #     print(f"There are {len(document.pages)} page(s) in this document.")
+
+    #     rows = []
+
+    #     for page in document.pages:
+    #             print(f"\n\n**** Page {page.page_number} ****")
+    #             print(f"\nFound {len(page.tables)} table(s):")
+
+    #             for table in page.tables:
+    #                 num_columns = len(table.header_rows[0].cells)
+    #                 if num_columns == 1:
+    #                     num_rows = len(table.body_rows)
+    #                     # print(f"Table with {num_columns} columns and {num_rows} rows:")
+
+    #                     headers = []
+    #                     row_data = []
+    #                     for cell in table.header_rows[0].cells:
+    #                         header_text = layout_to_text(cell.layout, text).strip()
+    #                         headers.append(header_text)
+    #                         row_data.append(header_text)
+
+    #                         if 'FEES' in row_data[0]:
+    #                             # print(row_data)
+    #                             x = re.search(r'(\d{2}/\d{2})\n(.*)\n([0-9,]*.\d{2})', row_data[0])
+                                
+    #                             dates = []
+    #                             descriptions = []
+    #                             amounts = []
+
+    #                             dates.append(x.group(1))
+    #                             descriptions.append(x.group(2))
+    #                             amounts.append(x.group(3))
+
+    #                             df = pd.DataFrame({
+    #                                 'date': dates,
+    #                                 'description': descriptions,
+    #                                 'amount': amounts
+    #                             })
+
+    #                             debits_df = pd.concat([debits_df, df])
+
+    #                     for row in table.body_rows:
+    #                         row_data = []
+    #                         for cell in row.cells:
+    #                             cell_text = layout_to_text(cell.layout, text).strip()
+    #                             row_data.append(cell_text)
+    #                             if 'FEES' in row_data[0]:
+    #                                 x = re.search(r'(\d{2}/\d{2})\n(.*)\n([0-9,]*.\d{2})', row_data[0])
+
+    #                                 dates = []
+    #                                 descriptions = []
+    #                                 amounts = []
+
+    #                                 dates.append(x.group(1))
+    #                                 descriptions.append(x.group(2))
+    #                                 amounts.append(x.group(3))
+
+    #                                 df = pd.DataFrame({
+    #                                     'date': dates,
+    #                                     'description': descriptions,
+    #                                     'amount': amounts
+    #                                 })
+
+    #                                 debits_df = pd.concat([debits_df, df])
+                                
+    #                 if num_columns == 2:
+    #                     num_rows = len(table.body_rows)
+    #                     headers = []
+                                    
+    #                     row_data = []
+    #                     for cell in table.header_rows[0].cells:
+    #                         header_text = layout_to_text(cell.layout, text).strip()
+    #                         headers.append(header_text)
+    #                         row_data.append(header_text)
+    #                     rows.append(row_data)
+
+    #                     for row in table.body_rows:
+    #                         row_data = []
+    #                         for cell in row.cells:
+    #                             cell_text = layout_to_text(cell.layout, text).strip()
+    #                             row_data.append(cell_text)
+    #                         rows.append(row_data)
+
+    #                     for r in rows:
+    #                         dates = []
+    #                         descriptions = []
+    #                         amounts = []
+
+    #                         pattern1 = r'(\d{2}/\d{2}) (.+)$'
+    #                         match1 = re.search(pattern1, r[0])
+    #                         pattern2 = r'([0-9,]+.\d{2})'
+    #                         match2 = re.search(pattern2, r[1])
+
+    #                         if match1 and match2:# Add values
+    #                             dates.append(match1.group(1))
+    #                             descriptions.append(match1.group(2))
+    #                             amounts.append(match2.group(1))
+
+    #                             amount = parse_amount(amounts[0])
+
+    #                             df = pd.DataFrame({
+    #                                 'date': dates,
+    #                                 'description': descriptions,
+    #                                 'amount': amount
+    #                             })
+
+    #                             if 'check' in headers[1].lower():
+    #                                 debits_df = pd.concat([debits_df, df])
+
+    #                             else:
+    #                                 credits_df = pd.concat([credits_df, df])
+
+    #                 if num_columns == 3:
+    #                     num_rows = len(table.body_rows)
+
+    #                     headers = []
+    #                     row_data = []
+    #                     for cell in table.header_rows[0].cells:
+    #                         header_text = layout_to_text(cell.layout, text).strip()
+    #                         headers.append(header_text)
+    #                         row_data.append(header_text)
+
+    #                     if is_valid_date_format(row_data[0]):
+    #                         dates = []
+    #                         descriptions = []
+    #                         amounts = []
+
+    #                         if 'check' in headers[1].lower():
+    #                             row_data[2] = parse_amount(row_data[2])
+
+    #                             x = re.search(r'(\d{2}/\d{2})', row_data[0])
+
+    #                             dates.append(x.group(0))
+    #                             descriptions.append(row_data[1])
+    #                             amounts.append(row_data[2])
+
+    #                             df = pd.DataFrame({
+    #                                 'date': dates,
+    #                                 'description': descriptions,
+    #                                 'amount': amounts
+    #                             })
+
+    #                             debits_df = pd.concat([debits_df, df])
+                            
+    #                         else:
+    #                             row_data[2] = parse_amount(row_data[2])
+                                
+    #                             x = re.search(r'(\d{2}/\d{2})', row_data[0])
+
+    #                             dates.append(x.group(0))
+    #                             descriptions.append(row_data[1])
+    #                             amounts.append(row_data[2])
+
+    #                             df = pd.DataFrame({
+    #                                 'date': dates,
+    #                                 'description': descriptions,
+    #                                 'amount': amounts
+    #                             })
+                                
+    #                             credits_df = pd.concat([credits_df, df])
+
+    #                     for row in table.body_rows:
+    #                         row_data = []
+    #                         for cell in row.cells:
+    #                             cell_text = layout_to_text(cell.layout, text).strip()
+    #                             row_data.append(cell_text)
+                                        
+    #                         if is_valid_date_format(row_data[0]):
+    #                             dates = []
+    #                             descriptions = []
+    #                             amounts = []
+
+    #                             if 'check' in headers[1].lower():
+    #                                 row_data[2] = parse_amount(row_data[2])
+                                    
+    #                                 x = re.search(r'(\d{2}/\d{2})', row_data[0])
+
+    #                                 dates.append(x.group(0))
+    #                                 descriptions.append(row_data[1])
+    #                                 amounts.append(row_data[2])
+
+    #                                 df = pd.DataFrame({
+    #                                     'date': dates,
+    #                                     'description': descriptions,
+    #                                     'amount': amounts
+    #                                 })
+
+    #                                 debits_df = pd.concat([debits_df, df])
+                                
+    #                             else:
+    #                                 row_data[2] = parse_amount(row_data[2])
+
+    #                                 x = re.search(r'(\d{2}/\d{2})', row_data[0])
+
+    #                                 dates.append(x.group(0))
+    #                                 descriptions.append(row_data[1])
+    #                                 amounts.append(row_data[2])
+
+    #                                 df = pd.DataFrame({
+    #                                     'date': dates,
+    #                                     'description': descriptions,
+    #                                     'amount': amounts
+    #                                 })
+                                    
+    #                                 credits_df = pd.concat([credits_df, df])       
+
+    #    with pd.ExcelWriter('excel3.xlsx', engine='openpyxl') as writer:
+    #         credits_df.to_excel(writer, sheet_name='Credit', index=False)
+    #         debits_df.to_excel(writer, sheet_name='Debit', index=False)
+
+    #         workbook3 = writer.book
+    #         worksheet1 = writer.sheets['Credit']
+    #         worksheet2 = writer.sheets['Debit']
+
+    #         temp_excel3 = tempfile.NamedTemporaryFile(suffix='.xlsx', delete=False)
+    #         workbook3.save(temp_excel3.name)
+    
+    # except Exception as e:
+    #     logger.debug("An error occured: ", e)
+
     try:
         logger.debug("Block 3")
-
-        credit_df = pd.DataFrame()
-        debit_df = pd.DataFrame()
 
         project_id = 'techify-446309'
         location = 'us'
@@ -2368,16 +2679,6 @@ def excel_regions():
         file_path = temp_path
         mime_type = 'application/pdf'
         credentials_path = '/home/ubuntu/pdf-excel/techify.json'
-
-        COLUMN_NAMES = ['Date', 'Description', 'Amount']
-
-        def clean_description(text: str) -> str:
-            """
-            Clean description by removing quotation marks only if they appear at both start and end
-            """
-            if text.startswith('"') and text.endswith('"'):
-                return text[1:-1]
-            return text
 
         def is_valid_date_format(date_str: str) -> bool:
             """
@@ -2454,7 +2755,6 @@ def excel_regions():
                 for segment in layout.text_anchor.text_segments
             )
 
-        
         document = process_document(
                 project_id, location, processor_id, processor_version, file_path, mime_type, credentials_path
             )
@@ -2462,12 +2762,10 @@ def excel_regions():
         text = document.text
         print(f"There are {len(document.pages)} page(s) in this document.")
 
-            # Initialize lists to store all credit and debit transactions
-        all_credit_rows = []
-        all_debit_rows = []
+        COLUMN_NAMES = ['Date', 'Description', 'Amount']
 
-        debits_df = pd.DataFrame()
         credits_df = pd.DataFrame()
+        debits_df = pd.DataFrame()
         rows = []
 
         for page in document.pages:
@@ -2482,18 +2780,29 @@ def excel_regions():
 
                         headers = []
                         row_data = []
+                        rows = []
+                        
                         for cell in table.header_rows[0].cells:
                             header_text = layout_to_text(cell.layout, text).strip()
                             headers.append(header_text)
                             row_data.append(header_text)
+                        rows.append(row_data)
 
-                            if 'FEES' in row_data[0]:
-                                # print(row_data)
-                                x = re.search(r'(\d{2}/\d{2})\n(.*)\n([0-9,]*.\d{2})', row_data[0])
-                                
+                        for row in table.body_rows:
+                            row_data = []
+                            for cell in row.cells:
+                                cell_text = layout_to_text(cell.layout, text).strip()
+                                row_data.append(cell_text)
+                            rows.append(row_data)
+
+                        for r in rows:
+                            if 'FEES' in r[0]:
+                                # print(r)
+                                x = re.search(r'(\d{2}/\d{2})\n(.*)\n([0-9,]*.\d{2})', r[0])
+                                            
                                 dates = []
                                 descriptions = []
-                                amounts = []
+                                amounts = []    
 
                                 dates.append(x.group(1))
                                 descriptions.append(x.group(2))
@@ -2505,37 +2814,24 @@ def excel_regions():
                                     'amount': amounts
                                 })
 
+                                # print(df)
+
+                                debits_df = pd.concat([debits_df, df])  
+
+                            elif 'Analysis Charge' in df['description']:
                                 debits_df = pd.concat([debits_df, df])
 
-                        for row in table.body_rows:
-                            row_data = []
-                            for cell in row.cells:
-                                cell_text = layout_to_text(cell.layout, text).strip()
-                                row_data.append(cell_text)
-                                if 'FEES' in row_data[0]:
-                                    x = re.search(r'(\d{2}/\d{2})\n(.*)\n([0-9,]*.\d{2})', row_data[0])
+                            else:
+                                credits_df = pd.concat([credits_df, df])
 
-                                    dates = []
-                                    descriptions = []
-                                    amounts = []
-
-                                    dates.append(x.group(1))
-                                    descriptions.append(x.group(2))
-                                    amounts.append(x.group(3))
-
-                                    df = pd.DataFrame({
-                                        'date': dates,
-                                        'description': descriptions,
-                                        'amount': amounts
-                                    })
-
-                                    debits_df = pd.concat([debits_df, df])
-                                
+                                            
                     if num_columns == 2:
                         num_rows = len(table.body_rows)
-                        headers = []
-                                    
+                        
+                        headers = []                        
                         row_data = []
+                        rows = []
+
                         for cell in table.header_rows[0].cells:
                             header_text = layout_to_text(cell.layout, text).strip()
                             headers.append(header_text)
@@ -2559,7 +2855,7 @@ def excel_regions():
                             pattern2 = r'([0-9,]+.\d{2})'
                             match2 = re.search(pattern2, r[1])
 
-                            if match1 and match2:# Add values
+                            if match1 and match2:
                                 dates.append(match1.group(1))
                                 descriptions.append(match1.group(2))
                                 amounts.append(match2.group(1))
@@ -2572,7 +2868,12 @@ def excel_regions():
                                     'amount': amount
                                 })
 
+                                # print(df)
+
                                 if 'check' in headers[1].lower():
+                                    debits_df = pd.concat([debits_df, df])
+
+                                elif 'Analysis Charge' in df['description']:
                                     debits_df = pd.concat([debits_df, df])
 
                                 else:
@@ -2583,94 +2884,54 @@ def excel_regions():
 
                         headers = []
                         row_data = []
+                        rows = []
+                                    
                         for cell in table.header_rows[0].cells:
                             header_text = layout_to_text(cell.layout, text).strip()
                             headers.append(header_text)
                             row_data.append(header_text)
-
-                        if is_valid_date_format(row_data[0]):
-                            dates = []
-                            descriptions = []
-                            amounts = []
-
-                            if 'check' in headers[1].lower():
-                                row_data[2] = parse_amount(row_data[2])
-
-                                x = re.search(r'(\d{2}/\d{2})', row_data[0])
-
-                                dates.append(x.group(0))
-                                descriptions.append(row_data[1])
-                                amounts.append(row_data[2])
-
-                                df = pd.DataFrame({
-                                    'date': dates,
-                                    'description': descriptions,
-                                    'amount': amounts
-                                })
-
-                                debits_df = pd.concat([debits_df, df])
-                            
-                            else:
-                                row_data[2] = parse_amount(row_data[2])
-                                
-                                x = re.search(r'(\d{2}/\d{2})', row_data[0])
-
-                                dates.append(x.group(0))
-                                descriptions.append(row_data[1])
-                                amounts.append(row_data[2])
-
-                                df = pd.DataFrame({
-                                    'date': dates,
-                                    'description': descriptions,
-                                    'amount': amounts
-                                })
-                                
-                                credits_df = pd.concat([credits_df, df])
+                        # print(row_data)
+                        rows.append(row_data)
 
                         for row in table.body_rows:
                             row_data = []
                             for cell in row.cells:
                                 cell_text = layout_to_text(cell.layout, text).strip()
                                 row_data.append(cell_text)
-                                        
-                            if is_valid_date_format(row_data[0]):
+                            # print(row_data)
+                            rows.append(row_data)
+
+                        for r in rows:
+                            if is_valid_date_format(r[0]):
                                 dates = []
                                 descriptions = []
                                 amounts = []
+                                
+                                amt = parse_amount(r[2])
+
+                                x = re.search(r'^\d{2}/\d{2}$', r[0])
+
+                                if x is not None:
+                                    dates.append(x.group())
+                                    descriptions.append(r[1])
+                                    amounts.append(amt)
+
+                                df = pd.DataFrame({
+                                    'date': dates,
+                                    'description': descriptions,
+                                    'amount': amounts
+                                })
+
+                                # print(df)
 
                                 if 'check' in headers[1].lower():
-                                    row_data[2] = parse_amount(row_data[2])
-                                    
-                                    x = re.search(r'(\d{2}/\d{2})', row_data[0])
-
-                                    dates.append(x.group(0))
-                                    descriptions.append(row_data[1])
-                                    amounts.append(row_data[2])
-
-                                    df = pd.DataFrame({
-                                        'date': dates,
-                                        'description': descriptions,
-                                        'amount': amounts
-                                    })
-
                                     debits_df = pd.concat([debits_df, df])
-                                
+                                        
+                                elif 'Analysis Charge' in df['description']:
+                                    debits_df = pd.concat([debits_df, df])
+
                                 else:
-                                    row_data[2] = parse_amount(row_data[2])
-
-                                    x = re.search(r'(\d{2}/\d{2})', row_data[0])
-
-                                    dates.append(x.group(0))
-                                    descriptions.append(row_data[1])
-                                    amounts.append(row_data[2])
-
-                                    df = pd.DataFrame({
-                                        'date': dates,
-                                        'description': descriptions,
-                                        'amount': amounts
-                                    })
-                                    
-                                    credits_df = pd.concat([credits_df, df])       
+                                    credits_df = pd.concat([credits_df, df])
 
         with pd.ExcelWriter('excel3.xlsx', engine='openpyxl') as writer:
             credits_df.to_excel(writer, sheet_name='Credit', index=False)
@@ -2683,6 +2944,10 @@ def excel_regions():
             temp_excel3 = tempfile.NamedTemporaryFile(suffix='.xlsx', delete=False)
             workbook3.save(temp_excel3.name)
     
+            with pd.ExcelWriter('excel3.xlsx', engine='openpyxl') as writer:
+                credits_df.to_excel(writer, sheet_name='Credit', index=False)
+                debits_df.to_excel(writer, sheet_name='Debit', index=False)
+
     except Exception as e:
         logger.debug("An error occured: ", e)
 
@@ -2819,7 +3084,7 @@ def excel_santander():
 
     try:
         # Send the file as response
-        pages = convert_from_path(temp_path, dpi=300)
+        pages = convert_from_path(temp_path, dpi=700)
 
         files = []
         for i in range(len(pages)):
@@ -3217,7 +3482,7 @@ def excel_seacoast():
         # temp_excel = tempfile.NamedTemporaryFile(suffix='.xlsx', delete=False)
         # workbook1.save(temp_excel.name)
 
-        pages = convert_from_path(temp_path, dpi=300)
+        pages = convert_from_path(temp_path, dpi=700)
 
         files = []
 
@@ -3627,7 +3892,7 @@ def excel_synovus():
         logger.debug("An error occured: ", e)
 
     try:
-        pages = convert_from_path(temp_path, dpi=300)
+        pages = convert_from_path(temp_path, dpi=700)
 
         files = []
         for i in range(len(pages)):
@@ -4019,7 +4284,7 @@ def excel_tdbank():
         logger.debug("An error occured: ", e)
 
     try:
-        pages = convert_from_path(temp_path, dpi=300)
+        pages = convert_from_path(temp_path, dpi=700)
 
         files = []
         for i in range(len(pages)):
@@ -4403,7 +4668,7 @@ def excel_wellsfargo():
         logger.debug("An error occured: ", e)
 
     try:
-        pages = convert_from_path(temp_path, dpi=300)
+        pages = convert_from_path(temp_path, dpi=700)
 
         files = []
         for i in range(len(pages)):
