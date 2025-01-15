@@ -1073,9 +1073,10 @@ def excel_capitalone():
         mime_type = 'application/pdf'
         credentials_path = '/home/ubuntu/pdf-excel/techify.json'
 
-        def clean_description(date_str):
-            date_obj = datetime.strptime(date_str, "%b %d")
-            return date_obj.strftime("%m/%d")
+        def clean_date(date_str):
+            full_date_str = f"{date_str}/{str(year)[-2:]}"
+            formatted_date = datetime.strptime(full_date_str, "%m/%d/%y").strftime("%m/%d/%y")
+            return formatted_date.strftime("%m/%d/%y")
 
         def is_valid_date_format(date_str: str) -> str:
             """
@@ -1189,8 +1190,6 @@ def excel_capitalone():
                             date_formatted = is_valid_date_format(row_data[0])
                             if date_formatted:
                                 row_data[0] = date_formatted
-                                # Clean the description (second column)
-                                # row_data[-2] = clean_description(row_data[-2])
                                 
                                 amount = parse_amount(row_data[-1])
                                 
@@ -1206,14 +1205,14 @@ def excel_capitalone():
         # Save credit transactions
         if all_credit_rows:
             credit_df = pd.DataFrame(all_credit_rows, columns=column_header)
-            credit_df[column_header[0]] = credit_df[column_header[0]].apply(clean_description)
+            credit_df[column_header[0]] = credit_df[column_header[0]].apply(clean_date)
             credit_df[column_header[-1]] = pd.to_numeric(credit_df[column_header[-1]], errors='coerce')
             # credit_df.to_excel(writer, sheet_name='Credits', index=False)
         print(f"Total credit transactions processed: {len(all_credit_rows)}")
         
         if all_debit_rows:
             debit_df = pd.DataFrame(all_debit_rows, columns=column_header)
-            debit_df[column_header[0]] = debit_df[column_header[0]].apply(clean_description)
+            debit_df[column_header[0]] = debit_df[column_header[0]].apply(clean_date)
             debit_df[column_header[-1]] = pd.to_numeric(debit_df[column_header[-1]], errors='coerce')
             # debit_df.to_excel(writer, sheet_name='Debits', index=False)
         print(f"Total debit transactions processed: {len(all_debit_rows)}")
@@ -1678,13 +1677,10 @@ def excel_citi():
         mime_type = 'application/pdf'
         credentials_path = '/home/ubuntu/pdf-excel/techify.json'
 
-        def clean_description(text: str) -> str:
-            """
-            Clean description by removing quotation marks only if they appear at both start and end
-            """
-            if text.startswith('"') and text.endswith('"'):
-                return text[1:-1]
-            return text
+        def clean_date(date_str):
+            full_date_str = f"{date_str}/{str(year)[-2:]}"
+            formatted_date = datetime.strptime(full_date_str, "%m/%d/%y").strftime("%m/%d/%y")
+            return formatted_date.strftime("%m/%d/%y")
 
         def is_valid_date_format(date_str: str) -> bool:
             """
@@ -1795,8 +1791,6 @@ def excel_citi():
                                 row_data.append(cell_text)
 
                             if is_valid_date_format(row_data[0]):
-                                # Clean the description (second column)
-                                row_data[1] = clean_description(row_data[1])
 
                                 credit_amount = parse_amount(row_data[2])
                                 
@@ -1808,6 +1802,10 @@ def excel_citi():
                                 elif credit_amount > 0:
                                     transactions = [row_data[0], row_data[1], credit_amount]
                                     credit_rows.append(transactions)
+
+                                full_date_str = f"{date_str}/{str(year)[-2:]}"
+                                formatted_date = datetime.strptime(full_date_str, "%m/%d/%y").strftime("%m/%d/%y")
+                                return formatted_date.strftime("%m/%d/%y")
         
         column_headers = ['Date', 'Description', 'Amount']
     
@@ -1815,12 +1813,14 @@ def excel_citi():
         if credit_rows:
             credit_df = pd.DataFrame(credit_rows, columns=column_headers)
             credit_df['Amount'] = pd.to_numeric(credit_df['Amount'], errors='coerce')
+            credit_df['Date'] = credit_df['Date'].apply(clean_date)
             # credit_df.to_excel(writer, sheet_name='Credits', index=False)
             print(f"Total credit transactions processed: {len(credit_rows)}")
         
         if debit_rows:
             debit_df = pd.DataFrame(debit_rows, columns=column_headers)
             debit_df['Amount'] = pd.to_numeric(debit_df['Amount'], errors='coerce')
+            debit_df['Date'] = debit_df['Date'].apply(clean_date)
             # debit_df.to_excel(writer, sheet_name='Debits', index=False)
             print(f"Total debit transactions processed: {len(debit_rows)}")
         
@@ -2363,6 +2363,11 @@ def excel_regions():
         mime_type = 'application/pdf'
         credentials_path = '/home/ubuntu/pdf-excel/techify.json'
 
+        def clean_date(date_str):
+            full_date_str = f"{date_str}/{str(year)[-2:]}"
+            formatted_date = datetime.strptime(full_date_str, "%m/%d/%y").strftime("%m/%d/%y")
+            return formatted_date.strftime("%m/%d/%y")
+        
         def is_valid_date_format(date_str: str) -> bool:
             """
             Validate if the date string matches mm/dd/yy format.
@@ -2610,7 +2615,9 @@ def excel_regions():
                                         credits_df = pd.concat([credits_df, df])
 
         credits_df['amount'] = pd.to_numeric(credits_df['amount'], errors='coerce')
+        credits_df['date'] = credits_df['date'].apply(clean_date)
         debits_df['amount'] = pd.to_numeric(debits_df['amount'], errors='coerce')
+        debits_df['date'] = debits_df['date'].apply(clean_date)
 
         with pd.ExcelWriter('excel3.xlsx', engine='openpyxl') as writer:
             credits_df.to_excel(writer, sheet_name='Credit', index=False)
@@ -2862,6 +2869,11 @@ def excel_santander():
         mime_type = 'application/pdf'
         credentials_path = '/home/ubuntu/pdf-excel/techify.json'
 
+        def clean_date(date_str):
+            full_date_str = f"{date_str}/{str(year)[-2:]}"
+            formatted_date = datetime.strptime(full_date_str, "%m/%d/%y").strftime("%m/%d/%y")
+            return formatted_date.strftime("%m/%d/%y")
+        
         def clean_description(text: str) -> str:
             """
             Clean description by removing quotation marks only if they appear at both start and end
@@ -2994,6 +3006,7 @@ def excel_santander():
             credit_df = pd.DataFrame(credit_rows, columns=output_columns)
             credit_df['Date'] = credit_df['Date'].replace('-', '/', regex=True)
             credit_df['Amount'] = pd.to_numeric(credit_df['Amount'], errors='coerce')
+            credit_df['Date'] = credit_df['Date'].apply(clean_date)
             # credit_df['Ending Balance'] = pd.to_numeric(credit_df['Ending Balance'], errors='coerce')
             # credit_df.to_excel(writer, sheet_name='Credits', index=False)
             print(f"Total credit transactions processed: {len(credit_rows)}")
@@ -3003,6 +3016,7 @@ def excel_santander():
             debit_df = pd.DataFrame(debit_rows, columns=output_columns)
             debit_df['Date'] = debit_df['Date'].replace('-', '/', regex=True)
             debit_df['Amount'] = pd.to_numeric(debit_df['Amount'], errors='coerce')
+            debit_df['Date'] = debit_df['Date'].apply(clean_date)
             # debit_df['Ending Balance'] = pd.to_numeric(debit_df['Ending Balance'], errors='coerce')
             # debit_df.to_excel(writer, sheet_name='Debits', index=False)
             print(f"Total debit transactions processed: {len(debit_rows)}") 
@@ -3269,6 +3283,11 @@ def excel_seacoast():
         mime_type = 'application/pdf'
         credentials_path = '/home/ubuntu/pdf-excel/techify.json'
 
+        def clean_date(date_str):
+            full_date_str = f"{date_str}/{str(year)[-2:]}"
+            formatted_date = datetime.strptime(full_date_str, "%m/%d/%y").strftime("%m/%d/%y")
+            return formatted_date.strftime("%m/%d/%y")
+        
         def clean_description(text: str) -> str:
             """
             Clean description by removing quotation marks only if they appear at both start and end
@@ -3404,14 +3423,17 @@ def excel_seacoast():
         if all_credit_rows:
             credit_df = pd.DataFrame(all_credit_rows, columns=column_headers)
             credit_df[column_headers[0]] = credit_df[column_headers[0]].replace('-','/', regex=True)
+            credit_df[column_headers[0]] = credit_df[column_headers[0]].apply(clean_date)
             credit_df[column_headers[1]] = credit_df[column_headers[1]].apply(clean_description)
             credit_df[column_headers[2]] = pd.to_numeric(credit_df[column_headers[2]], errors='coerce')
+            debit_df['Date'] = debit_df['Date'].apply(clean_date)
             # credit_df.to_excel(writer, sheet_name='Credits', index=False)
             print(f"Total credit transactions processed: {len(all_credit_rows)}")
             
         if all_debit_rows:
             debit_df = pd.DataFrame(all_debit_rows, columns=column_headers)
             debit_df[column_headers[0]] = debit_df[column_headers[0]].replace('-', '/', regex=True)
+            debit_df[column_headers[0]] = debit_df[column_headers[0]].apply(clean_date)
             debit_df[column_headers[1]] = debit_df[column_headers[1]].apply(clean_description)
             debit_df[column_headers[2]] = debit_df[column_headers[2]].astype(str)
             debit_df[column_headers[2]] = debit_df[column_headers[2]].replace('-', '', regex=True)
@@ -3669,6 +3691,11 @@ def excel_synovus():
         mime_type = 'application/pdf'
         credentials_path = '/home/ubuntu/pdf-excel/techify.json'
 
+        def clean_date(date_str):
+            full_date_str = f"{date_str}/{str(year)[-2:]}"
+            formatted_date = datetime.strptime(full_date_str, "%m/%d/%y").strftime("%m/%d/%y")
+            return formatted_date.strftime("%m/%d/%y")
+        
         def clean_description(text: str) -> str:
             """
             Clean description by removing quotation marks only if they appear at both start and end
@@ -3806,6 +3833,7 @@ def excel_synovus():
         if all_credit_rows:
             credit_df = pd.DataFrame(all_credit_rows, columns=column_headers)
             credit_df[column_headers[0]] = credit_df[column_headers[0]].replace('-','/', regex=True)
+            credit_df[column_headers[0]] = credit_df[column_headers[0]].apply(clean_date)
             credit_df[column_headers[2]] = credit_df[column_headers[2]].apply(clean_description)
             credit_df[column_headers[3]] = pd.to_numeric(credit_df[column_headers[3]], errors='coerce')
             # credit_df.to_excel(writer, sheet_name='Credits', index=False)
@@ -3814,6 +3842,7 @@ def excel_synovus():
         if all_debit_rows:
             debit_df = pd.DataFrame(all_debit_rows, columns=column_headers)
             debit_df[column_headers[0]] = debit_df[column_headers[0]].replace('-', '/', regex=True)
+            debit_df[column_headers[0]] = debit_df[column_headers[0]].apply(clean_date)
             debit_df[column_headers[2]] = debit_df[column_headers[2]].apply(clean_description)
             debit_df[column_headers[3]] = pd.to_numeric(debit_df[column_headers[3]], errors='coerce')
             # debit_df.to_excel(writer, sheet_name='Debits', index=False)
@@ -4054,6 +4083,11 @@ def excel_tdbank():
         mime_type = 'application/pdf'
         credentials_path = '/home/ubuntu/pdf-excel/techify.json'
 
+        def clean_date(date_str):
+            full_date_str = f"{date_str}/{str(year)[-2:]}"
+            formatted_date = datetime.strptime(full_date_str, "%m/%d/%y").strftime("%m/%d/%y")
+            return formatted_date.strftime("%m/%d/%y")
+        
         def clean_description(text: str) -> str:
             """
             Clean description by removing quotation marks only if they appear at both start and end
@@ -4190,6 +4224,7 @@ def excel_tdbank():
         
         if all_credit_rows:
             credit_df = pd.DataFrame(all_credit_rows, columns=column_headers)
+            credit_df[column_headers[0]] = credit_df[column_headers[0]].apply(clean_date)
             credit_df[column_headers[1]] = credit_df[column_headers[1]].apply(clean_description)
             credit_df[column_headers[2]] = pd.to_numeric(credit_df[column_headers[2]], errors='coerce')
             # credit_df.to_excel(writer, sheet_name='Credits', index=False)
@@ -4197,6 +4232,7 @@ def excel_tdbank():
         
         if all_debit_rows:
             debit_df = pd.DataFrame(all_debit_rows, columns=column_headers)
+            debit_df[column_headers[0]] = debit_df[column_headers[0]].apply(clean_date)
             debit_df[column_headers[1]] = debit_df[column_headers[1]].apply(clean_description)
             debit_df[column_headers[2]] = pd.to_numeric(debit_df[column_headers[2]], errors='coerce')
             # debit_df.to_excel(writer, sheet_name='Debits', index=False)
@@ -4444,6 +4480,11 @@ def excel_wellsfargo():
         mime_type = 'application/pdf'
         credentials_path = '/home/ubuntu/pdf-excel/techify.json'
 
+        def clean_date(date_str):
+            full_date_str = f"{date_str}/{str(year)[-2:]}"
+            formatted_date = datetime.strptime(full_date_str, "%m/%d/%y").strftime("%m/%d/%y")
+            return formatted_date.strftime("%m/%d/%y")
+        
         def clean_description(text: str) -> str:
             """
             Clean description by removing quotation marks only if they appear at both start and end
@@ -4583,6 +4624,7 @@ def excel_wellsfargo():
     
         if credit_rows:
             credit_df = pd.DataFrame(credit_rows, columns=output_columns)
+            credit_df['Date'] = credit_df['Date'].apply(clean_date)
             credit_df['Amount'] = pd.to_numeric(credit_df['Amount'], errors='coerce')
             # credit_df['Ending Balance'] = pd.to_numeric(credit_df['Ending Balance'], errors='coerce')
             # credit_df.to_excel(writer, sheet_name='Credits', index=False)
@@ -4591,6 +4633,7 @@ def excel_wellsfargo():
         # Save debit transactions
         if debit_rows:
             debit_df = pd.DataFrame(debit_rows, columns=output_columns)
+            debit_df['Date'] = debit_df['Date'].apply(clean_date)
             debit_df['Amount'] = pd.to_numeric(debit_df['Amount'], errors='coerce')
             # debit_df['Ending Balance'] = pd.to_numeric(debit_df['Ending Balance'], errors='coerce')
             # debit_df.to_excel(writer, sheet_name='Debits', index=False)
