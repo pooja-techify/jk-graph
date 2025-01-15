@@ -1082,7 +1082,7 @@ def excel_capitalone():
         #     """
         #     Validate if the date string matches mm/dd/yy format.
         #     Returns True if the date is valid, False otherwise.
-            """
+        #     """
         #     date_pattern = r'[A-Z]{1}[a-z]{2} \d{1,2}'
             
         #     x = re.search(date_pattern, date_str)
