@@ -1469,8 +1469,8 @@ def excel_chase():
         if len(credits_aws) > 0:
             credits_aws['amount'] = credits_aws['amount'].str.replace(r'[$,]', '', regex=True)
             credits_aws['amount'] = credits_aws['amount'].str.extract(r'([0-9]*.\d{2})')
-            credits_aws['amount'] = pd.to_numeric(credits_aws['amount'])
-        
+             debits_aws['amount'] = pd.to_numeric(debits_aws['amount'])
+
         with pd.ExcelWriter('excel2.xlsx', engine='openpyxl') as writer:
             credits_aws.to_excel(writer, sheet_name='Credit', index=False)
             debits_aws.to_excel(writer, sheet_name='Debit', index=False)
@@ -1644,6 +1644,7 @@ def excel_citi():
             credits_aws = transactions[transactions.iloc[:,0].str.match(r'^\d{2}/\d{2}', na=False)].reset_index(drop=True)   
 
         for i in range(len(credits_aws)):
+            credits_aws['amount'] = pd.to_numeric(credits_aws['amount'])
             date_str = credits_aws.iloc[i]['date'].strip() 
             full_date_str = f"{date_str}/{str(year)[-2:]}"
             formatted_date = datetime.strptime(full_date_str, "%m/%d/%y").strftime("%m/%d/%y")
