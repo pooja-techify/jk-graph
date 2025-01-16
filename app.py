@@ -1469,7 +1469,7 @@ def excel_chase():
         if len(credits_aws) > 0:
             credits_aws['amount'] = credits_aws['amount'].str.replace(r'[$,]', '', regex=True)
             credits_aws['amount'] = credits_aws['amount'].str.extract(r'([0-9]*.\d{2})')
-             debits_aws['amount'] = pd.to_numeric(debits_aws['amount'])
+            credits_aws['amount'] = pd.to_numeric(credits_aws['amount'])
 
         with pd.ExcelWriter('excel2.xlsx', engine='openpyxl') as writer:
             credits_aws.to_excel(writer, sheet_name='Credit', index=False)
