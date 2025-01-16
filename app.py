@@ -373,47 +373,48 @@ def excel_bcb():
                                         df.loc[i-1, 0] += ' ' + df.iloc[i][j]
                                     df.iloc[i,0].strip()
                         transactions = pd.concat([transactions, df], ignore_index=True)
+
         
 
-        if len(transactions) > 0:
-            df = transactions[transactions.iloc[:,0].str.match(r'^\d{1,2}/\d{2}.*', na=False)].reset_index(drop=True)
+        # if len(transactions) > 0:
+        #     df = transactions[transactions.iloc[:,0].str.match(r'^\d{1,2}/\d{2}.*', na=False)].reset_index(drop=True)
 
-        if len(df) > 0:
-            df[['date', 'description']] = df[0].str.split(' ', n=1, expand=True)
-            new_df = df[['date','description', 1, 2]].rename(columns={1: "debit", 2: "credit"})
+        # if len(df) > 0:
+        #     df[['date', 'description']] = df[0].str.split(' ', n=1, expand=True)
+        #     new_df = df[['date','description', 1, 2]].rename(columns={1: "debit", 2: "credit"})
 
-        for i in range(len(new_df)):
-            date_str = new_df.iloc[i]['date'].strip()
-            full_date_str = f"{date_str}/{str(year)[-2:]}"
-            formatted_date = datetime.strptime(full_date_str, "%m/%d/%y").strftime("%m/%d/%y")
-            new_df.loc[i, "date"] = formatted_date
+        # for i in range(len(new_df)):
+        #     date_str = new_df.iloc[i]['date'].strip() 
+        #     full_date_str = f"{date_str}/{str(year)[-2:]}"
+        #     formatted_date = datetime.strptime(full_date_str, "%m/%d/%y").strftime("%m/%d/%y")
+        #     new_df.loc[i, "date"] = formatted_date
 
-        credit_list = []
-        debit_list = []
+        # credit_list = []
+        # debit_list = []
 
-        for i in range(len(new_df)):
-            if new_df.iloc[i, -1] == '':
-                debit_list.append(new_df.iloc[i])
+        # for i in range(len(new_df)):
+        #     if new_df.iloc[i, -1] == '':
+        #         debit_list.append(new_df.iloc[i])
 
-            if new_df.iloc[i, -2] == '':
-                credit_list.append(new_df.iloc[i])
+        #     if new_df.iloc[i, -2] == '':
+        #         credit_list.append(new_df.iloc[i])
 
-        credits_aws = pd.DataFrame(credit_list)
-        debits_aws = pd.DataFrame(debit_list)
+        # credits_aws = pd.DataFrame(credit_list)
+        # debits_aws = pd.DataFrame(debit_list)
 
-        if len(credits_aws) > 0:
-            credits_aws.drop(columns='debit', inplace=True)
-            credits_aws['credit'] = credits_aws['credit'].astype(str).str.replace(r'[$,\s]', '', regex=True)
-            credits_aws['credit'] = pd.to_numeric(credits_aws['credit'])
+        # if len(credits_aws) > 0:
+        #     credits_aws.drop(columns='debit', inplace=True)
+        #     credits_aws['credit'] = credits_aws['credit'].astype(str).str.replace(r'[$,\s]', '', regex=True)
+        #     credits_aws['credit'] = pd.to_numeric(credits_aws['credit'])
 
-        if len(debits_aws) > 0:
-            debits_aws.drop(columns='credit', inplace=True)
-            debits_aws['debit'] = debits_aws['debit'].astype(str).replace(r'[-,]', '', regex=True)
-            debits_aws['debit'] = pd.to_numeric(debits_aws['debit'])
+        # if len(debits_aws) > 0:
+        #     debits_aws.drop(columns='credit', inplace=True)
+        #     debits_aws['debit'] = debits_aws['debit'].astype(str).replace(r'[-,]', '', regex=True)
+        #     debits_aws['debit'] = pd.to_numeric(debits_aws['debit'])
 
         with pd.ExcelWriter('excel2.xlsx', engine='openpyxl') as writer:
-            credits_aws.to_excel(writer, sheet_name='Credit', index=False)
-            debits_aws.to_excel(writer, sheet_name='Debit', index=False)
+            transactions.to_excel(writer, sheet_name='Credit', index=False)
+            # debits_aws.to_excel(writer, sheet_name='Debit', index=False)
 
             workbook2 = writer.book
             worksheet1 = writer.sheets['Credit']
@@ -1641,10 +1642,13 @@ def excel_citi():
 
         if len(transactions) > 0:
             credits_aws = transactions[transactions.iloc[:,0].str.match(r'^\d{2}/\d{2}', na=False)].reset_index(drop=True)
-            # credits_aws['amount'] = pd.to_numeric(credits_aws['amount'])
+        
+        if len(credits_aws) > 0:
+            credits_aws['amount'] = credits_aws['amount'].str.strip().replace(r'[,]', '', regex=True)
+            credits_aws['amount'] = pd.to_numeric(credits_aws['amount'])
 
         for i in range(len(credits_aws)):
-            date_str = credits_aws.iloc[i]['date'].strip() 
+            date_str = credits_aws.iloc[i]['date'].strip()
             full_date_str = f"{date_str}/{str(year)[-2:]}"
             formatted_date = datetime.strptime(full_date_str, "%m/%d/%y").strftime("%m/%d/%y")
             credits_aws.loc[i, "date"] = formatted_date
