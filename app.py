@@ -373,7 +373,6 @@ def excel_bcb():
                                         df.loc[i-1, 0] += ' ' + df.iloc[i][j]
                                     df.iloc[i,0].strip()
                         transactions = pd.concat([transactions, df], ignore_index=True)
-
         
 
         if len(transactions) > 0:
@@ -384,7 +383,7 @@ def excel_bcb():
             new_df = df[['date','description', 1, 2]].rename(columns={1: "debit", 2: "credit"})
 
         for i in range(len(new_df)):
-            date_str = new_df.iloc[i]['date'].strip() 
+            date_str = new_df.iloc[i]['date'].strip()
             full_date_str = f"{date_str}/{str(year)[-2:]}"
             formatted_date = datetime.strptime(full_date_str, "%m/%d/%y").strftime("%m/%d/%y")
             new_df.loc[i, "date"] = formatted_date
