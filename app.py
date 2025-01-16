@@ -3274,194 +3274,192 @@ def excel_seacoast():
     except Exception as e:
         logger.debug("An error occured: ", e)
 
-    # try:
-    #     logger.debug("Block 3")
+    try:
+        logger.debug("Block 3")
 
-    #     credit_df = pd.DataFrame()
-    #     debit_df = pd.DataFrame()
+        credit_df = pd.DataFrame()
+        debit_df = pd.DataFrame()
 
-    #     project_id = 'techify-446309'
-    #     location = 'us'
-    #     processor_id = '567c2df93ddea10e'
-    #     processor_version = 'rc'
-    #     file_path = temp_path
-    #     mime_type = 'application/pdf'
-    #     credentials_path = '/home/ubuntu/pdf-excel/techify.json'
+        project_id = 'techify-446309'
+        location = 'us'
+        processor_id = '567c2df93ddea10e'
+        processor_version = 'rc'
+        file_path = temp_path
+        mime_type = 'application/pdf'
+        credentials_path = '/home/ubuntu/pdf-excel/techify.json'
 
-    #     def clean_date(date_str):
-    #         full_date_str = f"{date_str}/{str(year)[-2:]}"
-    #         formatted_date = datetime.strptime(full_date_str, "%m/%d/%y").strftime("%m/%d/%y")
-    #         return formatted_date
+        def clean_date(date_str):
+            full_date_str = f"{date_str}/{str(year)[-2:]}"
+            formatted_date = datetime.strptime(full_date_str, "%m/%d/%y").strftime("%m/%d/%y")
+            return formatted_date
         
-    #     def clean_description(text: str) -> str:
-    #         """
-    #         Clean description by removing quotation marks only if they appear at both start and end
-    #         """
-    #         if text.startswith('"') and text.endswith('"'):
-    #             return text[1:-1]
-    #         return text
+        def clean_description(text: str) -> str:
+            """
+            Clean description by removing quotation marks only if they appear at both start and end
+            """
+            if text.startswith('"') and text.endswith('"'):
+                return text[1:-1]
+            return text
         
-    #     def is_valid_date_format(date_str: str) -> bool:
-    #         """
-    #         Validate if the date string matches mm/dd/yy format.
-    #         Returns True if the date is valid, False otherwise.
-    #         """
-    #         date_pattern = r'\d{2}-\d{2}'
+        def is_valid_date_format(date_str: str) -> bool:
+            """
+            Validate if the date string matches mm/dd/yy format.
+            Returns True if the date is valid, False otherwise.
+            """
+            date_pattern = r'\d{2}-\d{2}'
             
-    #         if not re.match(date_pattern, date_str):
-    #             return False
-    #         else:
-    #             return True
+            if not re.match(date_pattern, date_str):
+                return False
+            else:
+                return True
     
-    #     def parse_amount(amount_str: str) -> float:
-    #         print("New: ", amount_str)
-    #         try:
-    #             amount = re.search(r'-?[0-9,]+\.[0-9]{2}', amount_str).group()
-    #             clean_amount = amount.replace('$', '').replace(',', '').strip()
-    #             print(float(clean_amount))
-    #             return float(clean_amount)
-    #         except AttributeError or ValueError:
-    #             print(f"Warning: Could not parse amount: {amount_str}")
-    #             return 0.0
+        def parse_amount(amount_str: str) -> float:
+            print("New: ", amount_str)
+            try:
+                amount = re.search(r'-?[0-9,]+\.[0-9]{2}', amount_str).group()
+                clean_amount = amount.replace('$', '').replace(',', '').strip()
+                print(float(clean_amount))
+                return float(clean_amount)
+            except AttributeError or ValueError:
+                print(f"Warning: Could not parse amount: {amount_str}")
+                return 0.0
 
-    #     def process_document(
-    #         project_id: str,
-    #         location: str,
-    #         processor_id: str,
-    #         processor_version: str,
-    #         file_path: str,
-    #         mime_type: str,
-    #         credentials_path: str,
-    #         process_options: Optional[documentai.ProcessOptions] = None,
-    #     ) -> documentai.Document:
+        def process_document(
+            project_id: str,
+            location: str,
+            processor_id: str,
+            processor_version: str,
+            file_path: str,
+            mime_type: str,
+            credentials_path: str,
+            process_options: Optional[documentai.ProcessOptions] = None,
+        ) -> documentai.Document:
             
-    #         credentials = service_account.Credentials.from_service_account_file(
-    #             credentials_path,
-    #             scopes=['https://www.googleapis.com/auth/cloud-platform']
-    #         )
+            credentials = service_account.Credentials.from_service_account_file(
+                credentials_path,
+                scopes=['https://www.googleapis.com/auth/cloud-platform']
+            )
             
-    #         client = documentai.DocumentProcessorServiceClient(
-    #             credentials=credentials,
-    #             client_options=ClientOptions(
-    #                 api_endpoint=f"{location}-documentai.googleapis.com"
-    #             )
-    #         )
+            client = documentai.DocumentProcessorServiceClient(
+                credentials=credentials,
+                client_options=ClientOptions(
+                    api_endpoint=f"{location}-documentai.googleapis.com"
+                )
+            )
 
-    #         name = client.processor_version_path(
-    #             project_id, location, processor_id, processor_version
-    #         )
+            name = client.processor_version_path(
+                project_id, location, processor_id, processor_version
+            )
 
-    #         with open(file_path, "rb") as image:
-    #             image_content = image.read()
+            with open(file_path, "rb") as image:
+                image_content = image.read()
 
-    #         request = documentai.ProcessRequest(
-    #             name=name,
-    #             raw_document=documentai.RawDocument(content=image_content, mime_type=mime_type),
-    #             process_options=process_options,
-    #         )
+            request = documentai.ProcessRequest(
+                name=name,
+                raw_document=documentai.RawDocument(content=image_content, mime_type=mime_type),
+                process_options=process_options,
+            )
 
-    #         result = client.process_document(request=request)
+            result = client.process_document(request=request)
 
-    #         return result.document
+            return result.document
 
-    #     def layout_to_text(layout: documentai.Document.Page.Layout, text: str) -> str:
-    #         """
-    #         Document AI identifies text in different parts of the document by their
-    #         offsets in the entirety of the document's text. This function converts
-    #         offsets to a string.
-    #         """
-    #         return "".join(
-    #             text[int(segment.start_index) : int(segment.end_index)]
-    #             for segment in layout.text_anchor.text_segments
-    #         )
+        def layout_to_text(layout: documentai.Document.Page.Layout, text: str) -> str:
+            """
+            Document AI identifies text in different parts of the document by their
+            offsets in the entirety of the document's text. This function converts
+            offsets to a string.
+            """
+            return "".join(
+                text[int(segment.start_index) : int(segment.end_index)]
+                for segment in layout.text_anchor.text_segments
+            )
     
-    #     document = process_document(
-    #             project_id, location, processor_id, processor_version, file_path, mime_type, credentials_path
-    #         )
+        document = process_document(
+                project_id, location, processor_id, processor_version, file_path, mime_type, credentials_path
+            )
 
-    #     text = document.text
-    #     print(f"There are {len(document.pages)} page(s) in this document.")
+        text = document.text
+        print(f"There are {len(document.pages)} page(s) in this document.")
 
-    #     # Initialize lists to store all credit and debit transactions
-    #     all_credit_rows = []
-    #     all_debit_rows = []
-    #     headers = None
+        # Initialize lists to store all credit and debit transactions
+        all_credit_rows = []
+        all_debit_rows = []
+        headers = None
 
-    #     for page in document.pages:
-    #         print(f"\n\n**** Page {page.page_number} ****")
-    #         print(f"\nFound {len(page.tables)} table(s):")
+        for page in document.pages:
+            print(f"\n\n**** Page {page.page_number} ****")
+            print(f"\nFound {len(page.tables)} table(s):")
 
-    #         for table in page.tables:
-    #             num_columns = len(table.header_rows[0].cells)
-    #             if num_columns == 5:
-    #                 num_rows = len(table.body_rows)
-    #                 print(f"Table with {num_columns} columns and {num_rows} rows:")
+            for table in page.tables:
+                num_columns = len(table.header_rows[0].cells)
+                if num_columns == 5:
+                    num_rows = len(table.body_rows)
+                    print(f"Table with {num_columns} columns and {num_rows} rows:")
                     
-    #                 # Only store headers from the first valid table we encounter
-    #                 headers = []
-    #                 for cell in table.header_rows[0].cells:
-    #                     header_text = layout_to_text(cell.layout, text).strip()
-    #                     headers.append(header_text)
-    #                 print("Columns:", headers)
+                    # Only store headers from the first valid table we encounter
+                    headers = []
+                    for cell in table.header_rows[0].cells:
+                        header_text = layout_to_text(cell.layout, text).strip()
+                        headers.append(header_text)
+                    print("Columns:", headers)
 
-    #                 for row in table.body_rows:
-    #                     row_data = []
-    #                     for cell in row.cells:
-    #                         cell_text = layout_to_text(cell.layout, text).strip()
-    #                         row_data.append(cell_text)
+                    for row in table.body_rows:
+                        row_data = []
+                        for cell in row.cells:
+                            cell_text = layout_to_text(cell.layout, text).strip()
+                            row_data.append(cell_text)
 
-    #                     if is_valid_date_format(row_data[0]):
-    #                         row_data[1] = clean_description(row_data[1])
+                        if is_valid_date_format(row_data[0]):
+                            row_data[1] = clean_description(row_data[1])
                                 
-    #                         credit_amount = parse_amount(row_data[2])
-    #                         debit_amount = parse_amount(row_data[3])
+                            credit_amount = parse_amount(row_data[2])
+                            debit_amount = parse_amount(row_data[3])
                             
-    #                         if credit_amount == 0.0 and debit_amount < 0:
-    #                             transactions = [row_data[0], row_data[1], debit_amount]
-    #                             all_debit_rows.append(transactions)
-    #                         elif debit_amount == 0.0 and credit_amount > 0:
-    #                             transactions = [row_data[0], row_data[1], credit_amount]
-    #                             all_credit_rows.append(transactions)
+                            if credit_amount == 0.0 and debit_amount < 0:
+                                transactions = [row_data[0], row_data[1], debit_amount]
+                                all_debit_rows.append(transactions)
+                            elif debit_amount == 0.0 and credit_amount > 0:
+                                transactions = [row_data[0], row_data[1], credit_amount]
+                                all_credit_rows.append(transactions)
         
-    #     column_headers = ['Date', 'Description', 'Amount']
+        column_headers = ['Date', 'Description', 'Amount']
         
-    #     if all_credit_rows:
-    #         credit_df = pd.DataFrame(all_credit_rows, columns=column_headers)
-    #         credit_df[column_headers[0]] = credit_df[column_headers[0]].replace('-','/', regex=True)
-    #         credit_df[column_headers[0]] = credit_df[column_headers[0]].apply(clean_date)
-    #         credit_df[column_headers[1]] = credit_df[column_headers[1]].apply(clean_description)
-    #         credit_df[column_headers[2]] = pd.to_numeric(credit_df[column_headers[2]], errors='coerce')
-    #         debit_df['Date'] = debit_df['Date'].apply(clean_date)
-    #         # credit_df.to_excel(writer, sheet_name='Credits', index=False)
-    #         print(f"Total credit transactions processed: {len(all_credit_rows)}")
+        if all_credit_rows:
+            credit_df = pd.DataFrame(all_credit_rows, columns=column_headers)
+            credit_df[column_headers[0]] = credit_df[column_headers[0]].replace('-','/', regex=True)
+            credit_df[column_headers[0]] = credit_df[column_headers[0]].apply(clean_date)
+            credit_df[column_headers[1]] = credit_df[column_headers[1]].apply(clean_description)
+            credit_df[column_headers[2]] = pd.to_numeric(credit_df[column_headers[2]], errors='coerce')
+            # credit_df.to_excel(writer, sheet_name='Credits', index=False)
+            print(f"Total credit transactions processed: {len(all_credit_rows)}")
             
-    #     if all_debit_rows:
-    #         debit_df = pd.DataFrame(all_debit_rows, columns=column_headers)
-    #         debit_df[column_headers[0]] = debit_df[column_headers[0]].replace('-', '/', regex=True)
-    #         debit_df[column_headers[0]] = debit_df[column_headers[0]].apply(clean_date)
-    #         debit_df[column_headers[1]] = debit_df[column_headers[1]].apply(clean_description)
-    #         debit_df[column_headers[2]] = debit_df[column_headers[2]].astype(str)
-    #         debit_df[column_headers[2]] = debit_df[column_headers[2]].replace('-', '', regex=True)
-    #         debit_df[column_headers[2]] = pd.to_numeric(debit_df[column_headers[2]], errors='coerce')
-    #         # debit_df.to_excel(writer, sheet_name='Debits', index=False)
-    #         print(f"Total debit transactions processed: {len(all_debit_rows)}")
+        if all_debit_rows:
+            debit_df = pd.DataFrame(all_debit_rows, columns=column_headers)
+            debit_df[column_headers[0]] = debit_df[column_headers[0]].replace('-', '/', regex=True)
+            debit_df[column_headers[0]] = debit_df[column_headers[0]].apply(clean_date)
+            debit_df[column_headers[1]] = debit_df[column_headers[1]].apply(clean_description)
+            debit_df[column_headers[2]] = debit_df[column_headers[2]].astype(str)
+            debit_df[column_headers[2]] = debit_df[column_headers[2]].replace('-', '', regex=True)
+            debit_df[column_headers[2]] = pd.to_numeric(debit_df[column_headers[2]], errors='coerce')
+            print(f"Total debit transactions processed: {len(all_debit_rows)}")
         
-    #     if not (all_credit_rows or all_debit_rows):
-    #         print("No valid transactions found in any table")
+        if not (all_credit_rows or all_debit_rows):
+            print("No valid transactions found in any table")
 
-    #     with pd.ExcelWriter('excel3.xlsx', engine='openpyxl') as writer:
-    #         credit_df.to_excel(writer, sheet_name='Credit', index=False)
-    #         debit_df.to_excel(writer, sheet_name='Debit', index=False)
+        with pd.ExcelWriter('excel3.xlsx', engine='openpyxl') as writer:
+            credit_df.to_excel(writer, sheet_name='Credit', index=False)
+            debit_df.to_excel(writer, sheet_name='Debit', index=False)
 
-    #         workbook3 = writer.book
-    #         worksheet1 = writer.sheets['Credit']
-    #         worksheet2 = writer.sheets['Debit']
+            workbook3 = writer.book
+            worksheet1 = writer.sheets['Credit']
+            worksheet2 = writer.sheets['Debit']
 
-    #         temp_excel3 = tempfile.NamedTemporaryFile(suffix='.xlsx', delete=False)
-    #         workbook3.save(temp_excel3.name)
+            temp_excel3 = tempfile.NamedTemporaryFile(suffix='.xlsx', delete=False)
+            workbook3.save(temp_excel3.name)
     
-    # except Exception as e:
-    #     logger.debug("An error occured: ", e)
+    except Exception as e:
+        logger.debug("An error occured: ", e)
 
     try:
         # excel1_buffer = io.BytesIO()
@@ -3472,16 +3470,16 @@ def excel_seacoast():
         workbook2.save(excel2_buffer)
         excel2_buffer.seek(0)
 
-        # excel3_buffer = io.BytesIO()
-        # workbook3.save(excel3_buffer)
-        # excel3_buffer.seek(0)
+        excel3_buffer = io.BytesIO()
+        workbook3.save(excel3_buffer)
+        excel3_buffer.seek(0)
         
         # Create a zip file in memory
         zip_buffer = io.BytesIO()
         with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
             # zip_file.writestr('regex.xlsx', excel1_buffer.getvalue())
             zip_file.writestr('textract.xlsx', excel2_buffer.getvalue())
-            # zip_file.writestr('docai.xlsx', excel3_buffer.getvalue())
+            zip_file.writestr('docai.xlsx', excel3_buffer.getvalue())
         
         zip_buffer.seek(0)
         
@@ -3500,7 +3498,7 @@ def excel_seacoast():
         os.remove(temp_path)
         # os.remove('excel1.xlsx')
         os.remove('excel2.xlsx')
-        # os.remove('excel3.xlsx')
+        os.remove('excel3.xlsx')
         for f in files:
             os.remove(f)
     
