@@ -2145,6 +2145,12 @@ def excel_hab():
         transactions['amount'] = transactions['amount'].str.extract(r'(-{0,1}[0-9,]*.\d{2}-{0,1})')
 
         for i in range(len(transactions)):
+            date_str = transactions.iloc[i]['date'].strip() 
+            full_date_str = f"{date_str}/{str(year)[-2:]}"
+            formatted_date = datetime.strptime(full_date_str, "%m/%d/%y").strftime("%m/%d/%y")
+            transactions.loc[i, "date"] = formatted_date
+
+        for i in range(len(transactions)):
             # print("Transaction ", i)
             if 'Check' in transactions.iloc[i,1]:
                 debits_aws = pd.concat([debits_aws, transactions.iloc[[i]]], ignore_index=True)
@@ -2365,7 +2371,7 @@ def excel_regions():
         def clean_date(date_str):
             full_date_str = f"{date_str}/{str(year)[-2:]}"
             formatted_date = datetime.strptime(full_date_str, "%m/%d/%y").strftime("%m/%d/%y")
-            return formatted_date.strftime("%m/%d/%y")
+            return formatted_date
         
         def is_valid_date_format(date_str: str) -> bool:
             """
@@ -2871,7 +2877,7 @@ def excel_santander():
         def clean_date(date_str):
             full_date_str = f"{date_str}/{str(year)[-2:]}"
             formatted_date = datetime.strptime(full_date_str, "%m/%d/%y").strftime("%m/%d/%y")
-            return formatted_date.strftime("%m/%d/%y")
+            return formatted_date
         
         def clean_description(text: str) -> str:
             """
@@ -3285,7 +3291,7 @@ def excel_seacoast():
         def clean_date(date_str):
             full_date_str = f"{date_str}/{str(year)[-2:]}"
             formatted_date = datetime.strptime(full_date_str, "%m/%d/%y").strftime("%m/%d/%y")
-            return formatted_date.strftime("%m/%d/%y")
+            return formatted_date
         
         def clean_description(text: str) -> str:
             """
@@ -3693,7 +3699,7 @@ def excel_synovus():
         def clean_date(date_str):
             full_date_str = f"{date_str}/{str(year)[-2:]}"
             formatted_date = datetime.strptime(full_date_str, "%m/%d/%y").strftime("%m/%d/%y")
-            return formatted_date.strftime("%m/%d/%y")
+            return formatted_date
         
         def clean_description(text: str) -> str:
             """
@@ -4085,7 +4091,7 @@ def excel_tdbank():
         def clean_date(date_str):
             full_date_str = f"{date_str}/{str(year)[-2:]}"
             formatted_date = datetime.strptime(full_date_str, "%m/%d/%y").strftime("%m/%d/%y")
-            return formatted_date.strftime("%m/%d/%y")
+            return formatted_date
         
         def clean_description(text: str) -> str:
             """
@@ -4482,7 +4488,7 @@ def excel_wellsfargo():
         def clean_date(date_str):
             full_date_str = f"{date_str}/{str(year)[-2:]}"
             formatted_date = datetime.strptime(full_date_str, "%m/%d/%y").strftime("%m/%d/%y")
-            return formatted_date.strftime("%m/%d/%y")
+            return formatted_date
         
         def clean_description(text: str) -> str:
             """
