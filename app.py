@@ -1642,9 +1642,9 @@ def excel_citi():
 
         if len(transactions) > 0:
             credits_aws = transactions[transactions.iloc[:,0].str.match(r'^\d{2}/\d{2}', na=False)].reset_index(drop=True)   
+            # credits_aws['amount'] = pd.to_numeric(credits_aws['amount'])
 
         for i in range(len(credits_aws)):
-            credits_aws['amount'] = pd.to_numeric(credits_aws['amount'])
             date_str = credits_aws.iloc[i]['date'].strip() 
             full_date_str = f"{date_str}/{str(year)[-2:]}"
             formatted_date = datetime.strptime(full_date_str, "%m/%d/%y").strftime("%m/%d/%y")
