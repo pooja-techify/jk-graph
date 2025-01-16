@@ -1813,14 +1813,14 @@ def excel_citi():
         if credit_rows:
             credit_df = pd.DataFrame(credit_rows, columns=column_headers)
             credit_df['Amount'] = pd.to_numeric(credit_df['Amount'], errors='coerce')
-            credit_df['Date'] = credit_df['Date'].apply(clean_date)
+            # credit_df['Date'] = credit_df['Date'].apply(clean_date)
             # credit_df.to_excel(writer, sheet_name='Credits', index=False)
             print(f"Total credit transactions processed: {len(credit_rows)}")
         
         if debit_rows:
             debit_df = pd.DataFrame(debit_rows, columns=column_headers)
             debit_df['Amount'] = pd.to_numeric(debit_df['Amount'], errors='coerce')
-            debit_df['Date'] = debit_df['Date'].apply(clean_date)
+            # debit_df['Date'] = debit_df['Date'].apply(clean_date)
             # debit_df.to_excel(writer, sheet_name='Debits', index=False)
             print(f"Total debit transactions processed: {len(debit_rows)}")
         
