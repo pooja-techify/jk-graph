@@ -21,10 +21,8 @@ log = logging.getLogger(__name__)
 
 # llm = ChatOpenAI(model='gpt-4o')
 llm = AzureChatOpenAI(
-    openai_api_base="https://jktyre-ai.openai.azure.com/",
-    openai_api_version="2024-08-01-preview",  # Check Azure for the latest version
-    deployment_name="gpt-4o",  # Your Azure model deployment name
-    openai_api_type="azure"
+    azure_deployment="gpt-4o",
+    api_version="2024-08-01-preview"
 )
 
 app = Flask(__name__)
