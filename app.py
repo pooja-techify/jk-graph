@@ -2,7 +2,7 @@ import os
 from flask import Flask, jsonify, request, send_file
 from flask_cors import CORS
 from langchain_community.callbacks import get_openai_callback
-from langchain.chat_models import AzureChatOpenAI
+from langchain_openai import AzureChatOpenAI
 from langchain_core.tools import tool
 from langchain_core.prompts import ChatPromptTemplate
 from langchain.schema import StrOutputParser
