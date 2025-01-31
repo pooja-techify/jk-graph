@@ -2,7 +2,7 @@ import os
 from flask import Flask, jsonify, request, send_file
 from flask_cors import CORS
 from langchain_community.callbacks import get_openai_callback
-from langchain_openai import AzureChatOpenAI
+from langchain_openai import ChatOpenAI
 from langchain_core.tools import tool
 from langchain_core.prompts import ChatPromptTemplate
 from langchain.schema import StrOutputParser
@@ -19,11 +19,11 @@ load_dotenv()
 
 log = logging.getLogger(__name__)
 
-# llm = ChatOpenAI(model='gpt-4o')
-llm = AzureChatOpenAI(
-    azure_deployment="gpt-4o",
-    api_version="2024-08-01-preview"
-)
+llm = ChatOpenAI(model='gpt-4o')
+# llm = AzureChatOpenAI(
+#     azure_deployment="gpt-4o",
+#     api_version="2024-08-01-preview"
+# )
 
 app = Flask(__name__)
 CORS(app, origins = ['*']) 
@@ -73,6 +73,7 @@ def SQLQuery(text):
         "month" -> Shows the month of the year in 3 characters format namely JAN, FEB and so on.
         "zone" -> Shows the zone of purchase namely East, West, North, South and so on.
         "region" -> Shows the region of purchase. All region names are in all caps.
+        "territory" -> Shows the territory of purchase.
         "customercode" -> Shows the unique code of the customer. Also known as SAP code.
         "customer" -> Shows the name of the customer.
         "accountgroupkey" -> Shows the key to denote the account group type.
@@ -440,7 +441,7 @@ function_calling_prompt = ChatPromptTemplate.from_messages([
     2. visualize: Creates charts and graphs based on database queries. Use this only and only when you have been asked to plot a graph.
     3. excel: Export the result to an excel table.
 
-    ONLY and ONLY if user request contains the keyword 'chart' then use 'visualize' function. For all other cases, function should be 'SQLQuery'.
+    ONLY and ONLY if user request contains the keyword 'chart' or 'graph' then use 'visualize' function. For all other cases, function should be 'SQLQuery'.
 
     Your task is to determine which function to call based on the user's input {query}.
     If the user mentions to get excel file of result, use 'excel' function.
