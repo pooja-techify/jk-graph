@@ -158,6 +158,11 @@ def SQLQuery(text):
 
     All the column names and table names used in the query should be in double quotes.
 
+    When asked for brand stores, consider only the data that has customerclassification in SW, XW, FW and TW for accountgroupkey Z001.
+    When asked for Preferred Trade Partner or PTP, consider only the data with customer classification = CP, PP and TP for accountgroupkey Z001.
+    When asked for distributor, consider only the data that has customer classification DB and RD.
+    When asked for Multibrand Outlets or MBO, consider only the data with account group key Z001 and customer classification except SW, XW, FW, TW, CP, PP and TP.
+
     Do not use subqueries.
     ORDER BY only a column which you have selected under SELECT part of query.
     When using ORDER BY, make sure that the column being used is a result column or an alias of a result column.
