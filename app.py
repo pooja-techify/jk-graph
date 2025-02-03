@@ -266,6 +266,7 @@ def visualize(text):
     For example: Q1 2020, Q2 2020, Q3 2020, Q4 2021, Q1 2021, Q2 2021 and so on.
     For example: Q1 21-22, Q2 21-22, Q3 21-22, Q4 21-22, Q1 22-23, Q2 22-23 and so on.
     The 'data' should have keys exactly same as values of 'graph_parameters', with each value from 'graph_parameter' present in 'data' as key.
+    All the numerical values should be passed as numbers and not strings.
     Always make sure that the order of keys in each 'data' entry follows the same order as in 'graph_parameter' values.
     Here are some examples of the format of output required. Make sure you are returning the data in the same format only : {data_format}
     """
@@ -403,7 +404,7 @@ example 9 =>
     "input": "pie chart for total offtake per month for FY 2020-21", 
     "graph_type": "piechart", 
     "graph_parameters": {"namekey_Pie_1": "month", "datakey_Pie_1": "total_offtake"}, 
-    "data": [{"total_offtake": "82899.0", "month": "APR"}, {"total_offtake": "672333.0", "month": "MAY"}, {"total_offtake": "955921.0", "month": "JUN"}, {"total_offtake": "1022520.0", "month": "JUL"}, {"total_offtake": "1007422.0", "month": "AUG"}, {"total_offtake": "1115069.0", "month": "SEP"}, {"total_offtake": "1164656.0", "month": "OCT"}, {"total_offtake": "1045839.0", "month": "NOV"}, {"total_offtake": "1147228.0", "month": "DEC"}, {"total_offtake": "1080000.0", "month": "JAN"}, {"total_offtake": "1033255.0", "month": "FEB"}, {"total_offtake": "1060214.0", "month": "MAR"}], 
+    "data": [{"total_offtake": 82899.0, "month": "APR"}, {"total_offtake": 672333.0, "month": "MAY"}, {"total_offtake": 955921.0, "month": "JUN"}, {"total_offtake": 1022520.0, "month": "JUL"}, {"total_offtake": 1007422.0, "month": "AUG"}, {"total_offtake": 1115069.0, "month": "SEP"}, {"total_offtake": 1164656.0, "month": "OCT"}, {"total_offtake": 1045839.0, "month": "NOV"}, {"total_offtake": 1147228.0, "month": "DEC"}, {"total_offtake": 1080000.0, "month": "JAN"}, {"total_offtake": 1033255.0, "month": "FEB"}, {"total_offtake": 1060214.0, "month": "MAR"}], 
     "sql_query": "SELECT \"month\", SUM(\"quantity\") AS \"total_offtake\" FROM \"data\" WHERE \"financialyear\" = '20-21' GROUP BY \"month\" ORDER BY CASE \"month\" WHEN 'APR' THEN 1 WHEN 'MAY' THEN 2 WHEN 'JUN' THEN 3 WHEN 'JUL' THEN 4 WHEN 'AUG' THEN 5 WHEN 'SEP' THEN 6 WHEN 'OCT' THEN 7 WHEN 'NOV' THEN 8 WHEN 'DEC' THEN 9 WHEN 'JAN' THEN 10 WHEN 'FEB' THEN 11 WHEN 'MAR' THEN 12 END",
     "label": "Pie Chart for Total Offtake per Month for FY 2020-21"
 }
