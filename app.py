@@ -150,6 +150,7 @@ def SQLQuery(text):
     Make sure you avoid cases leading to divide by zero error. Use NULLIF for denominators.
     Make sure you avoid AmbiguousColumn errors when using JOIN, by never accessing a column directly using its column name and always mentioning table name or alias to be used to access columns using table_name_alias.column_name format.
     
+    Make sure you provide an alias for every aggregate function like count, sum, etc.
     The columns used in the aggregate function should never be added to GROUP BY.
     NEVER group results by 'customercode' or 'customer' if you are fetching a count of customers.
     Remember to add a GROUP BY clause to the query whenever you need to group results for the non-aggregate columns.
@@ -236,9 +237,9 @@ def visualize(text):
     The json result should consist of the following JSON keys:
         1. "input" -> The user input {text}
         2. "graph_type" -> This will have the type of chart to be plotted. It will consist of only the type of chart such as "linechart", "barchart", "piechart", "scatterchart" and no other information.
-        3. "graph_parameters" -> This will have parameters needed to plot the graph.
-        4. "data" -> This will consist of data points. The numerical values of data should be stored as floats with up to 2 floating points only.
-        5. "sql_query" -> The SQL query input {query}
+        3. "sql_query" -> The SQL query input {query}
+        4. "graph_parameters" -> This will have parameters needed to plot the graph. Make sure they match the column names from the sql_query
+        5. "data" -> This will consist of data points. The numerical values of data should be stored as floats with up to 2 floating points only.
         6. "label" -> A label for the graph, in human readable format and not field names.
     Only output the json and nothing else.
     The datakey and namekey should always be exactly as in the SQL result, never use a datakey that is not in the results.
@@ -639,13 +640,12 @@ def fetch_charts():
             chart_data=query_result(query)
             result['chartData']=chart_data
             graph_type=i['graph_type']
-            # graph_parameters=i['graph_parameters']
-            result['graph_parameters'] = chart_data[0].get('graph_parameters', {}) if chart_data else {}
+            graph_parameters=i['graph_parameters']
             result['order']=i['display_order']
             result['chartConfig']={
                 "query":query,
                 "graph_type":graph_type,
-                "graph_parameters":result['graph_parameters']
+                "graph_parameters":graph_parameters
             }
             results.append(result)
 
