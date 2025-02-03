@@ -639,12 +639,13 @@ def fetch_charts():
             chart_data=query_result(query)
             result['chartData']=chart_data
             graph_type=i['graph_type']
-            graph_parameters=i['graph_parameters']
+            # graph_parameters=i['graph_parameters']
+            result['graph_parameters'] = chart_data[0].get('graph_parameters', {}) if chart_data else {}
             result['order']=i['display_order']
             result['chartConfig']={
                 "query":query,
                 "graph_type":graph_type,
-                "graph_parameters":graph_parameters
+                "graph_parameters":result['graph_parameters']
             }
             results.append(result)
 
