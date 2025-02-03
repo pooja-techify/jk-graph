@@ -481,9 +481,20 @@ def query_result(query):
         cur.execute(query)
         rows=cur.fetchall()
         column_names=[desc[0] for desc in cur.description]
-        print(rows)
+        
+        # Convert numeric values to float
+        def convert_value(value):
+            try:
+                return float(value) if isinstance(value, (int, float, str)) and str(value).replace('.', '', 1).isdigit() else value
+            except:
+                return value
+                
+        result = []
+        for row in rows:
+            processed_row = [convert_value(v) for v in row]
+            result.append(dict(zip(column_names, processed_row)))
+            
         print("Successfully generated Query Output.")
-        result=[dict(zip(column_names,row)) for row in rows]
         return result
     except (Exception,psycopg2.Error) as e:
         print(f"Error creating table: {str(e)}")
