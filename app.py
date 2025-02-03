@@ -236,7 +236,7 @@ def visualize(text):
         1. "input" -> The user input {text}
         2. "graph_type" -> This will have the type of chart to be plotted. It will consist of only the type of chart such as "linechart", "barchart", "piechart", "scatterchart" and no other information.
         3. "graph_parameters" -> This will have parameters needed to plot the graph.
-        4. "data" -> This will consist of data points. 
+        4. "data" -> This will consist of data points. The numerical values of data should be stored as floats with up to 2 floating points only.
         5. "sql_query" -> The SQL query input {query}
         6. "label" -> A label for the graph, in human readable format and not field names.
     Only output the json and nothing else.
@@ -245,27 +245,27 @@ def visualize(text):
     DO NOT ADD numbered suffixed like "_1" or "_2" to graph parameters containing XAxis or YAxis in their name.
     The 'graph_parameters' should contain keys be as below depending on 'graph_type'. The necessary keys should always be there and the optional keys are added as per need:
         - 'barchart' :
-            necessary : 'datakey_XAxis' => categorical value 
-                        'datakey_Bar_1' => numerical value
-            optional :  'datakey_Bar_2' => numerical value, add one each for plotting multiple bar graphs
+            necessary : 'datakey_XAxis' => categorical value => stored as string eg: "ABC", "DEF"
+                        'datakey_Bar_1' => numerical value => stored as float eg: 123, 45
+            optional :  'datakey_Bar_2' => numerical value, add one each for plotting multiple bar graphs => stored as float eg: 123, 45
         - 'piechart' :
-            necessary : 'datakey_Pie_1' => numerical value
-                        'namekey_Pie_1' => categorical value   
+            necessary : 'datakey_Pie_1' => numerical value => stored as float eg: 123, 45
+                        'namekey_Pie_1' => categorical value  => stored as string eg: "ABC", "DEF"  
         - 'linechart' :
-            necessary : 'datakey_XAxis' => categorical value 
-                        'datakey_Line_1' => numerical value
-            optional :  'datakey_Line_2' => numerical value, add one each for plotting multiple line graphs
+            necessary : 'datakey_XAxis' => categorical value => stored as string eg: "ABC", "DEF"
+                        'datakey_Line_1' => numerical value => stored as float eg: 123, 45
+            optional :  'datakey_Line_2' => numerical value, add one each for plotting multiple line graphs => stored as float eg: 123, 45
         - 'scatterchart' :
-            necessary : 'namekey_Scatter' => categorical value 
-                        'datakey_XAxis' => numerical value
-            optional :  'datakey_Scatter_1' => numerical value, add one each for plotting multiple scatter graphs
+            necessary : 'namekey_Scatter' => categorical value => stored as string eg: "ABC", "DEF" 
+                        'datakey_XAxis' => numerical value => stored as float eg: 123, 45
+            optional :  'datakey_Scatter_1' => numerical value, add one each for plotting multiple scatter graphs => stored as float eg: 123, 45
     
     The json should contain the data in chronological month order (JAN, FEB, MAR, etc.) per year and not alphabetically.
     For queries involving quarters of years the data should ALWAYS be ordered as Q4, Q1, Q2, Q3 - ordered in ascending order of years.
     For queries involving quarters of financial years the data should ALWAYS be ordered as Q1, Q2, Q3, Q4 - ordered in ascending order of years.
     For example: Q1 2020, Q2 2020, Q3 2020, Q4 2021, Q1 2021, Q2 2021 and so on.
     For example: Q1 21-22, Q2 21-22, Q3 21-22, Q4 21-22, Q1 22-23, Q2 22-23 and so on.
-    The 'data' should have keys exactly same as values of 'graph_parameters', with each value from 'graph_parameter' present in 'data' as key.
+    The 'data' should have keys exactly same as values of 'graph_parameters', with each value from 'graph_parameter' present in 'data' as key. Do not form any of the keys by yourself.
     All the numerical values should be passed as numbers and not strings.
     Always make sure that the order of keys in each 'data' entry follows the same order as in 'graph_parameter' values.
     Here are some examples of the format of output required. Make sure you are returning the data in the same format only : {data_format}
