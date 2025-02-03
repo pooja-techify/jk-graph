@@ -14,6 +14,7 @@ from dotenv import load_dotenv
 import logging
 import json
 import uuid
+import decimal
 
 load_dotenv()
 
@@ -471,32 +472,32 @@ def hello_world():
 def query_result(query):
     try:
         conn = psycopg2.connect(
-        host = "localhost", 
-        database = "test2", 
-        user = "postgres", 
-        password = "123"
-    )
-        cur=conn.cursor()
-    
+            host = "localhost",
+            database = "test2",
+            user = "postgres",
+            password = "123"
+        )
+        cur = conn.cursor()
+
         cur.execute(query)
-        rows=cur.fetchall()
-        column_names=[desc[0] for desc in cur.description]
-        
-        # Convert numeric values to float
-        def convert_value(value):
-            try:
-                return float(value) if isinstance(value, (int, float, str)) and str(value).replace('.', '', 1).isdigit() else value
-            except:
-                return value
-                
+        rows = cur.fetchall()
+        column_names = [desc[0] for desc in cur.description]
+        print("Successfully generated Query Output.")
+
         result = []
         for row in rows:
-            processed_row = [convert_value(v) for v in row]
-            result.append(dict(zip(column_names, processed_row)))
-            
-        print("Successfully generated Query Output.")
+            row_dict = {}
+            for col_name, val in zip(column_names, row):
+                # If the value is a Decimal, convert it to float
+                if isinstance(val, decimal.Decimal):
+                    val = float(val)
+                row_dict[col_name] = val
+
+            result.append(row_dict)
+
         return result
-    except (Exception,psycopg2.Error) as e:
+
+    except (Exception, psycopg2.Error) as e:
         print(f"Error creating table: {str(e)}")
     finally:
         if cur:
