@@ -275,7 +275,7 @@ def visualize(text):
     Here are some examples of the format of output required. Make sure you are returning the data in the same format only : {data_format}
     Make sure you use the alias only for every column that will be used as a graph parameter in the JSON output. The graph parameters should be only the alias columns.
     The 'data' should have keys exactly same as values of 'graph_parameters', with each value from 'graph_parameter' present in 'data' as key. Do not form any of the keys by yourself.
-    Ensure that the year is included in the query comparing or combining data of multiple years or financial years and is part of the graph parameters, using an alias.
+    Ensure that the year or financial year is always included in the query comparing or combining data of multiple years or financial years and is part of the graph parameters, using an alias.
     """
     )
 
