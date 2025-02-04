@@ -275,6 +275,8 @@ def visualize(text):
     All the numerical values should be passed as numbers and not strings.
     Always make sure that the order of keys in each 'data' entry follows the same order as in 'graph_parameter' values.
     Here are some examples of the format of output required. Make sure you are returning the data in the same format only : {data_format}
+    Make sure you use the alias only for every column that will be used as a graph parameter in the JSON output. The graph parameters should be only the alias columns.
+    The 'data' should have keys exactly same as values of 'graph_parameters', with each value from 'graph_parameter' present in 'data' as key. Do not form any of the keys by yourself.
     """
     )
 
