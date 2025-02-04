@@ -151,6 +151,7 @@ def SQLQuery(text):
     Make sure you avoid AmbiguousColumn errors when using JOIN, by never accessing a column directly using its column name and always mentioning table name or alias to be used to access columns using table_name_alias.column_name format.
     
     Make sure you provide an alias for every aggregate function like count, sum, etc.
+    Make sure you provide an alias also for every column that you are returning.
     The columns used in the aggregate function should never be added to GROUP BY.
     NEVER group results by 'customercode' or 'customer' if you are fetching a count of customers.
     Remember to add a GROUP BY clause to the query whenever you need to group results for the non-aggregate columns.
