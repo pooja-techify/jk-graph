@@ -245,6 +245,7 @@ def visualize(text):
         5. "data" -> This will consist of data points. The numerical values of data should be stored as floats with up to 2 floating points only.
         6. "label" -> A label for the graph, in human readable format and not field names.
     Only output the json and nothing else.
+    The 'data' should have keys exactly same as values of 'graph_parameters', with each value from 'graph_parameter' present in 'data' as key. Do not form any of the keys by yourself.
     The datakey and namekey should always be exactly as in the SQL result, never use a datakey that is not in the results.
     Always indicate where the datakey or namekey is coming from by suffixing the component with "_" followed by component name. Example: datakey_Pie_1, namekey_Pie_1, datakey_YAxis etc.
     DO NOT ADD numbered suffixed like "_1" or "_2" to graph parameters containing XAxis or YAxis in their name.
