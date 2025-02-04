@@ -630,6 +630,7 @@ def fetch_charts():
 
         
         column_names = [desc[0] for desc in cur.description]
+        print(column_names)
         charts = [dict(zip(column_names, row)) for row in result]
         print(charts)
         results=[]
