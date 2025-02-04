@@ -158,7 +158,7 @@ def SQLQuery(text):
     The query should not have any opening or closing brackets like '(' or ')' around the table name.
     All the column names should be in lowercase letters only.
 
-    When asked for APM, calculate average per month i.e. total amount divided by count of distinct dealers divided by count of months being considered in the data.
+    When asked for APM, calculate average per month i.e. total amount divided by count of distinct dealers divided by count of distinct months present in the data.
 
     All the column names and table names used in the query should be in double quotes.
 
