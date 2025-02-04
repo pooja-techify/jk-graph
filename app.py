@@ -134,7 +134,7 @@ def SQLQuery(text):
 
     A single financial year or calender year should have exactly 4 quarters.
     
-    When asked for advantage data, select customers for that financial year who have billing type in 'ZOR', 'YOR', 'YPLT', 'YRDR', 'ZPLT', 'ZRDR' and Account Group Key is 'Z001' combined with customers who have billing type in 'ZOR', 'YOR', 'YPLT', 'YRDR', 'ZPLT', 'ZRDR' and Account Group Key is 'Z004' and customer classification in 'DB' and 'RD'.
+    When asked for advantage data, select customers for that financial year with tyre category in 'PCR', 'PCR-BIAS' or 'PCR-RADIAL' who have billing type in 'ZOR', 'YOR', 'YPLT', 'YRDR', 'ZPLT', 'ZRDR' and Account Group Key is 'Z001' combined with customers who have billing type in 'ZOR', 'YOR', 'YPLT', 'YRDR', 'ZPLT', 'ZRDR' and Account Group Key is 'Z004' and customer classification in 'DB' and 'RD'.
     
     Unless asked exclusively, don't include active status in query.
 
@@ -157,6 +157,8 @@ def SQLQuery(text):
     When asking a total count, make sure to not add a group by 'customer' or 'customercode' or 'quantity' or such fields which do not need to be grouped on for a total count.
     The query should not have any opening or closing brackets like '(' or ')' around the table name.
     All the column names should be in lowercase letters only.
+
+    When asked for APM, calculate average per month i.e. total amount divided by count of distinct dealers divided by count of months being considered in the data.
 
     All the column names and table names used in the query should be in double quotes.
 
