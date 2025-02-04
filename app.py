@@ -151,7 +151,7 @@ def SQLQuery(text):
     Make sure you avoid AmbiguousColumn errors when using JOIN, by never accessing a column directly using its column name and always mentioning table name or alias to be used to access columns using table_name_alias.column_name format.
     
     Make sure you provide an alias for every aggregate function like count, sum, etc.
-    Make sure you provide an alias also for every column that you are returning.
+    Make sure you provide an alias also for every column that you are selecting.
     The columns used in the aggregate function should never be added to GROUP BY.
     NEVER group results by 'customercode' or 'customer' if you are fetching a count of customers.
     Remember to add a GROUP BY clause to the query whenever you need to group results for the non-aggregate columns.
@@ -241,7 +241,7 @@ def visualize(text):
         1. "input" -> The user input {text}
         2. "graph_type" -> This will have the type of chart to be plotted. It will consist of only the type of chart such as "linechart", "barchart", "piechart", "scatterchart" and no other information.
         3. "sql_query" -> The SQL query input {query}
-        4. "graph_parameters" -> This will have parameters needed to plot the graph. Make sure they match the column names from the sql_query
+        4. "graph_parameters" -> This will have parameters needed to plot the graph. Make sure you get them from aliases for column names from the sql query.
         5. "data" -> This will consist of data points. The numerical values of data should be stored as floats with up to 2 floating points only.
         6. "label" -> A label for the graph, in human readable format and not field names.
     Only output the json and nothing else.
@@ -320,7 +320,7 @@ Example 1 =>
     "graph_type": "barchart",
     "graph_parameters": {"datakey_XAxis": "quarter", "datakey_Bar_1": "average_offtake"},
     "data": [{"quarter": "Q1", "average_offtake": 8.0393105368476108}, {"quarter": "Q2", "average_offtake": 8.2378032538059075}, {"quarter": "Q3", "average_offtake": 7.8879574670104418}, {"quarter": "Q4", "average_offtake": 7.8775089728485712}],
-    "sql_query": "SELECT "quarter", AVG("quantity") AS "average_offtake" FROM "data" WHERE "year" = 2022 GROUP BY "quarter"",
+    "sql_query": "SELECT "quarter" as "quarter", AVG("quantity") AS "average_offtake" FROM "data" WHERE "year" = 2022 GROUP BY "quarter"",
     "label": "Bar Chart for Average Quarterly Offtake"
 }
 
@@ -331,7 +331,7 @@ Example 2 =>
     "graph_type": "piechart",
     "graph_parameters": {"namekey_Pie_1": "quarter", "datakey_Pie_1": "average_offtake"},
     "data": [{"average_offtake": 8.0393105368476108, "quarter": "Q1"}, {"average_offtake": 8.2378032538059075, "quarter": "Q2"}, {"average_offtake": 7.8879574670104418, "quarter": "Q3"}, {"average_offtake": 7.8775089728485712, "quarter": "Q4"}],
-    "sql_query": "SELECT "quarter", AVG("quantity") AS "average_offtake" FROM "data" WHERE "year" = 2022 GROUP BY "quarter"",
+    "sql_query": "SELECT "quarter" as "quarter", AVG("quantity") AS "average_offtake" FROM "data" WHERE "year" = 2022 GROUP BY "quarter"",
     "label": "Pie Chart for Average Quarterly Offtake"
 }
 ```
@@ -343,7 +343,7 @@ Example 3 =>
     "graph_type": "barchart",
     "graph_parameters": {"datakey_XAxis": "zone", "datakey_Bar_1": "count"},
     "data": [{"zone": "East", "count": 13}, {"zone": "North", "count": 2}, {"zone": "West", "count": 3}],
-    "sql_query": "SELECT "data"."zone", COUNT(DISTINCT "data"."customercode") FROM "data" WHERE "data"."customerclassification" = 'HY' AND "data"."financialyear" = '20-21' GROUP BY "data"."zone"",
+    "sql_query": "SELECT "data"."zone" as "zone", COUNT(DISTINCT "data"."customercode") as "count" FROM "data" WHERE "data"."customerclassification" = 'HY' AND "data"."financialyear" = '20-21' GROUP BY "data"."zone"",
     "label": "Bar Chart for Count of Dealers"
 }
 ```
@@ -355,7 +355,7 @@ Example 4 =>
     "graph_type": "scatterchart", 
     "graph_parameters": {"datakey_XAxis": "count", "namekey_Scatter_1": "quarter"}, 
     "data": [{"quarter": "Q1 2019-20", "count": 14475}, {"quarter": "Q2 2019-20", "count": 10021}, {"quarter": "Q3 2019-20", "count": 7925}, {"quarter": "Q4 2019-20", "count": 7070}, {"quarter": "Q1 2020-21", "count": 3700}, {"quarter": "Q2 2020-21", "count": 7819}, {"quarter": "Q3 2020-21", "count": 7704}, {"quarter": "Q4 2020-21", "count": 6444}],
-    "sql_query": "SELECT "year", "quarter", COUNT("customercode") FROM "data" WHERE "zone" = \'North\' AND "customerclassification" = \'TP\' AND "financialyear" IN (\'19-20\', \'20-21\') GROUP BY "financialyear", "quarter" ORDER BY "financialyear"",
+    "sql_query": "SELECT "year" as "year", "quarter" as "quarter", COUNT("customercode") as "count" FROM "data" WHERE "zone" = \'North\' AND "customerclassification" = \'TP\' AND "financialyear" IN (\'19-20\', \'20-21\') GROUP BY "financialyear", "quarter" ORDER BY "financialyear"",
     "label": "Scatter Graph for Total Count of Customers"
 }
 
@@ -366,7 +366,7 @@ example 5 =>
     "graph_type": "linechart", 
     "graph_parameters": {"datakey_XAxis": "quarter", "datakey_Line_1": "offtake"}, 
     "data": [{"quarter": "Q1", "offtake": 14475}, {"quarter": "Q2", "offtake": 10021}, {"quarter": "Q3", "offtake": 7925}, {"quarter": "Q4", "offtake": 7070}],
-    "sql_query": "SELECT "quarter", SUM(CASE WHEN "financialyear" = '22-23' THEN "quantity" ELSE 0 END) - SUM(CASE WHEN "financialyear" = '21-22' THEN "quantity" ELSE 0 END) AS "change_in_offtake" FROM "data" WHERE ("data"."financialyear" IN ('21-22', '22-23')) GROUP BY "data"."quarter" ORDER BY "data"."quarter""
+    "sql_query": "SELECT "quarter" as "quarter", SUM(CASE WHEN "financialyear" = '22-23' THEN "quantity" ELSE 0 END) - SUM(CASE WHEN "financialyear" = '21-22' THEN "quantity" ELSE 0 END) AS "offtake" FROM "data" WHERE ("data"."financialyear" IN ('21-22', '22-23')) GROUP BY "data"."quarter" ORDER BY "data"."quarter""
     "label": "Line Graph for Change in Quarter on Quarter Offtake"
 }
 
@@ -377,7 +377,7 @@ example 6 =>
     "graph_type": "barchart",
     "graph_parameters": {"datakey_XAxis": "zone", "datakey_Bar_1": "offtake_22_23", "datakey_Bar_2": "offtake_23_24"},
     "data": [{"zone": "East", "offtake_22_23": 2559720.0, "offtake_23_24": 1944190.0}, {"zone": "Nepal", "offtake_22_23": 0, "offtake_23_24": 19298.0}, {"zone": "North", "offtake_22_23": 3564074.0, "offtake_23_24": 3717753.0}, {"zone": "Not assigned", "offtake_22_23": 0, "offtake_23_24": 803.0}, {"zone": "Plant", "offtake_22_23": 0, "offtake_23_24": 5002.0}, {"zone": "South", "offtake_22_23": 2151174.0, "offtake_23_24": 0}, {"zone": "South - I", "offtake_22_23": 459828.0, "offtake_23_24": 1249148.0}, {"zone": "South - II", "offtake_22_23": 567537.0, "offtake_23_24": 1582382.0}, {"zone": "West", "offtake_22_23": 2947819.0, "offtake_23_24": 2624835.0}],
-    "sql_query": "SELECT "zone", SUM(CASE WHEN "financialyear" = \'22-23\' THEN "quantity" ELSE 0 END) AS "offtake_22_23", SUM(CASE WHEN "financialyear" = \'23-24\' THEN "quantity" ELSE 0 END) AS "offtake_23_24" FROM "data" WHERE "financialyear" IN (\'22-23\', \'23-24\') GROUP BY "zone"",
+    "sql_query": "SELECT "zone" as "zone", SUM(CASE WHEN "financialyear" = \'22-23\' THEN "quantity" ELSE 0 END) AS "offtake_22_23", SUM(CASE WHEN "financialyear" = \'23-24\' THEN "quantity" ELSE 0 END) AS "offtake_23_24" FROM "data" WHERE "financialyear" IN (\'22-23\', \'23-24\') GROUP BY "zone"",
     "label": "Bar Chart for Offtake Comparison between FY 2022-23 and FY 2023-24"
 }
 
@@ -388,7 +388,7 @@ example 7 =>
     "graph_type": "linechart", 
     "graph_parameters": {"datakey_XAxis": "quarter", "datakey_Line_1": "change_in_offtake"}, 
     "data": [{"quarter": "Q1 21-22", "change_in_offtake": 557018.0}, {"quarter": "Q2 21-22", "change_in_offtake": 2413659.0}, {"quarter": "Q3 21-22", "change_in_offtake": 2171918.0}, {"quarter": "Q4 21-22", "change_in_offtake": 751088.0}], 
-    "sql_query": "SELECT "quarter", SUM(CASE WHEN "financialyear" = \'22-23\' THEN "quantity" ELSE 0 END) - SUM(CASE WHEN "financialyear" = \'21-22\' THEN "quantity" ELSE 0 END) AS "change_in_offtake" FROM "data" WHERE "financialyear" IN (\'21-22\', \'22-23\') GROUP BY "quarter" ORDER BY "quarter"", 
+    "sql_query": "SELECT "quarter" as "quarter", SUM(CASE WHEN "financialyear" = \'22-23\' THEN "quantity" ELSE 0 END) - SUM(CASE WHEN "financialyear" = \'21-22\' THEN "quantity" ELSE 0 END) AS "change_in_offtake" FROM "data" WHERE "financialyear" IN (\'21-22\', \'22-23\') GROUP BY "quarter" ORDER BY "quarter"", 
     "label": "Line Chart for Quarter on Quarter Offtake Change"
 }
 
@@ -399,7 +399,7 @@ example 8 =>
     "graph_type": "linechart", 
     "graph_parameters": {"datakey_XAxis": "quarter", "datakey_Line_1": "FY_2021_22", "datakey_Line_2": "FY_2022_23"}, 
     "data": [{"quarter": "Q1 21-22", "FY_2021_22": 3089499.0, "FY_2022_23": 2532481.0}, {"quarter": "Q2 21-22", "FY_2021_22": 3278102.0, "FY_2022_23": 864443.0}, {"quarter": "Q3 21-22", "FY_2021_22": 3007339.0, "FY_2022_23": 835421.0}, {"quarter": "Q4 21-22", "FY_2021_22": 2875212.0, "FY_2022_23": 2124124.0}], 
-    "sql_query": "SELECT "quarter", SUM(CASE WHEN "financialyear" = \'22-23\' THEN "quantity" ELSE 0 END) AS "FY_2022_23", SUM(CASE WHEN "financialyear" = \'21-22\' THEN "quantity" ELSE 0 END) AS "FY_2021_22" FROM "data" WHERE "financialyear" IN (\'21-22\', \'22-23\') GROUP BY "quarter" ORDER BY "quarter"", 
+    "sql_query": "SELECT "quarter" as "quarter", SUM(CASE WHEN "financialyear" = \'22-23\' THEN "quantity" ELSE 0 END) AS "FY_2022_23", SUM(CASE WHEN "financialyear" = \'21-22\' THEN "quantity" ELSE 0 END) AS "FY_2021_22" FROM "data" WHERE "financialyear" IN (\'21-22\', \'22-23\') GROUP BY "quarter" ORDER BY "quarter"", 
     "label": "Line Chart for Quarter on Quarter Offtake Comparison FY 2021-22 vs FY 2022-23"
 }
 
@@ -410,7 +410,7 @@ example 9 =>
     "graph_type": "piechart", 
     "graph_parameters": {"namekey_Pie_1": "month", "datakey_Pie_1": "total_offtake"}, 
     "data": [{"total_offtake": 82899.0, "month": "APR"}, {"total_offtake": 672333.0, "month": "MAY"}, {"total_offtake": 955921.0, "month": "JUN"}, {"total_offtake": 1022520.0, "month": "JUL"}, {"total_offtake": 1007422.0, "month": "AUG"}, {"total_offtake": 1115069.0, "month": "SEP"}, {"total_offtake": 1164656.0, "month": "OCT"}, {"total_offtake": 1045839.0, "month": "NOV"}, {"total_offtake": 1147228.0, "month": "DEC"}, {"total_offtake": 1080000.0, "month": "JAN"}, {"total_offtake": 1033255.0, "month": "FEB"}, {"total_offtake": 1060214.0, "month": "MAR"}], 
-    "sql_query": "SELECT \"month\", SUM(\"quantity\") AS \"total_offtake\" FROM \"data\" WHERE \"financialyear\" = '20-21' GROUP BY \"month\" ORDER BY CASE \"month\" WHEN 'APR' THEN 1 WHEN 'MAY' THEN 2 WHEN 'JUN' THEN 3 WHEN 'JUL' THEN 4 WHEN 'AUG' THEN 5 WHEN 'SEP' THEN 6 WHEN 'OCT' THEN 7 WHEN 'NOV' THEN 8 WHEN 'DEC' THEN 9 WHEN 'JAN' THEN 10 WHEN 'FEB' THEN 11 WHEN 'MAR' THEN 12 END",
+    "sql_query": "SELECT "month" as "month", SUM("quantity") AS "total_offtake" FROM "data" WHERE "financialyear" = '20-21' GROUP BY "month" ORDER BY CASE "month" WHEN 'APR' THEN 1 WHEN 'MAY' THEN 2 WHEN 'JUN' THEN 3 WHEN 'JUL' THEN 4 WHEN 'AUG' THEN 5 WHEN 'SEP' THEN 6 WHEN 'OCT' THEN 7 WHEN 'NOV' THEN 8 WHEN 'DEC' THEN 9 WHEN 'JAN' THEN 10 WHEN 'FEB' THEN 11 WHEN 'MAR' THEN 12 END",
     "label": "Pie Chart for Total Offtake per Month for FY 2020-21"
 }
 
@@ -420,27 +420,27 @@ In the above examples, the fields for "data" are truncated for some cases, but f
 sql_format_example = """
 Example 1 =>
     Input: Show a bar chart for the count of distinct dealers for each zone with 'HY' classification for FY 2021-22.
-    Output: SELECT "data"."zone", COUNT(DISTINCT "data"."customercode") FROM "data" WHERE "data"."customerclassification" = 'HY' AND "data"."financialyear" = '21-22' GROUP BY "data"."zone"
+    Output: SELECT "data"."zone" as "zone", COUNT(DISTINCT "data"."customercode") as "count" FROM "data" WHERE "data"."customerclassification" = 'HY' AND "data"."financialyear" = '21-22' GROUP BY "data"."zone"
 
 Example 2 =>
     Input: Share the details of distinct dealers having returns in Quarter 1, Quarter 2 and Quarter 3 of year 2023. Limit to 10.
-    Output: SELECT DISTINCT "customercode", "customer" FROM "data" WHERE "quantity" < 0 AND "year" = 2023 AND ("quarter" = 'Q1' OR "quarter" = 'Q2' OR "quarter" = 'Q3') ORDER BY "customercode", "customer" LIMIT 10
+    Output: SELECT DISTINCT "customercode" as "customercode", "customer" as "customer" FROM "data" WHERE "quantity" < 0 AND "year" = 2023 AND ("quarter" = 'Q1' OR "quarter" = 'Q2' OR "quarter" = 'Q3') ORDER BY "customercode", "customer" LIMIT 10
 
 Example 3 =>
     Input: Share total count of customers by year and quarter in North Zone with Customer Classification 'TP' for Q1 of FY 2019-20 to Q4 of FY 2020-21
-    Output: SELECT "quarter", "financialyear", COUNT("customercode") FROM "data" WHERE "customerclassification" = 'TP' AND "zone" = 'North' AND "financialyear" IN ('19-20', '20-21') GROUP BY "quarter", "financialyear"
+    Output: SELECT "quarter" as "quarter", "financialyear" as "financialyear", COUNT("customercode") as "count" FROM "data" WHERE "customerclassification" = 'TP' AND "zone" = 'North' AND "financialyear" IN ('19-20', '20-21') GROUP BY "quarter", "financialyear"
 
 Example 4 =>
     Input: Share the amount of distinct dealers with Steel Wheels classification, where quarterly offtake reduced by 30%, from Q1 FY 2022-23 to Q1 FY 2023-24
-    Output: SELECT COUNT(DISTINCT "data"."customercode") FROM "data" WHERE "data"."customerclassification" = 'SW' AND ("data"."financialyear" = '22-23' AND "data"."quarter" = 'Q1' OR "data"."financialyear" = '23-24' AND "data"."quarter" = 'Q1') HAVING SUM(CASE WHEN "data"."financialyear" = '22-23' THEN "data"."quantity" ELSE 0 END) > 0 AND SUM(CASE WHEN "data"."financialyear" = '23-24' THEN "data"."quantity" ELSE 0 END) < SUM(CASE WHEN "data"."financialyear" = '22-23' THEN "data"."quantity" ELSE 0 END) * 0.7
+    Output: SELECT COUNT(DISTINCT "data"."customercode") as "count" FROM "data" WHERE "data"."customerclassification" = 'SW' AND ("data"."financialyear" = '22-23' AND "data"."quarter" = 'Q1' OR "data"."financialyear" = '23-24' AND "data"."quarter" = 'Q1') HAVING SUM(CASE WHEN "data"."financialyear" = '22-23' THEN "data"."quantity" ELSE 0 END) > 0 AND SUM(CASE WHEN "data"."financialyear" = '23-24' THEN "data"."quantity" ELSE 0 END) < SUM(CASE WHEN "data"."financialyear" = '22-23' THEN "data"."quantity" ELSE 0 END) * 0.7
 
 Example 5 =>
     Input: Share a change in quarter on quarter offtake for year FY 2021-22 vs FY 2022-23 as a line chart
-    Output: SELECT "quarter", SUM(CASE WHEN "financialyear" = '22-23' THEN "quantity" ELSE 0 END) - SUM(CASE WHEN "financialyear" = '21-22' THEN "quantity" ELSE 0 END) AS "change_in_offtake" FROM "data" WHERE ("data"."financialyear" IN ('21-22', '22-23')) GROUP BY "data"."quarter" ORDER BY "data"."quarter" 
+    Output: SELECT "quarter" as "quarter", SUM(CASE WHEN "financialyear" = '22-23' THEN "quantity" ELSE 0 END) - SUM(CASE WHEN "financialyear" = '21-22' THEN "quantity" ELSE 0 END) AS "change_in_offtake" FROM "data" WHERE ("data"."financialyear" IN ('21-22', '22-23')) GROUP BY "data"."quarter" ORDER BY "data"."quarter" 
 
 Example 6 =>
     Input: Share a change in month on month offtake for FY 2022-23 vs FY 2023-24
-    Output: SELECT "month", SUM(CASE WHEN "financialyear" = '23-24' THEN "quantity" ELSE 0 END) - SUM(CASE WHEN "financialyear" = '22-23' THEN "quantity" ELSE 0 END) AS "change_in_offtake" FROM "data" WHERE "financialyear" IN ('22-23', '23-24') GROUP BY "month" ORDER BY CASE "month" WHEN 'APR' THEN 1 WHEN 'MAY' THEN 2 WHEN 'JUN' THEN 3 WHEN 'JUL' THEN 4 WHEN 'AUG' THEN 5 WHEN 'SEP' THEN 6 WHEN 'OCT' THEN 7 WHEN 'NOV' THEN 8 WHEN 'DEC' THEN 9 WHEN 'JAN' THEN 10 WHEN 'FEB' THEN 11 WHEN 'MAR' THEN 12 END
+    Output: SELECT "month" as "month", SUM(CASE WHEN "financialyear" = '23-24' THEN "quantity" ELSE 0 END) - SUM(CASE WHEN "financialyear" = '22-23' THEN "quantity" ELSE 0 END) AS "change_in_offtake" FROM "data" WHERE "financialyear" IN ('22-23', '23-24') GROUP BY "month" ORDER BY CASE "month" WHEN 'APR' THEN 1 WHEN 'MAY' THEN 2 WHEN 'JUN' THEN 3 WHEN 'JUL' THEN 4 WHEN 'AUG' THEN 5 WHEN 'SEP' THEN 6 WHEN 'OCT' THEN 7 WHEN 'NOV' THEN 8 WHEN 'DEC' THEN 9 WHEN 'JAN' THEN 10 WHEN 'FEB' THEN 11 WHEN 'MAR' THEN 12 END
     
 """
 
