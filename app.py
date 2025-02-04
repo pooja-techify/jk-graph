@@ -60,7 +60,7 @@ def SQLQuery(text):
     The database has two tables:
         1. 'data' table which consists of rows denoting transactions also known as orders.
         2. 'active_dealer' table having a list of customers who are currently considered to have status active 
-    
+        3. 'data2425' table which is the table to use any time you are working with data for FY 24-25
     Use the table from database respectively as mentioned by the user.
 
     The 'data' table has the following columns:
