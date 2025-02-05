@@ -58,12 +58,11 @@ def SQLQuery(text):
     You will get a natural language input as {text}.
 
     The database has two tables:
-        1. 'data' table which consists of rows denoting transactions also known as orders.
+        1. 'adv_data' table which consists of rows denoting transactions also known as orders which are advantage data specific.
         2. 'active_dealer' table having a list of customers who are currently considered to have status active 
-        3. 'data2425' table which is the table to use any time you are working with data for FY 24-25
     Use the table from database respectively as mentioned by the user.
 
-    The 'data' table has the following columns:
+    The 'adv_data' table has the following columns:
         "financialyear" -> Shows the financial year. Financial years are stored in XX-YY format such as 19-20, 20-21 and so on.
         "quarter" -> Shows the quarter of the year as Q1, Q2, Q3 and Q4.
             Q1 represents APR, MAY and JUN months
@@ -133,8 +132,6 @@ def SQLQuery(text):
     The yearly data will have quarters in the order of Q4, Q1, Q2, Q3 of the same year.
 
     A single financial year or calender year should have exactly 4 quarters.
-    
-    When asked for advantage data, select customers for that financial year with tyre category in 'PCR', 'PCR-BIAS' or 'PCR-RADIAL' who have billing type in 'ZOR', 'YOR', 'YPLT', 'YRDR', 'ZPLT', 'ZRDR' and Account Group Key is 'Z001' combined with customers who have billing type in 'ZOR', 'YOR', 'YPLT', 'YRDR', 'ZPLT', 'ZRDR' and Account Group Key is 'Z004' and customer classification in 'DB' and 'RD'.
     
     Unless asked exclusively, don't include active status in query.
 
