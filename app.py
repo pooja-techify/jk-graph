@@ -1275,7 +1275,7 @@ def excel_capitalone():
         #     os.remove(f)
 
 
-@app.route('/chase', methods=['POST'])
+@app.route('/chasechecking', methods=['POST'])
 def excel_chase():
     uploaded_file = request.files.get('file')
     year = request.form.get('year')
@@ -1477,6 +1477,207 @@ def excel_chase():
             workbook2 = writer.book
             worksheet1 = writer.sheets['Credit']
             worksheet2 = writer.sheets['Debit']
+
+            temp_excel2 = tempfile.NamedTemporaryFile(suffix='.xlsx', delete=False)
+            workbook2.save(temp_excel2.name)
+    
+    except Exception as e:
+        logger.debug("An error occured: ", e)
+
+    try:
+        # excel1_buffer = io.BytesIO()
+        # workbook1.save(excel1_buffer)
+        # excel1_buffer.seek(0)
+        
+        excel2_buffer = io.BytesIO()
+        workbook2.save(excel2_buffer)
+        excel2_buffer.seek(0)
+        
+        # Create a zip file in memory
+        zip_buffer = io.BytesIO()
+        with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
+            # zip_file.writestr('regex.xlsx', excel1_buffer.getvalue())
+            zip_file.writestr('chase.xlsx', excel2_buffer.getvalue())
+        
+        zip_buffer.seek(0)
+        
+        # Send the zip file
+        return send_file(
+            zip_buffer, 
+            mimetype='application/zip',
+            as_attachment=True,
+            download_name='chase.zip'
+        )
+    
+    except Exception as e:
+        logger.debug("An error occured: ", e)
+
+    finally:
+        os.remove(temp_path)
+        # os.remove('excel1.xlsx')
+        os.remove('excel2.xlsx')
+        for f in files:
+            os.remove(f)
+
+@app.route('/chase', methods=['POST'])
+def excel_chase():
+    uploaded_file = request.files.get('file')
+    year = request.form.get('year')
+    if not uploaded_file:
+        return jsonify({'error': 'No file uploaded'}), 400
+    
+    temp_path = tempfile.mktemp(suffix='.pdf')
+    uploaded_file.save(temp_path)
+
+    try:
+        pages = convert_from_path(temp_path, dpi=700)
+
+        files = []
+        for i in range(len(pages)):
+            pages[i].save("Chase_page_"+str(i+1)+".png", "PNG")
+            files.append("Chase_page_"+str(i+1)+".png")
+
+        credits_aws = pd.DataFrame()
+        debits_aws = pd.DataFrame()
+        savings_transactions = pd.DataFrame()
+
+        for f in files:
+            image = Image.open(f) # loads the document image with Pillow
+            extractor = Textractor(region_name="us-east-1") # Initialize textractor client, modify region if required
+            response = extractor.analyze_document(
+                file_source=image,
+                features=[
+                    TextractFeatures.TABLES
+                ],
+                save_image=True
+            )
+
+            for i in range(len(response.tables)):
+                table = EntityList(response.tables[i])
+                response.tables[i].visualize()
+                table_title = table[0].title
+                if table_title:
+                    print(table_title.text)
+
+                    if table_title.text.startswith('DEPOSIT'):
+                        df=table[0].to_pandas()
+                        print(df)
+                        if len(df.columns) > 3:
+                            for i in range(2, len(df.columns)-1):
+                                df[1] = df[1] + ' ' + df[i]
+                        df1 = df[[0,1,len(df.columns)-1]].copy()
+                        df1 = df1.rename(columns={0: "date", 1: "description", len(df.columns)-1: "amount"})
+                        credits_aws = pd.concat([credits_aws, df1], ignore_index=True)
+
+                    if table_title.text in ['ATM & DEBIT CARD WITHDRAWALS', 'ELECTRONIC WITHDRAWALS', 'ELECTRONIC WITHDRAWALS (continued)', 'FEES', 'OTHER WITHDRAWALS']:
+                        df=table[0].to_pandas()
+                        print(df)
+                        if len(df.columns) > 3:
+                            for i in range(2, len(df.columns)-1):
+                                df[1] = df[1] + ' ' + df[i]
+                        df1 = df[[0,1,len(df.columns)-1]].copy()
+                        df1 = df1.rename(columns={0: "date", 1: "description", len(df.columns)-1: "amount"})
+                        # print(df1)
+                        debits_aws = pd.concat([debits_aws, df1], ignore_index=True)
+
+                    if table_title.text in ['CHECKS PAID']:
+                        df=table[0].to_pandas()
+                        print(df)
+                        if len(df.columns) > 3:
+                            for i in range(1, len(df.columns)-2):
+                                df[0] = df[0] + ' ' + df[i]
+                        df1 = df[[0,len(df.columns)-2,len(df.columns)-1]].copy()
+                        df1 = df1.rename(columns={len(df.columns)-2: "date", 0: "description", len(df.columns)-1: "amount"})
+                        # print(df1)
+                        debits_aws = pd.concat([debits_aws, df1], ignore_index=True)
+                    
+                    if table_title.text in ['TRANSACTION DETAIL']:
+                        df=table[0].to_pandas()
+                        # print(df)
+                        if len(df.columns) > 4:
+                            for i in range(2, len(df.columns)-2):
+                                df[1] = df[1] + ' ' + df[i]
+                        df1 = df[[0,1,len(df.columns)-2]].copy()
+                        df1 = df1.rename(columns={0: "date", 1: "description", len(df.columns)-2: "amount"})
+                        print(df1)
+                        savings_transactions = pd.concat([savings_transactions, df1], ignore_index=True)
+
+        debits_aws = debits_aws[['date', 'description', 'amount']]
+
+        if len(debits_aws) > 0:
+            debits_aws.iloc[:,0] = debits_aws.iloc[:,0].str.extract(r'(\d{2}/\d{2})')
+            debits_aws = debits_aws[debits_aws.iloc[:,0].str.contains(r'\d{2}/\d{2}', na=False)].reset_index(drop=True)
+                
+        if len(credits_aws) > 0:
+            credits_aws.iloc[:,0] = credits_aws.iloc[:,0].str.extract(r'(\d{2}/\d{2})')
+            credits_aws = credits_aws[credits_aws.iloc[:,0].str.contains(r'\d{2}/\d{2}', na=False)].reset_index(drop=True) 
+
+        if len(savings_transactions) > 0:
+            savings_transactions.iloc[:,0] = savings_transactions.iloc[:,0].str.extract(r'(\d{2}/\d{2})')
+            savings_transactions = savings_transactions[savings_transactions.iloc[:,0].str.contains(r'\d{2}/\d{2}', na=False)].reset_index(drop=True) 
+
+        savings_debit = pd.DataFrame()
+        savings_credit = pd.DataFrame()  
+
+        savings_transactions['amount'] = savings_transactions['amount'].str.replace(r'[$,]', '', regex=True).astype(float)
+        savings_transactions['amount'] = pd.to_numeric(savings_transactions['amount'], errors='coerce')
+
+        savings_debit = savings_transactions[savings_transactions['amount'] < 0].reset_index(drop=True)
+        savings_credit = savings_transactions[savings_transactions['amount'] > 0].reset_index(drop=True)
+
+        savings_debit.loc[:, 'amount'] = savings_debit['amount'].astype(str).str.replace(r'[-]', '', regex=True).astype(float)       
+
+        for i in range(len(debits_aws)):
+            date_str = debits_aws.iloc[i]['date'].strip() 
+            full_date_str = f"{date_str}/{str(year)[-2:]}"
+            formatted_date = datetime.strptime(full_date_str, "%m/%d/%y").strftime("%m/%d/%y")
+            debits_aws.loc[i, "date"] = formatted_date
+
+        for i in range(len(credits_aws)):
+            date_str = credits_aws.iloc[i]['date'].strip()
+            full_date_str = f"{date_str}/{str(year)[-2:]}"
+            formatted_date = datetime.strptime(full_date_str, "%m/%d/%y").strftime("%m/%d/%y")
+            credits_aws.loc[i, "date"] = formatted_date
+
+        for i in range(len(savings_debit)):
+            date_str = savings_debit.iloc[i]['date'].strip() 
+            full_date_str = f"{date_str}/{str(year)[-2:]}"
+            formatted_date = datetime.strptime(full_date_str, "%m/%d/%y").strftime("%m/%d/%y")
+            savings_debit.loc[i, "date"] = formatted_date
+
+        for i in range(len(savings_credit)):
+            date_str = savings_credit.iloc[i]['date'].strip()
+            full_date_str = f"{date_str}/{str(year)[-2:]}"
+            formatted_date = datetime.strptime(full_date_str, "%m/%d/%y").strftime("%m/%d/%y")
+            savings_credit.loc[i, "date"] = formatted_date
+
+        if len(debits_aws) > 0:
+            debits_aws['amount'] = debits_aws['amount'].str.replace(r'[$,]', '', regex=True)
+            debits_aws['amount'] = debits_aws['amount'].str.extract(r'([0-9,]*\.\d{2})')
+            debits_aws['amount'] = pd.to_numeric(debits_aws['amount'])
+
+        if len(credits_aws) > 0:
+            credits_aws['amount'] = credits_aws['amount'].str.replace(r'[$,]', '', regex=True)
+            credits_aws['amount'] = credits_aws['amount'].str.extract(r'([0-9]*.\d{2})')
+            credits_aws['amount'] = pd.to_numeric(credits_aws['amount'])
+        
+        if len(savings_debit) > 0:
+            savings_debit['amount'] = pd.to_numeric(savings_debit['amount'])
+
+        if len(savings_credit) > 0:
+            savings_credit['amount'] = pd.to_numeric(savings_credit['amount'])
+
+        with pd.ExcelWriter('excel2.xlsx', engine='openpyxl') as writer:
+            credits_aws.to_excel(writer, sheet_name='Credit', index=False)
+            debits_aws.to_excel(writer, sheet_name='Debit', index=False)
+            savings_credit.to_excel(writer, sheet_name='SavingsCredit', index=False)
+            savings_debit.to_excel(writer, sheet_name='SavingsDebit', index=False)
+
+            workbook2 = writer.book
+            worksheet1 = writer.sheets['Credit']
+            worksheet2 = writer.sheets['Debit']
+            worksheet3 = writer.sheets['SavingsCredit']
+            worksheet4 = writer.sheets['SavingsDebit']
 
             temp_excel2 = tempfile.NamedTemporaryFile(suffix='.xlsx', delete=False)
             workbook2.save(temp_excel2.name)
