@@ -1619,13 +1619,14 @@ def excel_chase():
         savings_debit = pd.DataFrame()
         savings_credit = pd.DataFrame()  
 
-        savings_transactions['amount'] = savings_transactions['amount'].str.replace(r'[$,]', '', regex=True).astype(float)
-        savings_transactions['amount'] = pd.to_numeric(savings_transactions['amount'], errors='coerce')
+        if len(savings_transactions) > 0:
+            savings_transactions['amount'] = savings_transactions['amount'].str.replace(r'[$,]', '', regex=True).astype(float)
+            savings_transactions['amount'] = pd.to_numeric(savings_transactions['amount'], errors='coerce')
 
-        savings_debit = savings_transactions[savings_transactions['amount'] < 0].reset_index(drop=True)
-        savings_credit = savings_transactions[savings_transactions['amount'] > 0].reset_index(drop=True)
+            savings_debit = savings_transactions[savings_transactions['amount'] < 0].reset_index(drop=True)
+            savings_credit = savings_transactions[savings_transactions['amount'] > 0].reset_index(drop=True)
 
-        savings_debit.loc[:, 'amount'] = savings_debit['amount'].astype(str).str.replace(r'[-]', '', regex=True).astype(float)       
+            savings_debit.loc[:, 'amount'] = savings_debit['amount'].astype(str).str.replace(r'[-]', '', regex=True).astype(float)       
 
         for i in range(len(debits_aws)):
             date_str = debits_aws.iloc[i]['date'].strip() 
@@ -1678,16 +1679,17 @@ def excel_chase():
             temp_excel1 = tempfile.NamedTemporaryFile(suffix='.xlsx', delete=False)
             workbook1.save(temp_excel1.name)
 
-        with pd.ExcelWriter('excel2.xlsx', engine='openpyxl') as writer:
-            savings_credit.to_excel(writer, sheet_name='Credit', index=False)
-            savings_debit.to_excel(writer, sheet_name='Debit', index=False)
+        if len(savings_transactions) > 0:
+            with pd.ExcelWriter('excel2.xlsx', engine='openpyxl') as writer:
+                savings_credit.to_excel(writer, sheet_name='Credit', index=False)
+                savings_debit.to_excel(writer, sheet_name='Debit', index=False)
 
-            workbook2 = writer.book
-            worksheet1 = writer.sheets['Credit']
-            worksheet2 = writer.sheets['Debit']
+                workbook2 = writer.book
+                worksheet1 = writer.sheets['Credit']
+                worksheet2 = writer.sheets['Debit']
 
-            temp_excel2 = tempfile.NamedTemporaryFile(suffix='.xlsx', delete=False)
-            workbook2.save(temp_excel2.name)
+                temp_excel2 = tempfile.NamedTemporaryFile(suffix='.xlsx', delete=False)
+                workbook2.save(temp_excel2.name)
     
     except Exception as e:
         logger.debug("An error occured: ", e)
@@ -1697,15 +1699,17 @@ def excel_chase():
         workbook1.save(excel1_buffer)
         excel1_buffer.seek(0)
         
-        excel2_buffer = io.BytesIO()
-        workbook2.save(excel2_buffer)
-        excel2_buffer.seek(0)
+        if len(savings_transactions) > 0:
+            excel2_buffer = io.BytesIO()
+            workbook2.save(excel2_buffer)
+            excel2_buffer.seek(0)
         
         # Create a zip file in memory
         zip_buffer = io.BytesIO()
         with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
             zip_file.writestr('Checking.xlsx', excel1_buffer.getvalue())
-            zip_file.writestr('Saving.xlsx', excel2_buffer.getvalue())
+            if len(savings_transactions) > 0:
+                zip_file.writestr('Saving.xlsx', excel2_buffer.getvalue())
         
         zip_buffer.seek(0)
         
@@ -1722,8 +1726,9 @@ def excel_chase():
 
     finally:
         os.remove(temp_path)
-        # os.remove('excel1.xlsx')
-        os.remove('excel2.xlsx')
+        os.remove('excel1.xlsx')
+        if len(savings_transactions) > 0:
+            os.remove('excel2.xlsx')
         for f in files:
             os.remove(f)
 
