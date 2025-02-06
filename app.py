@@ -1667,17 +1667,24 @@ def excel_chase():
         if len(savings_credit) > 0:
             savings_credit['amount'] = pd.to_numeric(savings_credit['amount'])
 
-        with pd.ExcelWriter('excel2.xlsx', engine='openpyxl') as writer:
+        with pd.ExcelWriter('excel1.xlsx', engine='openpyxl') as writer:
             credits_aws.to_excel(writer, sheet_name='Credit', index=False)
             debits_aws.to_excel(writer, sheet_name='Debit', index=False)
-            savings_credit.to_excel(writer, sheet_name='SavingsCredit', index=False)
-            savings_debit.to_excel(writer, sheet_name='SavingsDebit', index=False)
+
+            workbook1 = writer.book
+            worksheet1 = writer.sheets['Credit']
+            worksheet2 = writer.sheets['Debit']
+
+            temp_excel1 = tempfile.NamedTemporaryFile(suffix='.xlsx', delete=False)
+            workbook1.save(temp_excel1.name)
+
+        with pd.ExcelWriter('excel2.xlsx', engine='openpyxl') as writer:
+            savings_credit.to_excel(writer, sheet_name='Credit', index=False)
+            savings_debit.to_excel(writer, sheet_name='Debit', index=False)
 
             workbook2 = writer.book
             worksheet1 = writer.sheets['Credit']
             worksheet2 = writer.sheets['Debit']
-            worksheet3 = writer.sheets['SavingsCredit']
-            worksheet4 = writer.sheets['SavingsDebit']
 
             temp_excel2 = tempfile.NamedTemporaryFile(suffix='.xlsx', delete=False)
             workbook2.save(temp_excel2.name)
@@ -1686,9 +1693,9 @@ def excel_chase():
         logger.debug("An error occured: ", e)
 
     try:
-        # excel1_buffer = io.BytesIO()
-        # workbook1.save(excel1_buffer)
-        # excel1_buffer.seek(0)
+        excel1_buffer = io.BytesIO()
+        workbook1.save(excel1_buffer)
+        excel1_buffer.seek(0)
         
         excel2_buffer = io.BytesIO()
         workbook2.save(excel2_buffer)
@@ -1697,8 +1704,8 @@ def excel_chase():
         # Create a zip file in memory
         zip_buffer = io.BytesIO()
         with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
-            # zip_file.writestr('regex.xlsx', excel1_buffer.getvalue())
-            zip_file.writestr('chase.xlsx', excel2_buffer.getvalue())
+            zip_file.writestr('Checking.xlsx', excel1_buffer.getvalue())
+            zip_file.writestr('Saving.xlsx', excel2_buffer.getvalue())
         
         zip_buffer.seek(0)
         
