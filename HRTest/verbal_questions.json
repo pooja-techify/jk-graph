@@ -1,0 +1,124 @@
+[
+  {
+    "Question": "There are 8 houses in a line and in each house only one boy lives with the conditions as given below:\nJack is not the neighbour Siman.\nHarry is just next to the left of Larry.\nThere is at least one to the left of Larry.\nPaul lives in one of the two houses in the middle.\nMike lives in between Paul and Larry.\nIf at least one lives to the right of Robert and Harry is not between Taud and Larry, then which one of the following statement is not correct?",
+    "Level": "Basic",
+    "Category": "Verbal",
+    "Options": [
+      "Robert is not at the left end.",
+      "Robert is in between Simon and Taud.",
+      "Taud is in between Paul and Jack.",
+      "There are three persons to the right of Paul."
+    ],
+    "Answer": "3"
+  },
+  {
+    "Question": "Arrange the words to form a meaningful sentence:\nA. the entire night\nB. the police\nC. searching for clues\nD. worked through",
+    "Level": "Basic",
+    "Category": "Verbal",
+    "Options": [
+      "BDAC",
+      "DBAC",
+      "BADC",
+      "BDCA"
+    ],
+    "Answer": "1"
+  },
+  {
+    "Question": "It is 14 years since I _______ him.",
+    "Level": "Basic",
+    "Category": "Verbal",
+    "Options": [
+      "have seen",
+      "had seen",
+      "saw",
+      "see"
+    ],
+    "Answer": "3"
+  },
+  {
+    "Question": "Research shows that young children who are read to on a regular basis will grow up to be better readers. When children sit in their parent's lap and listen to stories, they are learning about the pleasures of reading and the patterns of language. When you see children turning the pages of a book, looking at the pictures, and telling the story, often from memory, they are engaged in what is called emergent literacy. Parents can foster this early language and literacy development by talking with their children, telling them stories, reading to them every day, and surrounding them with books. Emergent literacy is best defined as",
+    "Level": "Basic",
+    "Category": "Verbal",
+    "Options": [
+      "the practice of pretend reading",
+      "reading to children every day",
+      "patterns of language",
+      "early language and reading development"
+    ],
+    "Answer": "4"
+  },
+  {
+    "Question": "Which word does not belong to others?",
+    "Level": "Basic",
+    "Category": "Verbal",
+    "Options": [
+      "Arc",
+      "Diameter",
+      "Radius",
+      "Diagonal"
+    ],
+    "Answer": "4"
+  },
+  {
+    "Question": "Sohan ranks fifth in the class. How many students are there in the class?\nI. His friend ranks 52th which is the last rank in the class.\nII. Sohan's rank from the last is 48th.",
+    "Level": "Basic",
+    "Category": "Verbal",
+    "Options": [
+      "Statement I alone is sufficient, but statement II alone is not sufficient",
+      "Statement II alone is sufficient, but statement I alone is not sufficient",
+      "Either I or II is sufficient",
+      "Data in both the statements together are not sufficient",
+      "Both I and II are needed"
+    ],
+    "Answer": "3"
+  },
+  {
+    "Question": "Read the question and complete the sentence with proper words\nAlthough alarmed by the __________, professor Symes had no reason to doubt the ________ of his student's results, for his student was nothing if not reliable",
+    "Level": "Intermediate",
+    "Category": "Verbal",
+    "Options": [
+      "Errors-Truth",
+      "Implications-veracity",
+      "Conclusions-Folly",
+      "Deductions-impudence"
+    ],
+    "Answer": "2"
+  },
+  {
+    "Question": "If in a certain language, NOIDA is coded as OPJEB, how is DELHI coded in that language?",
+    "Level": "Intermediate",
+    "Category": "Verbal",
+    "Options": [
+      "CDKGH",
+      "EFMIJ",
+      "FGNJK",
+      "IHLED"
+    ],
+    "Answer": "2"
+  },
+  {
+    "Question": "It is 6:00 pm, when can Deepak get next bus from Noida to Delhi?\nI. Buses for Delhi leave after every 30 minutes, until 11 pm.\nII. 20 minutes ago, a bus has left for Delhi.",
+    "Level": "Intermediate",
+    "Category": "Verbal",
+    "Options": [
+      "Statement I alone is sufficient, but statement II alone is not sufficient",
+      "Statement II alone is sufficient, but statement I alone is not sufficient",
+      "Either I or II is sufficient",
+      "Data in both the statements together are not sufficient",
+      "Both I and II are needed"
+    ],
+    "Answer": "5"
+  },
+  {
+    "Question": "Read each sentence to find out whether there is any grammatical error in it. The error, if any, will be in one part of the sentence. The letter of that part is the answer. If there is no error, the answer is 'D'.",
+    "Level": "Intermediate",
+    "Category": "Verbal",
+    "Options": [
+      "We discussed about the problem so thoroughly",
+      "on the eve of the examination",
+      "that I found it very easy to work it out",
+      "No error."
+    ],
+    "Answer": "1"
+  }
+]
