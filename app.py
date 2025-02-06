@@ -1276,7 +1276,7 @@ def excel_capitalone():
 
 
 @app.route('/chasechecking', methods=['POST'])
-def excel_chase():
+def excel_chasechecking():
     uploaded_file = request.files.get('file')
     year = request.form.get('year')
     if not uploaded_file:
