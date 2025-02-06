@@ -1406,7 +1406,7 @@ def excel_chasechecking():
                 response.tables[i].visualize()
                 table_title = table[0].title
                 if table_title:
-                    print(table_title.text)
+                    # print(table_title.text)
                     if table_title.text.startswith('DEPOSIT'):
                         df=table[0].to_pandas()
                         if len(df.columns) > 3:
@@ -1557,11 +1557,11 @@ def excel_chase():
                 response.tables[i].visualize()
                 table_title = table[0].title
                 if table_title:
-                    print(table_title.text)
+                    # print(table_title.text)
 
                     if table_title.text.startswith('DEPOSIT'):
                         df=table[0].to_pandas()
-                        print(df)
+                        # print(df)
                         if len(df.columns) > 3:
                             for i in range(2, len(df.columns)-1):
                                 df[1] = df[1] + ' ' + df[i]
@@ -1571,7 +1571,7 @@ def excel_chase():
 
                     if table_title.text in ['ATM & DEBIT CARD WITHDRAWALS', 'ELECTRONIC WITHDRAWALS', 'ELECTRONIC WITHDRAWALS (continued)', 'FEES', 'OTHER WITHDRAWALS']:
                         df=table[0].to_pandas()
-                        print(df)
+                        # print(df)
                         if len(df.columns) > 3:
                             for i in range(2, len(df.columns)-1):
                                 df[1] = df[1] + ' ' + df[i]
@@ -1582,7 +1582,7 @@ def excel_chase():
 
                     if table_title.text in ['CHECKS PAID']:
                         df=table[0].to_pandas()
-                        print(df)
+                        # print(df)
                         if len(df.columns) > 3:
                             for i in range(1, len(df.columns)-2):
                                 df[0] = df[0] + ' ' + df[i]
@@ -1599,7 +1599,7 @@ def excel_chase():
                                 df[1] = df[1] + ' ' + df[i]
                         df1 = df[[0,1,len(df.columns)-2]].copy()
                         df1 = df1.rename(columns={0: "date", 1: "description", len(df.columns)-2: "amount"})
-                        print(df1)
+                        # print(df1)
                         savings_transactions = pd.concat([savings_transactions, df1], ignore_index=True)
 
         debits_aws = debits_aws[['date', 'description', 'amount']]
@@ -1963,7 +1963,7 @@ def excel_citi():
             )
 
         text = document.text
-        print(f"There are {len(document.pages)} page(s) in this document.")
+        # print(f"There are {len(document.pages)} page(s) in this document.")
 
         # Initialize lists to store all credit and debit transactions
         credit_rows = []
@@ -1971,21 +1971,21 @@ def excel_citi():
         headers = None
 
         for page in document.pages:
-            print(f"\n\n**** Page {page.page_number} ****")
-            print(f"\nFound {len(page.tables)} table(s):")
+            # print(f"\n\n**** Page {page.page_number} ****")
+            # print(f"\nFound {len(page.tables)} table(s):")
 
             for table in page.tables:
                 num_columns = len(table.header_rows[0].cells)
                 if num_columns >= 4:
                     num_rows = len(table.body_rows)
-                    print(f"Table with {num_columns} columns and {num_rows} rows:")
+                    # print(f"Table with {num_columns} columns and {num_rows} rows:")
                     
                     # Only store headers from the first valid table we encounter
                     headers = []
                     for cell in table.header_rows[0].cells:
                         header_text = layout_to_text(cell.layout, text).strip()
                         headers.append(header_text)
-                    print("Columns:", headers)
+                    # print("Columns:", headers)
 
                     if 'date' in headers[0].lower():
                         for row in table.body_rows:
@@ -2017,14 +2017,14 @@ def excel_citi():
             credit_df['Amount'] = pd.to_numeric(credit_df['Amount'], errors='coerce')
             credit_df['Date'] = credit_df['Date'].apply(clean_date)
             # credit_df.to_excel(writer, sheet_name='Credits', index=False)
-            print(f"Total credit transactions processed: {len(credit_rows)}")
+            # print(f"Total credit transactions processed: {len(credit_rows)}")
         
         if debit_rows:
             debit_df = pd.DataFrame(debit_rows, columns=column_headers)
             debit_df['Amount'] = pd.to_numeric(debit_df['Amount'], errors='coerce')
             debit_df['Date'] = debit_df['Date'].apply(clean_date)
             # debit_df.to_excel(writer, sheet_name='Debits', index=False)
-            print(f"Total debit transactions processed: {len(debit_rows)}")
+            # print(f"Total debit transactions processed: {len(debit_rows)}")
         
 
         if not (credit_rows or debit_rows):
@@ -2657,7 +2657,7 @@ def excel_regions():
             )
 
         text = document.text
-        print(f"There are {len(document.pages)} page(s) in this document.")
+        # print(f"There are {len(document.pages)} page(s) in this document.")
 
         COLUMN_NAMES = ['Date', 'Description', 'Amount']
 
@@ -2666,8 +2666,8 @@ def excel_regions():
         rows = []
 
         for page in document.pages:
-                print(f"\n\n**** Page {page.page_number} ****")
-                print(f"\nFound {len(page.tables)} table(s):")
+                # print(f"\n\n**** Page {page.page_number} ****")
+                # print(f"\nFound {len(page.tables)} table(s):")
 
                 for table in page.tables:
                     num_columns = len(table.header_rows[0].cells)
@@ -2811,7 +2811,7 @@ def excel_regions():
                                         'amount': amounts
                                     })
 
-                                    print(df)
+                                    # print(df)
 
                                     if 'check' in headers[1].lower():
                                         debits_df = pd.concat([debits_df, df])
@@ -4767,7 +4767,7 @@ def excel_wellsfargo():
             )  
 
         text = document.text
-        print(f"There are {len(document.pages)} page(s) in this document.")
+        # print(f"There are {len(document.pages)} page(s) in this document.")
 
         # Initialize lists to store credit and debit transactions
         credit_rows = []
@@ -4775,14 +4775,14 @@ def excel_wellsfargo():
         headers = None
 
         for page in document.pages:
-            print(f"\n\n**** Page {page.page_number} ****")
-            print(f"\nFound {len(page.tables)} table(s):")
+            # print(f"\n\n**** Page {page.page_number} ****")
+            # print(f"\nFound {len(page.tables)} table(s):")
 
             for table in page.tables:
                 num_columns = len(table.header_rows[0].cells)
                 if num_columns == 6:  # Verify we have the expected number of columns
                     num_rows = len(table.body_rows)
-                    print(f"Table with {num_columns} columns and {num_rows} rows:")
+                    # print(f"Table with {num_columns} columns and {num_rows} rows:")
                     
                     # Store headers from the first valid table
                     if headers is None:
@@ -4790,7 +4790,7 @@ def excel_wellsfargo():
                         for cell in table.header_rows[0].cells:
                             header_text = layout_to_text(cell.layout, text).strip()
                             headers.append(header_text)
-                        print("Columns:", headers)
+                        # print("Columns:", headers)
 
                     # Process only if we have the expected date column
                     if headers[0].lower() == 'date':
@@ -4833,7 +4833,7 @@ def excel_wellsfargo():
             credit_df['Amount'] = pd.to_numeric(credit_df['Amount'], errors='coerce')
             # credit_df['Ending Balance'] = pd.to_numeric(credit_df['Ending Balance'], errors='coerce')
             # credit_df.to_excel(writer, sheet_name='Credits', index=False)
-            print(f"Total credit transactions processed: {len(credit_rows)}")
+            # print(f"Total credit transactions processed: {len(credit_rows)}")
         
         # Save debit transactions
         if debit_rows:
@@ -4842,7 +4842,7 @@ def excel_wellsfargo():
             debit_df['Amount'] = pd.to_numeric(debit_df['Amount'], errors='coerce')
             # debit_df['Ending Balance'] = pd.to_numeric(debit_df['Ending Balance'], errors='coerce')
             # debit_df.to_excel(writer, sheet_name='Debits', index=False)
-            print(f"Total debit transactions processed: {len(debit_rows)}")
+            # print(f"Total debit transactions processed: {len(debit_rows)}")
         
         
         if not (credit_rows or debit_rows):
