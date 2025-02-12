@@ -609,6 +609,16 @@ def excel_boa():
                         df1 = df[[0,1,len(df.columns)-1]].rename(columns={0: "date", 1: "description", len(df.columns)-1: "amount"})
                         debits_aws = pd.concat([debits_aws, df1], ignore_index=True)
 
+                    if "subtractions" in table_title.text:
+                        df=table[0].to_pandas()
+                        if len(df.columns) > 3:
+                            ori_columns = df.columns
+                            for i in range(2, len(df.columns)-1):
+                                df[1] = df[1].astype(str) + ' ' + df[ori_columns[i]].astype(str)
+                        df1 = df[[0,1,len(df.columns)-1]].rename(columns={0: "date", 1: "description", len(df.columns)-1: "amount"})
+                        debits_aws = pd.concat([debits_aws, df1], ignore_index=True)
+
+
                     # if "Checks" in table_title.text:
                     #     df=table[0].to_pandas()
                     #     debits_aws = pd.concat([debits_aws, df], ignore_index=True)
