@@ -237,7 +237,7 @@ def submit_test():
 
             # Upload the report to S3
             s3_client = boto3.client('s3')
-            s3_bucket = 'techifyhrtest'
+            s3_bucket = 'onlinetest-stag-documents'
             s3_key = f'reports/{candidate_id}'
             report_s3_url = f'https://{s3_bucket}.s3.us-east-1.amazonaws.com/{s3_key}'  # Store the full S3 URL
             
@@ -497,7 +497,7 @@ def delete_user_data():
 
         # Delete the reports from S3
         s3_client = boto3.client('s3')
-        s3_bucket = 'techifyhrtest'
+        s3_bucket = 'onlinetest-stag-documents'
         for candidate_id in candidate_ids:
             s3_key = f'reports/{candidate_id}'
             try:
