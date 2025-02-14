@@ -242,16 +242,20 @@ def submit_test():
             report_s3_url = f'https://{s3_bucket}.s3.us-east-1.amazonaws.com/{s3_key}'  # Store the full S3 URL
             
             # Upload the report to S3 with ContentDisposition
-            s3_client.upload_file(
-                report_path, s3_bucket, s3_key,
-                ExtraArgs={
-                    "ContentDisposition": "inline",
-                    "ContentType": "application/pdf",
-                    "ACL": "public-read"
-                }
-            )
+            try:
+                s3_client.upload_file(
+                    report_path, s3_bucket, s3_key,
+                    ExtraArgs={
+                        "ContentDisposition": "inline",
+                        "ContentType": "application/pdf",
+                        "ACL": "public-read"
+                    }
+                )
 
-            s3_client.put_object_acl(Bucket=s3_bucket, Key=s3_key, ACL='public-read')
+                s3_client.put_object_acl(Bucket=s3_bucket, Key=s3_key, ACL='public-read')
+            except Exception as e:
+                print(f"Error uploading report to S3: {e}")
+                return jsonify({"error": "Failed to upload report to S3"}), 500
 
             latitude, longitude = location.split(",")
             location = get_address_from_coordinates_nominatim(latitude, longitude)
@@ -272,6 +276,9 @@ def submit_test():
     
     except Exception as e:
         print(e)
+        return jsonify({"error": str(e)}), 500  # Ensure a response is returned in case of an error
+
+    return jsonify({"error": "Unexpected error occurred"}), 500  # Fallback response
 
 @app.route('/submit_feedback', methods=['POST'])
 def submit_feedback():
