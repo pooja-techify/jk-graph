@@ -18,7 +18,7 @@ from geopy.geocoders import Nominatim
 import pandas as pd
 
 app = Flask(__name__)
-CORS(app)
+CORS(app, resources={r"/*": {"origins": "*", "methods": "*", "allow_headers": "*"}})
 
 # Configure your email settings
 SMTP_SERVER = 'smtp.gmail.com'
