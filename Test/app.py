@@ -9,13 +9,20 @@ from email.mime.text import MIMEText
 from email.mime.base import MIMEBase
 from email import encoders
 from flask_cors import CORS
-import gspread
+# import gspread
 # from oauth2client.service_account import ServiceAccountCredentials
 from datetime import datetime
 import boto3
 import psycopg2
 from geopy.geocoders import Nominatim
 import pandas as pd
+from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives.asymmetric import padding
+from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
+import base64
+from cryptography.fernet import Fernet
 
 app = Flask(__name__)
 CORS(app)
@@ -25,6 +32,28 @@ SMTP_SERVER = 'smtp.gmail.com'
 SMTP_PORT = 587
 EMAIL_SENDER = 'hrtest.techify@gmail.com'
 EMAIL_PASSWORD = 'twar fdoi zxau djde'
+
+# Load your RSA public key (ensure you have the key in PEM format)
+with open("public_key.pem", "rb") as key_file:
+    public_key = serialization.load_pem_public_key(key_file.read())
+
+# Load your RSA private key (ensure you have the key in PEM format)
+# with open("private_key.pem", "rb") as private_file:
+#     private_key = serialization.load_pem_private_key(
+#         private_file.read(),
+#         password=None,  # If your private key is password protected, provide the password here
+#         backend=default_backend()
+#     )
+
+# Load the SECRET_KEY from a file
+with open("SECRET_KEY.txt", "r") as key_file:
+    SECRET_KEY = key_file.read().strip()  # Read and strip any extra whitespace
+
+# Validate the SECRET_KEY for Fernet
+try:
+    cipher_suite = Fernet(SECRET_KEY)
+except ValueError as e:
+    raise ValueError("Invalid SECRET_KEY: Ensure it is a 32-byte URL-safe base64-encoded string.") from e
 
 def get_address_from_coordinates_nominatim(latitude, longitude):
     try:
@@ -122,30 +151,103 @@ def generate_questions():
     except Exception as e:
         return jsonify({"error": str(e)}), 400
 
-@app.route('/get_aptitude_questions', methods=['GET'])
-def get_aptitude_questions():
-    try:
-        with open('aptitude_questions.json', 'r') as f:
-            data = f.read()
-        return data, 200, {'Content-Type': 'text/plain'}
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+# Function to encrypt data using AES
+def encrypt_data_aes(data):
+    key = os.urandom(32)  # Generate a random 256-bit key
+    iv = os.urandom(16)   # Generate a random initialization vector
+    cipher = Cipher(algorithms.AES(key), modes.CFB(iv), backend=default_backend())
+    encryptor = cipher.encryptor()
+    encrypted_data = encryptor.update(data.encode()) + encryptor.finalize()
+    return base64.b64encode(iv + encrypted_data).decode(), key  # Return IV + encrypted data
 
+# Function to encrypt the AES key using RSA
+def encrypt_key_rsa(aes_key):
+    return public_key.encrypt(
+        aes_key,
+        padding.OAEP(
+            mgf=padding.MGF1(algorithm=hashes.SHA256()),
+            algorithm=hashes.SHA256(),
+            label=None
+        )
+    )
+ 
 @app.route('/get_verbal_questions', methods=['GET'])
 def get_verbal_questions():
     try:
         with open('verbal_questions.json', 'r') as f:
             data = f.read()
-        return data, 200, {'Content-Type': 'text/plain'}
+        
+        # Ensure the data is in bytes before encryption
+        encrypted_data = cipher_suite.encrypt(data.encode('utf-8'))  # Encode to bytes
+        
+        return jsonify({
+            "data": base64.b64encode(encrypted_data).decode(),  # Encode encrypted data to base64 for JSON response
+            "key": base64.b64encode(SECRET_KEY.encode()).decode()  # Encode the SECRET_KEY to base64
+        })
+
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
+@app.route('/get_aptitude_questions', methods=['GET'])
+def get_aptitude_questions():
+    try:
+        with open('aptitude_questions.json', 'r') as f:
+            data = f.read()
+        
+        # Encrypt the data using AES
+        encrypted_data, aes_key = encrypt_data_aes(data)
+        
+        # Encrypt the AES key using RSA
+        encrypted_key = encrypt_key_rsa(aes_key)
+        
+        return jsonify({
+            "encrypted_data": encrypted_data,
+            "encrypted_key": base64.b64encode(encrypted_key).decode()
+        }), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+# @app.route('/get_verbal_questions', methods=['GET'])
+# def get_verbal_questions():
+#     try:
+#         with open('verbal_questions.json', 'r') as f:
+#             data = f.read()
+        
+#         # Check the size of the data before encryption
+#         if len(data) > 245:  # Adjust this limit based on your RSA key size
+#             return jsonify({"error": "Data too large for RSA encryption"}), 400
+        
+#         # Encrypt the data using RSA
+#         encrypted_data = public_key.encrypt(
+#             data.encode(),
+#             padding.OAEP(
+#                 mgf=padding.MGF1(algorithm=hashes.SHA256()),
+#                 algorithm=hashes.SHA256(),
+#                 label=None
+#             )
+#         )
+        
+#         return encrypted_data, 200, {'Content-Type': 'application/octet-stream'}  # Change content type to binary
+#     except Exception as e:
+#         return jsonify({"error": str(e)}), 500
 
 @app.route('/get_programming_questions', methods=['GET'])
 def get_programming_questions():
     try:
         with open('programming_questions.json', 'r') as f:
             data = f.read()
-        return data, 200, {'Content-Type': 'text/plain'}
+        
+        # Encrypt the data using RSA
+        encrypted_data = public_key.encrypt(
+            data.encode(),
+            padding.OAEP(
+                mgf=padding.MGF1(algorithm=hashes.SHA256()),
+                algorithm=hashes.SHA256(),
+                label=None
+            )
+        )
+        
+        return encrypted_data, 200, {'Content-Type': 'application/octet-stream'}  # Change content type to binary
     except Exception as e:
         return jsonify({"error": str(e)}), 500
     
@@ -154,7 +256,18 @@ def get_reasoning_questions():
     try:
         with open('reasoning_questions.json', 'r') as f:
             data = f.read()
-        return data, 200, {'Content-Type': 'text/plain'}
+        
+        # Encrypt the data using RSA
+        encrypted_data = public_key.encrypt(
+            data.encode(),
+            padding.OAEP(
+                mgf=padding.MGF1(algorithm=hashes.SHA256()),
+                algorithm=hashes.SHA256(),
+                label=None
+            )
+        )
+        
+        return encrypted_data, 200, {'Content-Type': 'application/octet-stream'}  # Change content type to binary
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
@@ -277,10 +390,18 @@ def submit_feedback():
         conn = psycopg2.connect(
             dbname='hrtest',
             user='hruser',
-            password='dGVjaGlmeWxvbW9zbw==',
+            password='T@chify$ol8m0s0!',
             host='localhost',
             port='5432'
         )
+
+        # conn = psycopg2.connect(
+        #     dbname='postgres',
+        #     user='postgres',
+        #     password='pwd123',
+        #     host='localhost',
+        #     port='5433'
+        # )
         
         cursor = conn.cursor()
 
@@ -313,10 +434,19 @@ def store_user_data(candidate_id, first_name, last_name, email, phone_number, lo
         conn = psycopg2.connect(
             dbname='hrtest',
             user='hruser',
-            password='dGVjaGlmeWxvbW9zbw==',
+            password='T@chify$ol8m0s0!',
             host='localhost',
             port='5432'
         )
+
+        # conn = psycopg2.connect(
+        #     dbname='postgres',
+        #     user='postgres',
+        #     password='pwd123',
+        #     host='localhost',
+        #     port='5433'
+        # )
+
         cursor = conn.cursor()
 
         # Create a table if it doesn't exist
@@ -368,10 +498,19 @@ def fetch_user_data():
         conn = psycopg2.connect(
             dbname='hrtest',
             user='hruser',
-            password='dGVjaGlmeWxvbW9zbw==',
+            password='T@chify$ol8m0s0!',
             host='localhost',
             port='5432'
         )
+
+        # conn = psycopg2.connect(
+        #     dbname='postgres',
+        #     user='postgres',
+        #     password='pwd123',
+        #     host='localhost',
+        #     port='5433'
+        # )
+
         cursor = conn.cursor()
 
         # Query to fetch user data
@@ -424,10 +563,19 @@ def delete_user_data():
         conn = psycopg2.connect(
             dbname='hrtest',
             user='hruser',
-            password='dGVjaGlmeWxvbW9zbw==',
+            password='T@chify$ol8m0s0!',
             host='localhost',
             port='5432'
         )
+
+        # conn = psycopg2.connect(
+        #     dbname='postgres',
+        #     user='postgres',
+        #     password='pwd123',
+        #     host='localhost',
+        #     port='5433'
+        # )
+
         cursor = conn.cursor()
 
         # SQL query to delete the user data
@@ -477,10 +625,19 @@ def export_candidate_data():
         conn = psycopg2.connect(
             dbname='hrtest',
             user='hruser',
-            password='dGVjaGlmeWxvbW9zbw==',
+            password='T@chify$ol8m0s0!',
             host='localhost',
             port='5432'
         )
+
+        # conn = psycopg2.connect(
+        #     dbname='postgres',
+        #     user='postgres',
+        #     password='pwd123',
+        #     host='localhost',
+        #     port='5433'
+        # )
+
         cursor = conn.cursor()
 
         # SQL query to fetch user data for the given candidate IDs
@@ -549,10 +706,19 @@ def send_test(email):
         conn = psycopg2.connect(
             dbname='hrtest',
             user='hruser',
-            password='dGVjaGlmeWxvbW9zbw==',
+            password='T@chify$ol8m0s0!',
             host='localhost',
             port='5432'
         )
+
+        # conn = psycopg2.connect(
+        #     dbname='postgres',
+        #     user='postgres',
+        #     password='pwd123',
+        #     host='localhost',
+        #     port='5433'
+        # )
+
         cursor = conn.cursor()
 
         cursor.execute('''
@@ -600,10 +766,19 @@ def verify_passcode():
         conn = psycopg2.connect(
             dbname='hrtest',
             user='hruser',
-            password='dGVjaGlmeWxvbW9zbw==',
+            password='T@chify$ol8m0s0!',
             host='localhost',
             port='5432'
         )
+
+        # conn = psycopg2.connect(
+        #     dbname='postgres',
+        #     user='postgres',
+        #     password='pwd123',
+        #     host='localhost',
+        #     port='5433'
+        # )
+
         cursor = conn.cursor()
 
         cursor.execute('''
@@ -640,10 +815,19 @@ def start_test():
         conn = psycopg2.connect(
             dbname='hrtest',
             user='hruser',
-            password='dGVjaGlmeWxvbW9zbw==',
+            password='T@chify$ol8m0s0!',
             host='localhost',
             port='5432'
         )
+
+        # conn = psycopg2.connect(
+        #     dbname='postgres',
+        #     user='postgres',
+        #     password='pwd123',
+        #     host='localhost',
+        #     port='5433'
+        # )
+
         cursor = conn.cursor()
 
         cursor.execute('''
@@ -660,6 +844,44 @@ def start_test():
             cursor.close()
         if conn:
             conn.close()
+
+# @app.route('/decrypt_questions', methods=['POST'])
+# def decrypt_questions():
+#     try:
+#         # Get the encrypted data and key from the request
+#         encrypted_data = request.json.get("encrypted_data")
+#         encrypted_key = request.json.get("encrypted_key")
+
+#         if not encrypted_data or not encrypted_key:
+#             return jsonify({"error": "Encrypted data and key are required"}), 400
+
+        # Decrypt the AES key using RSA
+        # aes_key = private_key.decrypt(
+        #     base64.b64decode(encrypted_key),
+        #     padding.OAEP(
+        #         mgf=padding.MGF1(algorithm=hashes.SHA256()),
+        #         algorithm=hashes.SHA256(),
+        #         label=None
+        #     )
+        # )
+
+        # # Decrypt the data using AES
+        # encrypted_data_bytes = base64.b64decode(encrypted_data)
+        # iv = encrypted_data_bytes[:16]  # Extract the IV
+        # encrypted_message = encrypted_data_bytes[16:]  # Extract the encrypted message
+
+        # cipher = Cipher(algorithms.AES(aes_key), modes.CFB(iv), backend=default_backend())
+        # decryptor = cipher.decryptor()
+        # decrypted_data = decryptor.update(encrypted_message) + decryptor.finalize()
+
+        # return jsonify({"decrypted_data": decrypted_data.decode()}), 200
+
+    # except Exception as e:
+    #     return jsonify({"error": str(e)}), 500
+
+@app.route('/health', methods=['GET'])
+def health_check():
+    return jsonify({"status": "healthy"}), 200
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=5001, debug=True)
