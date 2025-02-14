@@ -276,21 +276,21 @@ def submit_feedback():
         if not candidate_id or not feedback:
             return jsonify({"error": "Candidate ID and feedback are required"}), 400
 
-        # conn = psycopg2.connect(
-        #     dbname='hrtest',
-        #     user='hruser',
-        #     password='dGVjaGlmeWxvbW9zbw==',
-        #     host='localhost',
-        #     port='5432'
-        # )
-
         conn = psycopg2.connect(
-            dbname='postgres',
-            user='postgres',
-            password='pwd123',
+            dbname='hrtest',
+            user='hruser',
+            password='T@chify$ol8m0s0!',
             host='localhost',
-            port='5433'
+            port='5432'
         )
+
+        # conn = psycopg2.connect(
+        #     dbname='postgres',
+        #     user='postgres',
+        #     password='pwd123',
+        #     host='localhost',
+        #     port='5433'
+        # )
         
         cursor = conn.cursor()
 
@@ -322,21 +322,21 @@ def store_user_data(candidate_id, first_name, last_name, email, phone_number, lo
     conn = None
     try:
         # Connect to the PostgreSQL database
-        # conn = psycopg2.connect(
-        #     dbname='hrtest',
-        #     user='hruser',
-        #     password='dGVjaGlmeWxvbW9zbw==',
-        #     host='localhost',
-        #     port='5432'
-        # )
-
         conn = psycopg2.connect(
-            dbname='postgres',
-            user='postgres',
-            password='pwd123',
+            dbname='hrtest',
+            user='hruser',
+            password='T@chify$ol8m0s0!',
             host='localhost',
-            port='5433'
+            port='5432'
         )
+
+        # conn = psycopg2.connect(
+        #     dbname='postgres',
+        #     user='postgres',
+        #     password='pwd123',
+        #     host='localhost',
+        #     port='5433'
+        # )
 
         cursor = conn.cursor()
 
@@ -388,21 +388,21 @@ def fetch_user_data():
     conn = None
     try:
         # Connect to the PostgreSQL database
-        # conn = psycopg2.connect(
-        #     dbname='hrtest',
-        #     user='hruser',
-        #     password='dGVjaGlmeWxvbW9zbw==',
-        #     host='localhost',
-        #     port='5432'
-        # )
-
         conn = psycopg2.connect(
-            dbname='postgres',
-            user='postgres',
-            password='pwd123',
+            dbname='hrtest',
+            user='hruser',
+            password='T@chify$ol8m0s0!',
             host='localhost',
-            port='5433'
+            port='5432'
         )
+
+        # conn = psycopg2.connect(
+        #     dbname='postgres',
+        #     user='postgres',
+        #     password='pwd123',
+        #     host='localhost',
+        #     port='5433'
+        # )
 
         cursor = conn.cursor()
 
@@ -455,21 +455,21 @@ def delete_user_data():
             return jsonify({"error": "A list of Candidate IDs is required"}), 400
 
         # Connect to the PostgreSQL database
-        # conn = psycopg2.connect(
-        #     dbname='hrtest',
-        #     user='hruser',
-        #     password='dGVjaGlmeWxvbW9zbw==',
-        #     host='localhost',
-        #     port='5432'
-        # )
-
         conn = psycopg2.connect(
-            dbname='postgres',
-            user='postgres',
-            password='pwd123',
+            dbname='hrtest',
+            user='hruser',
+            password='T@chify$ol8m0s0!',
             host='localhost',
-            port='5433'
+            port='5432'
         )
+
+        # conn = psycopg2.connect(
+        #     dbname='postgres',
+        #     user='postgres',
+        #     password='pwd123',
+        #     host='localhost',
+        #     port='5433'
+        # )
 
         cursor = conn.cursor()
 
@@ -519,21 +519,21 @@ def export_candidate_data():
             return jsonify({"error": "A list of Candidate IDs is required"}), 400
 
         # Connect to the PostgreSQL database
-        # conn = psycopg2.connect(
-        #     dbname='hrtest',
-        #     user='hruser',
-        #     password='dGVjaGlmeWxvbW9zbw==',
-        #     host='localhost',
-        #     port='5432'
-        # )
-
         conn = psycopg2.connect(
-            dbname='postgres',
-            user='postgres',
-            password='pwd123',
+            dbname='hrtest',
+            user='hruser',
+            password='T@chify$ol8m0s0!',
             host='localhost',
-            port='5433'
+            port='5432'
         )
+
+        # conn = psycopg2.connect(
+        #     dbname='postgres',
+        #     user='postgres',
+        #     password='pwd123',
+        #     host='localhost',
+        #     port='5433'
+        # )
 
         cursor = conn.cursor()
 
@@ -603,21 +603,21 @@ def send_test(email):
     conn = None
     
     try:
-        # conn = psycopg2.connect(
-        #     dbname='hrtest',
-        #     user='hruser',
-        #     password='dGVjaGlmeWxvbW9zbw==',
-        #     host='localhost',
-        #     port='5432'
-        # )
-
         conn = psycopg2.connect(
-            dbname='postgres',
-            user='postgres',
-            password='pwd123',
+            dbname='hrtest',
+            user='hruser',
+            password='T@chify$ol8m0s0!',
             host='localhost',
-            port='5433'
+            port='5432'
         )
+
+        # conn = psycopg2.connect(
+        #     dbname='postgres',
+        #     user='postgres',
+        #     password='pwd123',
+        #     host='localhost',
+        #     port='5433'
+        # )
 
         cursor = conn.cursor()
 
@@ -664,21 +664,21 @@ def verify_passcode():
     cursor = None
     conn = None
     try:
-        # conn = psycopg2.connect(
-        #     dbname='hrtest',
-        #     user='hruser',
-        #     password='dGVjaGlmeWxvbW9zbw==',
-        #     host='localhost',
-        #     port='5432'
-        # )
-
         conn = psycopg2.connect(
-            dbname='postgres',
-            user='postgres',
-            password='pwd123',
+            dbname='hrtest',
+            user='hruser',
+            password='T@chify$ol8m0s0!',
             host='localhost',
-            port='5433'
+            port='5432'
         )
+
+        # conn = psycopg2.connect(
+        #     dbname='postgres',
+        #     user='postgres',
+        #     password='pwd123',
+        #     host='localhost',
+        #     port='5433'
+        # )
 
         cursor = conn.cursor()
 
@@ -715,21 +715,21 @@ def start_test():
     cursor = None
     conn = None
     try:
-        # conn = psycopg2.connect(
-        #     dbname='hrtest',
-        #     user='hruser',
-        #     password='dGVjaGlmeWxvbW9zbw==',
-        #     host='localhost',
-        #     port='5432'
-        # )
-
         conn = psycopg2.connect(
-            dbname='postgres',
-            user='postgres',
-            password='pwd123',
+            dbname='hrtest',
+            user='hruser',
+            password='T@chify$ol8m0s0!',
             host='localhost',
-            port='5433'
+            port='5432'
         )
+
+        # conn = psycopg2.connect(
+        #     dbname='postgres',
+        #     user='postgres',
+        #     password='pwd123',
+        #     host='localhost',
+        #     port='5433'
+        # )
         
         cursor = conn.cursor()
 
