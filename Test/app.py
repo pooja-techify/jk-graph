@@ -18,7 +18,12 @@ from geopy.geocoders import Nominatim
 import pandas as pd
 
 app = Flask(__name__)
-CORS(app, resources={r"/*": {"origins": "*", "methods": "*", "allow_headers": "*"}})
+CORS(app, resources={r"/*": {
+    "origins": "*",  # Allow all origins (or replace with specific origins like "http://localhost:5173")
+    "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    "allow_headers": ["Content-Type", "Authorization", "X-Requested-With"],  # Add "Content-Type" here
+    "supports_credentials": True  # If you need to handle cookies or authentication headers
+}})
 
 # Configure your email settings
 SMTP_SERVER = 'smtp.gmail.com'
