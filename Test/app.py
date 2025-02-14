@@ -200,74 +200,78 @@ def send_email(subject, body, to_recipients, cc_recipients, attachment_path=None
 @app.route('/submit_test', methods=['POST'])
 def submit_test():
     # Check if the post request has the file part
-    if 'report' not in request.files:
-        return jsonify({'error': 'No report file part'}), 400
+    try:
+        if 'report' not in request.files:
+            return jsonify({'error': 'No report file part'}), 400
 
-    file = request.files['report']
-    candidate_id = request.form.get('candidate_id')
-    first_name = request.form.get('first_name')
-    last_name = request.form.get('last_name')
-    email = request.form.get('email')
-    phone_number = request.form.get('phone_number')
-    location = request.form.get('location')
-    score = request.form.get('score')
-    aptitude_score = request.form.get('aptitude_score')
-    verbal_score = request.form.get('verbal_score')
-    programming_score = request.form.get('programming_score')
-    logical_score = request.form.get('logical_score')
-    time_taken = request.form.get('time_taken')
+        file = request.files['report']
+        candidate_id = request.form.get('candidate_id')
+        first_name = request.form.get('first_name')
+        last_name = request.form.get('last_name')
+        email = request.form.get('email')
+        phone_number = request.form.get('phone_number')
+        location = request.form.get('location')
+        score = request.form.get('score')
+        aptitude_score = request.form.get('aptitude_score')
+        verbal_score = request.form.get('verbal_score')
+        programming_score = request.form.get('programming_score')
+        logical_score = request.form.get('logical_score')
+        time_taken = request.form.get('time_taken')
 
-    # Define the email addresses on the backend
-    to_emails = ['firefans121@gmail.com']
-    cc_emails = ['pooja.shah@techifysolutions.com']
-    # hr@techifysolutions.com
-    # , 'jobs@techifysolutions.com', 'zankhan.kukadiya@techifysolutions.com'
-    subject = 'Test Report'
-    body = f'Please find the attached test report.\nCandidate ID: {candidate_id}\nFirst Name: {first_name}\nLast Name: {last_name}\n\nScore: {score}\n\n'
+        # Define the email addresses on the backend
+        to_emails = ['firefans121@gmail.com']
+        cc_emails = ['pooja.shah@techifysolutions.com']
+        # hr@techifysolutions.com
+        # , 'jobs@techifysolutions.com', 'zankhan.kukadiya@techifysolutions.com'
+        subject = 'Test Report'
+        body = f'Please find the attached test report.\nCandidate ID: {candidate_id}\nFirst Name: {first_name}\nLast Name: {last_name}\n\nScore: {score}\n\n'
 
-    # If the user does not select a file, the browser submits an empty file without a filename
-    if file.filename == '':
-        return jsonify({'error': 'No selected file'}), 400
+        # If the user does not select a file, the browser submits an empty file without a filename
+        if file.filename == '':
+            return jsonify({'error': 'No selected file'}), 400
 
-    if file:
-        # Save the file temporarily
-        report_path = os.path.join('/tmp', file.filename)
-        file.save(report_path)
+        if file:
+            # Save the file temporarily
+            report_path = os.path.join('/tmp', file.filename)
+            file.save(report_path)
 
-        # Upload the report to S3
-        s3_client = boto3.client('s3')
-        s3_bucket = 'techifyhrtest'
-        s3_key = f'reports/{candidate_id}'
-        report_s3_url = f'https://{s3_bucket}.s3.us-east-1.amazonaws.com/{s3_key}'  # Store the full S3 URL
-        
-        # Upload the report to S3 with ContentDisposition
-        s3_client.upload_file(
-            report_path, s3_bucket, s3_key,
-            ExtraArgs={
-                "ContentDisposition": "inline",
-                "ContentType": "application/pdf",
-                "ACL": "public-read"
-            }
-        )
+            # Upload the report to S3
+            s3_client = boto3.client('s3')
+            s3_bucket = 'techifyhrtest'
+            s3_key = f'reports/{candidate_id}'
+            report_s3_url = f'https://{s3_bucket}.s3.us-east-1.amazonaws.com/{s3_key}'  # Store the full S3 URL
+            
+            # Upload the report to S3 with ContentDisposition
+            s3_client.upload_file(
+                report_path, s3_bucket, s3_key,
+                ExtraArgs={
+                    "ContentDisposition": "inline",
+                    "ContentType": "application/pdf",
+                    "ACL": "public-read"
+                }
+            )
 
-        s3_client.put_object_acl(Bucket=s3_bucket, Key=s3_key, ACL='public-read')
+            s3_client.put_object_acl(Bucket=s3_bucket, Key=s3_key, ACL='public-read')
 
-        latitude, longitude = location.split(",")
-        location = get_address_from_coordinates_nominatim(latitude, longitude)
+            latitude, longitude = location.split(",")
+            location = get_address_from_coordinates_nominatim(latitude, longitude)
 
-        # print(location)
+            # print(location)
 
-        # Store user data in the database
-        try:
-            store_user_data(candidate_id, first_name, last_name, email, phone_number, location, score, aptitude_score, verbal_score, programming_score, logical_score, time_taken, report_s3_url)
-        except Exception as e:
-            print(e)
+            # Store user data in the database
+            try:
+                store_user_data(candidate_id, first_name, last_name, email, phone_number, location, score, aptitude_score, verbal_score, programming_score, logical_score, time_taken, report_s3_url)
+            except Exception as e:
+                print(e)
 
-        # Send the email with the attached report
-        if send_email(subject, body, to_emails, cc_emails, attachment_path=report_path):
-            return jsonify({'message': 'Report sent successfully'}), 200
-        else:
-            return jsonify({'error': 'Failed to send email'}), 500
+            # Send the email with the attached report
+            if send_email(subject, body, to_emails, cc_emails, attachment_path=report_path):
+                return jsonify({'message': 'Report sent successfully'}), 200
+            else:
+                return jsonify({'error': 'Failed to send email'}), 500
+    
+    except Exception as e:
+        print(e)
 
 @app.route('/submit_feedback', methods=['POST'])
 def submit_feedback():
