@@ -16,6 +16,7 @@ import boto3
 import psycopg2
 from geopy.geocoders import Nominatim
 import pandas as pd
+import base64
 
 app = Flask(__name__)
 CORS(app, resources={r"/*": {
@@ -131,8 +132,14 @@ def generate_questions():
 def get_aptitude_questions():
     try:
         with open('aptitude_questions.json', 'r') as f:
-            data = f.read()
-        return data, 200, {'Content-Type': 'text/plain'}
+            data = json.load(f)
+
+        json_data = json.dumps(data)
+
+        encoded_data = base64.b64encode(json_data.encode('utf-8')).decode('utf-8')
+        
+        return jsonify({"encoded": encoded_data})
+    
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
@@ -140,17 +147,29 @@ def get_aptitude_questions():
 def get_verbal_questions():
     try:
         with open('verbal_questions.json', 'r') as f:
-            data = f.read()
-        return data, 200, {'Content-Type': 'text/plain'}
+            data = json.load(f)
+
+        json_data = json.dumps(data)
+
+        encoded_data = base64.b64encode(json_data.encode('utf-8')).decode('utf-8')
+        
+        return jsonify({"encoded": encoded_data})
+    
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-
+    
 @app.route('/get_programming_questions', methods=['GET'])
 def get_programming_questions():
     try:
         with open('programming_questions.json', 'r') as f:
-            data = f.read()
-        return data, 200, {'Content-Type': 'text/plain'}
+            data = json.load(f)
+
+        json_data = json.dumps(data)
+
+        encoded_data = base64.b64encode(json_data.encode('utf-8')).decode('utf-8')
+        
+        return jsonify({"encoded": encoded_data})
+    
     except Exception as e:
         return jsonify({"error": str(e)}), 500
     
@@ -158,10 +177,17 @@ def get_programming_questions():
 def get_reasoning_questions():
     try:
         with open('reasoning_questions.json', 'r') as f:
-            data = f.read()
-        return data, 200, {'Content-Type': 'text/plain'}
+            data = json.load(f)
+
+        json_data = json.dumps(data)
+
+        encoded_data = base64.b64encode(json_data.encode('utf-8')).decode('utf-8')
+        
+        return jsonify({"encoded": encoded_data})
+    
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+    
 
 def send_email(subject, body, to_recipients, cc_recipients, attachment_path=None):
     try:
