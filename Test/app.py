@@ -216,6 +216,7 @@ def submit_test():
         verbal_score = request.form.get('verbal_score')
         programming_score = request.form.get('programming_score')
         logical_score = request.form.get('logical_score')
+        submit_reason = request.form.get('submit_reason')
         time_taken = request.form.get('time_taken')
 
         # Define the email addresses on the backend
@@ -264,7 +265,7 @@ def submit_test():
 
             # Store user data in the database
             try:
-                store_user_data(candidate_id, first_name, last_name, email, phone_number, location, score, aptitude_score, verbal_score, programming_score, logical_score, time_taken, report_s3_url)
+                store_user_data(candidate_id, first_name, last_name, email, phone_number, location, score, aptitude_score, verbal_score, programming_score, logical_score, time_taken, report_s3_url, submit_reason)
             except Exception as e:
                 print(e)
 
@@ -333,7 +334,7 @@ def submit_feedback():
         if conn:
             conn.close()
 
-def store_user_data(candidate_id, first_name, last_name, email, phone_number, location, score, aptitude_score, verbal_score, programming_score, logical_score, time_taken, report_s3_url):
+def store_user_data(candidate_id, first_name, last_name, email, phone_number, location, score, aptitude_score, verbal_score, programming_score, logical_score, time_taken, report_s3_url, submit_reason):
     cursor = None
     conn = None
     try:
@@ -373,7 +374,8 @@ def store_user_data(candidate_id, first_name, last_name, email, phone_number, lo
                 time_taken VARCHAR(50),
                 feedback TEXT DEFAULT '',
                 report_s3_url TEXT,
-                submission_date TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP
+                submission_date TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                submit_reason VARCHAR(50)
             )
             ''')
 
@@ -382,9 +384,9 @@ def store_user_data(candidate_id, first_name, last_name, email, phone_number, lo
 
         # Insert user data into the table
         cursor.execute('''
-            INSERT INTO hrtest_reports (candidate_id, first_name, last_name, email, phone_number, location, score, aptitude_score, verbal_score, programming_score, logical_score, time_taken, report_s3_url, submission_date)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-            ''', (candidate_id, first_name, last_name, email, phone_number, location, score, aptitude_score, verbal_score, programming_score, logical_score, time_taken, report_s3_url, submission_date))
+            INSERT INTO hrtest_reports (candidate_id, first_name, last_name, email, phone_number, location, score, aptitude_score, verbal_score, programming_score, logical_score, time_taken, report_s3_url, submission_date, submit_reason)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            ''', (candidate_id, first_name, last_name, email, phone_number, location, score, aptitude_score, verbal_score, programming_score, logical_score, time_taken, report_s3_url, submission_date, submit_reason))
         # Commit the changes
         conn.commit()
         
@@ -444,7 +446,8 @@ def fetch_user_data():
                 "time_taken": row[11],
                 "feedback": row[12],
                 "report_s3_url": row[13],
-                "submission_date": row[14]
+                "submission_date": row[14],
+                "submit_reason": row[15]
             })
 
         return jsonify(user_data), 200
@@ -567,7 +570,7 @@ def export_candidate_data():
             "candidate_id", "first_name", "last_name", "email", "phone_number",
             "location", "score", "aptitude_score", "verbal_score",
             "programming_score", "logical_score", "time_taken", "feedback", 
-            "report_s3_url", "submission_date"
+            "report_s3_url", "submission_date", "submit_reason"
         ]
         data_to_export = [dict(zip(columns, row)) for row in rows]
 
