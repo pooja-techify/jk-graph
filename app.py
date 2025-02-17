@@ -1,4930 +1,801 @@
-import re
-import os
-import pandas as pd
-import pymupdf
 from flask import Flask, request, jsonify, send_file
+import json
+import random
+import os
+import requests
+import smtplib
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+from email.mime.base import MIMEBase
+from email import encoders
 from flask_cors import CORS
-# from langchain_community.document_loaders import AmazonTextractPDFLoader
-from pdf2image import convert_from_path
-import tempfile
-from PIL import Image
-from textractor import Textractor
-from textractor.visualizers.entitylist import EntityList
-from textractor.data.constants import TextractFeatures
-import zipfile
-import io
+# import gspread
+# from oauth2client.service_account import ServiceAccountCredentials
 from datetime import datetime
-from typing import Optional, Sequence, List
-import pandas as pd # type: ignore
-from google.api_core.client_options import ClientOptions # type: ignore
-from google.cloud import documentai # type: ignore
-import re
-import logging
-from google.oauth2 import service_account
-
-logging.basicConfig(filename="newfile.log",
-                    format='%(asctime)s %(message)s',
-                    filemode='w')
-
-logger = logging.getLogger()
-
-logger.setLevel(logging.DEBUG)
+import boto3
+import psycopg2
+from geopy.geocoders import Nominatim
+import pandas as pd
+import base64
 
 app = Flask(__name__)
-CORS(app)
+CORS(app, resources={r"/*": {
+    "origins": "*",  # Allow all origins (or replace with specific origins like "http://localhost:5173")
+    "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    "allow_headers": ["Content-Type", "Authorization", "X-Requested-With"],  # Add "Content-Type" here
+    "supports_credentials": True  # If you need to handle cookies or authentication headers
+}})
 
-@app.route('/amex', methods=['POST'])
-def excel_amex():
-    uploaded_file = request.files.get('file')
-    year = request.form.get('year')
-    if not uploaded_file:
-        return jsonify({'error': 'No file uploaded'}), 400
-    
-    temp_path = tempfile.mktemp(suffix='.pdf')
-    uploaded_file.save(temp_path)
+# Configure your email settings
+SMTP_SERVER = 'smtp.gmail.com'
+SMTP_PORT = 587
+EMAIL_SENDER = 'hrtest.techify@gmail.com'
+EMAIL_PASSWORD = 'twar fdoi zxau djde'
 
+def get_address_from_coordinates_nominatim(latitude, longitude):
     try:
-        doc = pymupdf.open(temp_path)
+        url = f"https://nominatim.openstreetmap.org/reverse?lat={latitude}&lon={longitude}&format=json"
+        headers = {
+            'User-Agent': 'YourAppName/1.0'  # Replace with your app name and version
+        }
+        response = requests.get(url, headers=headers)
 
-        with open('log.txt', 'w', encoding='utf-8') as f:
-            for page in doc:
-                text = page.get_text() 
-                f.write(text + '\n')
+        # Check if the response status code is OK
+        if response.status_code == 200:
+            data = response.json()
+            if 'address' in data:
+                state_district = data['address'].get('state_district') or data['address'].get('state')
+                if state_district:
+                    return state_district  # Return the state or district
+                return 'State/District not found'
+            return 'Address not found'
+        else:
+            print(f"Error: Received response with status code {response.status_code}")
+            return None
+    except Exception as e:
+        print(f"Error getting address: {e}")
+        return None
 
-        with open("log.txt", "r") as f:
-            text = f.read()
+def select_questions(input_file, level, num_questions, output_file, append=False):
+    try:
+        # Check if the input file exists
+        if not os.path.exists(input_file):
+            raise FileNotFoundError(f"Input file does not exist: {input_file}")
 
-        cr_pattern = r'(\d{2}/\d{2}/\d{2})[\**]\s([A-Za-z ]+)\s([A-Za-z- ]+)\s-\$([0-9,]+[.][0-9]{2})'
-        cr_pattern2 = r'(\d{2}/\d{2}/\d{2})\s([A-Za-z0-9 \.\*\-\#]+)\s-\$([0-9,]+[.][0-9]{2})'
-        db_pattern = r'(\d{2}/\d{2}/\d{2})\s([A-Za-z0-9() .\*\-\#\/]+)\s([A-Z0-9() .\*\-\#\/]*)\s([A-Z0-9() .\*\-\#\/]*)\s([A-Za-z0-9() .\*\-\#\/]*)\s\$([0-9,]+[.][0-9]{2})'
-        db_pattern2 = r'(\d{2}/\d{2}/\d{2})\s([A-Za-z0-9 \.\*\-\#]+)\s\$([0-9,]+[.][0-9]{2})'
+        json_output = os.path.join(output_file)
 
-        credits = []
-        debits = []
+        with open(input_file, 'r') as f:
+            questions = json.load(f)
 
-        for match in re.finditer(cr_pattern, text):
-            date = match.group(1)
-            user = match.group(3)
-            credit = match.group(4)
-            credits.append({
-                "date": date,
-                "description": user,
-                "credit": credit
-            })
+        level_questions = [q for q in questions if q['Level'] == level]
+        
+        if not level_questions:
+            raise ValueError(f"No questions found for level: {level}")
+        
+        existing_questions = []
+        if append and os.path.exists(json_output):
+            with open(json_output, 'r') as f:
+                try:
+                    existing_questions = json.load(f)
+                except json.JSONDecodeError:
+                    existing_questions = []
 
-        for match in re.finditer(cr_pattern2, text):
-            date = match.group(1)
-            user = match.group(2)
-            credit = match.group(3)
-            credits.append({
-                "date": date,
-                "description": user,
-                "credit": credit
-            })
+        available_questions = [q for q in level_questions if q not in existing_questions]
+        
+        if not available_questions:
+            print(f"Warning: All questions for level {level} have already been selected")
+            return
+            
+        if num_questions > len(available_questions):
+            print(f"Warning: Only {len(available_questions)} new questions available for level {level}")
+            selected = available_questions
+        else:
+            selected = random.sample(available_questions, num_questions)
+        
+        final_questions = existing_questions + selected
+        
+        with open(json_output, 'w') as f:
+            json.dump(final_questions, f, indent=2)
+        
+        print(f"Successfully {'appended' if append else 'saved'} {len(selected)} questions of level {level}")
+        print(f"Total questions in output files: {len(final_questions)}")
+        
+    except FileNotFoundError as e:
+        print(f"Error: {str(e)}")
+    except json.JSONDecodeError:
+        print("Error: Invalid JSON format in input file")
+    except Exception as e:
+        print(f"An error occurred: {str(e)}")
 
-        for match in re.finditer(db_pattern, text):
-            date = match.group(1)
-            user = match.group(2) + " " + match.group(5)
-            debit = match.group(6)
-            debits.append({
-                "date": date,
-                "description": user,
-                "debit": debit
-            })
+@app.route('/generate_questions', methods=['GET'])
+def generate_questions():
+    try:
+        select_questions(input_file="aptitude.txt", level="Basic", num_questions=2, output_file="aptitude_questions.json", append=False)
+        select_questions(input_file="aptitude.txt", level="Intermediate", num_questions=6, output_file="aptitude_questions.json", append=True)
+        select_questions(input_file="aptitude.txt", level="Advanced", num_questions=7, output_file="aptitude_questions.json", append=True)
+        select_questions(input_file="verbal.txt", level="Basic", num_questions=6, output_file="verbal_questions.json", append=False)
+        select_questions(input_file="verbal.txt", level="Intermediate", num_questions=4, output_file="verbal_questions.json", append=True)
+        select_questions(input_file="programming.txt", level="Basic", num_questions=5, output_file="programming_questions.json", append=False)
+        select_questions(input_file="programming.txt", level="Intermediate", num_questions=2, output_file="programming_questions.json", append=True)
+        select_questions(input_file="programming.txt", level="Advanced", num_questions=1, output_file="programming_questions.json", append=True)
+        select_questions(input_file="programming.txt", level="Coding", num_questions=2, output_file="programming_questions.json", append=True)
+        select_questions(input_file="reasoning.txt", level="Basic", num_questions=2, output_file="reasoning_questions.json", append=False)
+        select_questions(input_file="reasoning.txt", level="Intermediate", num_questions=11, output_file="reasoning_questions.json", append=True)
+        select_questions(input_file="reasoning.txt", level="Advanced", num_questions=2, output_file="reasoning_questions.json", append=True)
 
-        for match in re.finditer(db_pattern2, text):
-            date = match.group(1)
-            user = match.group(2)
-            debit = match.group(3)
-            debits.append({
-                "date": date,
-                "description": user,
-                "debit": debit
-            })
-
-        def clean_amount(amount):
-            return float(amount.replace(',', ''))
-
-        credits = pd.DataFrame(credits)
-        if len(credits) > 0:
-                    credits['credit'] = credits['credit'].apply(clean_amount)
-
-        debits = pd.DataFrame(debits)
-        if len(debits) > 0:
-                    debits['debit'] = debits['debit'].apply(clean_amount)
-
-        with pd.ExcelWriter('excel1.xlsx', engine='openpyxl') as writer:
-            credits.to_excel(writer, sheet_name='Credit', index=False)
-            debits.to_excel(writer, sheet_name='Debit', index=False)
-
-            workbook1 = writer.book
-            worksheet1 = writer.sheets['Credit']
-            worksheet2 = writer.sheets['Debit']
-
-            for cell in worksheet1['C'][1:]:
-                cell.number_format = '##0.00'
-
-            for cell in worksheet2['C'][1:]:
-                cell.number_format = '##0.00'
-
-        temp_excel = tempfile.NamedTemporaryFile(suffix='.xlsx', delete=False)
-        workbook1.save(temp_excel.name)
+        return jsonify({"message": "Questions generated successfully"}), 200
     
     except Exception as e:
-        logger.debug("An error occured: ", e)
-    
-    # try: 
-    #     pages = convert_from_path(temp_path, dpi=700)
+        return jsonify({"error": str(e)}), 400
 
-    #     files = []
-    #     for i in range(len(pages)):
-    #         pages[i].save("Amex_page_"+str(i+1)+".png", "PNG")
-    #         files.append("Amex_page_"+str(i+1)+".png")
-
-    #     credits_aws = pd.DataFrame()
-    #     debits_aws = pd.DataFrame()
-    #     transactions = pd.DataFrame()
-
-    #     for f in files:
-    #         image = Image.open(f) # loads the document image with Pillow
-    #         extractor = Textractor(region_name="us-east-1") # Initialize textractor client, modify region if required
-    #         response = extractor.analyze_document(
-    #             file_source=image,
-    #             features=[
-    #                 TextractFeatures.TABLES
-    #             ],
-    #             save_image=True
-    #         )
-
-    #         for i in range(len(response.tables)):
-    #             table = EntityList(response.tables[i])
-    #             response.tables[i].visualize()
-    #             table_title = table[0].title
-    #             if table_title:
-    #                 if 'Detail' in table_title.text:
-    #                     df=table[0].to_pandas()
-    #                     transactions = pd.concat([transactions, df], ignore_index=True)
-    #                 if 'Interest Charged' in table_title.text:
-    #                     df=table[0].to_pandas()
-    #                     transactions = pd.concat([transactions, df], ignore_index=True)
-
-    #     df = transactions
-
-    #     if len(df) > 0:
-    #         df1 = df[df.iloc[:,0].str.match(r'^\d{2}/\d{2}', na=False)].reset_index(drop=True)
-    #         if len(df1) > 0:
-    #             df1.iloc[:, 0] = df1.iloc[:, 0].str.strip()
-    #             for i in range(len(df1)):
-    #                 if pd.isna(df1.iloc[i, -1]):
-    #                     df1.iloc[i, -1] = df1.iloc[i, df1.iloc[i].last_valid_index()]
-    #             for i in range(len(df1)):
-    #                 if df1.iloc[i,0][-1] == '*':
-    #                     df1.iloc[i,0] = df1.iloc[i,0][:-1]
-    #                 if re.fullmatch(r'\d{2}/\d{2}/\d{2}.+', str(df1.iloc[i, 0])):
-    #                     df1.iloc[i, 1] = df1.iloc[i, 0][8:].strip()
-    #                     df1.iloc[i, 0] = df1.iloc[i, 0][0:8]
-    #             new_df = df1[[0, 1, len(df1.columns)-1]].rename(columns={0: "date", 1: "description", len(df1.columns)-1: "amount"})
-    #             new_df['amount'] = new_df['amount'].str.replace(r'[$,]', '', regex=True)
-    #             new_df['amount'] = pd.to_numeric(new_df['amount'])
-
-    #     credits_aws = new_df[new_df['amount']<0]
-
-    #     if len(credits_aws) > 0:
-    #         credits_aws['amount'] = credits_aws['amount'].astype(str).replace(r'[-,]', '', regex=True)
-    #         credits_aws['amount'] = pd.to_numeric(credits_aws['amount'])
-
-    #     debits_aws = new_df[new_df['amount']>0]
-        
-    #     if len(debits_aws) > 0:
-    #         debits_aws['amount'] = pd.to_numeric(debits_aws['amount'])
-
-    #     with pd.ExcelWriter('excel2.xlsx', engine='openpyxl') as writer:
-    #         credits_aws.to_excel(writer, sheet_name='Credit', index=False)
-    #         debits_aws.to_excel(writer, sheet_name='Debit', index=False)
-
-    #         workbook2 = writer.book
-    #         worksheet1 = writer.sheets['Credit']
-    #         worksheet2 = writer.sheets['Debit']
-
-    #         temp_excel2 = tempfile.NamedTemporaryFile(suffix='.xlsx', delete=False)
-    #         workbook2.save(temp_excel2.name)
-    
-    # except Exception as e:
-    #     logger.debug("An error occured: ", e)
-
+@app.route('/get_aptitude_questions', methods=['GET'])
+def get_aptitude_questions():
     try:
-        excel1_buffer = io.BytesIO()
-        workbook1.save(excel1_buffer)
-        excel1_buffer.seek(0)
-        
-        # excel2_buffer = io.BytesIO()
-        # workbook2.save(excel2_buffer)
-        # excel2_buffer.seek(0)
-        
-        # Create a zip file in memory
-        zip_buffer = io.BytesIO()
-        with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
-            zip_file.writestr('amex.xlsx', excel1_buffer.getvalue())
-            # zip_file.writestr('textract.xlsx', excel2_buffer.getvalue())
-        
-        zip_buffer.seek(0)
-        
-        # Send the zip file
-        return send_file(
-            zip_buffer, 
-            mimetype='application/zip',
-            as_attachment=True,
-            download_name='amex.zip'
-        )
+        with open('aptitude_questions.json', 'r') as f:
+            data = json.load(f)
 
+        json_data = json.dumps(data)
+
+        encoded_data = base64.b64encode(json_data.encode('utf-8')).decode('utf-8')
+        
+        return jsonify({"encoded": encoded_data})
+    
     except Exception as e:
-        logger.debug("An error occured: ", e)
-        
-    finally:
-        os.remove(temp_path)
-        os.remove('excel1.xlsx')
-        # os.remove('excel2.xlsx')
-        # for f in files:
-        #     os.remove(f)
+        return jsonify({"error": str(e)}), 500
 
-
-@app.route('/bcb', methods=['POST'])
-def excel_bcb():
-    uploaded_file = request.files.get('file')
-    year = request.form.get('year')
-
-    if not uploaded_file:
-        return jsonify({'error': 'No file uploaded'}), 400
-    
-    temp_path = tempfile.mktemp(suffix='.pdf')
-    uploaded_file.save(temp_path)
-
-    # try:
-    #     doc = pymupdf.open(temp_path)
-
-    #     with open('log.txt', 'w', encoding='utf-8') as f:
-    #         for page in doc:
-    #             text = page.get_text()
-    #             f.write(text + '\n')
-
-    #     with open("log.txt", "r") as f:
-    #         text = f.read()
-
-    #     cr_pattern = r'(\d{1,2}/\d{2})\s([A-Za-z0-9\&\'\#\*\s]+)\s([0-9,]+[.]+[0-9]+)\s*([0-9,]+[.][0-9]{2})\s'
-    #     db_pattern = r'(\d{1,2}/\d{2})\s([A-Za-z0-9\&\'\#\*\s]+)\s([0-9,]+[.]+[0-9]+)[-]\s*([0-9,]+[.][0-9]{2})\s'
-
-    #     credits = []
-    #     debits = []
-
-    #     for match in re.finditer(cr_pattern, text):
-    #         date = match.group(1) 
-    #         user = match.group(2)
-    #         credit = match.group(3)
-    #         credits.append({
-    #             "date": date,
-    #             "description": user,
-    #             "credit": credit
-    #         })
-
-    #     for match in re.finditer(db_pattern, text):
-    #         date = match.group(1) 
-    #         user = match.group(2)
-    #         debit = match.group(3)
-    #         debits.append({
-    #             "date": date,
-    #             "description": user,
-    #             "debit": debit
-    #         })
-
-    #     def clean_amount(amount):
-    #         return float(amount.replace(',', ''))
-        
-    #     def clean_date(date_format):
-    #         date_str = date_format.strip() 
-    #         full_date_str = f"{date_str}/{str(year)[-2:]}"
-    #         formatted_date = datetime.strptime(full_date_str, "%m/%d/%y").strftime("%m/%d/%y")
-    #         return formatted_date
-
-    #     credits = pd.DataFrame(credits)
-    #     if len(credits) > 0:
-    #         credits['credit'] = credits['credit'].apply(clean_amount)
-    #         credits['date'] = credits['date'].apply(clean_date)
-
-    #     debits = pd.DataFrame(debits)
-    #     if len(debits) > 0:
-    #         debits['debit'] = debits['debit'].apply(clean_amount)
-    #         debits['date'] = debits['date'].apply(clean_date)
-
-    #     with pd.ExcelWriter('excel1.xlsx', engine='openpyxl') as writer:
-    #         credits.to_excel(writer, sheet_name='Credit', index=False)
-    #         debits.to_excel(writer, sheet_name='Debit', index=False)
-
-    #         workbook1 = writer.book
-    #         worksheet1 = writer.sheets['Credit']
-    #         worksheet2 = writer.sheets['Debit']
-
-    #         for cell in worksheet1['C'][1:]:
-    #             cell.number_format = '##0.00'
-
-    #         for cell in worksheet2['C'][1:]:
-    #             cell.number_format = '##0.00'
-
-    #     temp_excel = tempfile.NamedTemporaryFile(suffix='.xlsx', delete=False)
-    #     workbook1.save(temp_excel.name)
-
-    # except Exception as e:
-    #     logger.debug("An error occured: ", e)
-
+@app.route('/get_verbal_questions', methods=['GET'])
+def get_verbal_questions():
     try:
-        pages = convert_from_path(temp_path, dpi=800)
+        with open('verbal_questions.json', 'r') as f:
+            data = json.load(f)
 
-        files = []
-        for i in range(len(pages)):
-            pages[i].save("BCB_page_"+str(i+1)+".png", "PNG")
-            files.append("BCB_page_"+str(i+1)+".png")
+        json_data = json.dumps(data)
 
-        credits_aws = pd.DataFrame()
-        debits_aws = pd.DataFrame()
-        transactions = pd.DataFrame()
+        encoded_data = base64.b64encode(json_data.encode('utf-8')).decode('utf-8')
+        
+        return jsonify({"encoded": encoded_data})
+    
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    
+@app.route('/get_programming_questions', methods=['GET'])
+def get_programming_questions():
+    try:
+        with open('programming_questions.json', 'r') as f:
+            data = json.load(f)
 
-        for f in files:
-            image = Image.open(f) # loads the document image with Pillow
-            extractor = Textractor(region_name="ap-south-1") # Initialize textractor client, modify region if required
-            response = extractor.analyze_document(
-                file_source=image,
-                features=[
-                    TextractFeatures.TABLES
-                    ],
-                save_image=True
+        json_data = json.dumps(data)
+
+        encoded_data = base64.b64encode(json_data.encode('utf-8')).decode('utf-8')
+        
+        return jsonify({"encoded": encoded_data})
+    
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    
+@app.route('/get_reasoning_questions', methods=['GET'])
+def get_reasoning_questions():
+    try:
+        with open('reasoning_questions.json', 'r') as f:
+            data = json.load(f)
+
+        json_data = json.dumps(data)
+
+        encoded_data = base64.b64encode(json_data.encode('utf-8')).decode('utf-8')
+        
+        return jsonify({"encoded": encoded_data})
+    
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    
+
+def send_email(subject, body, to_recipients, cc_recipients, attachment_path=None):
+    try:
+        msg = MIMEMultipart()
+        msg['From'] = EMAIL_SENDER
+        msg['To'] = ', '.join(to_recipients)
+        msg['Cc'] = ', '.join(cc_recipients)
+        msg['Subject'] = subject
+        msg.attach(MIMEText(body, 'plain'))
+
+        # Attach the file if provided
+        if attachment_path:
+            with open(attachment_path, 'rb') as attachment:
+                part = MIMEBase('application', 'octet-stream')
+                part.set_payload(attachment.read())
+                encoders.encode_base64(part)
+                part.add_header(
+                    'Content-Disposition',
+                    f'attachment; filename= {os.path.basename(attachment_path)}',
+                )
+                msg.attach(part)
+
+        all_recipients = to_recipients + cc_recipients
+
+        server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT)
+        server.starttls()
+        server.login(EMAIL_SENDER, EMAIL_PASSWORD)
+        server.sendmail(EMAIL_SENDER, all_recipients, msg.as_string())
+        server.quit()
+        return True
+    
+    except Exception as e:
+        print(f'Error sending email: {e}')
+        return False
+
+@app.route('/submit_test', methods=['POST'])
+def submit_test():
+    # Check if the post request has the file part
+    try:
+        if 'report' not in request.files:
+            return jsonify({'error': 'No report file part'}), 400
+
+        file = request.files['report']
+        candidate_id = request.form.get('candidate_id')
+        first_name = request.form.get('first_name')
+        last_name = request.form.get('last_name')
+        email = request.form.get('email')
+        phone_number = request.form.get('phone_number')
+        location = request.form.get('location')
+        score = request.form.get('score')
+        aptitude_score = request.form.get('aptitude_score')
+        verbal_score = request.form.get('verbal_score')
+        programming_score = request.form.get('programming_score')
+        logical_score = request.form.get('logical_score')
+        submit_reason = request.form.get('submit_reason')
+        time_taken = request.form.get('time_taken')
+
+        # Define the email addresses on the backend
+        to_emails = ['firefans121@gmail.com']
+        cc_emails = ['pooja.shah@techifysolutions.com']
+        # hr@techifysolutions.com
+        # , 'jobs@techifysolutions.com', 'zankhan.kukadiya@techifysolutions.com'
+        subject = 'Test Report'
+        body = f'Please find the attached test report.\nCandidate ID: {candidate_id}\nFirst Name: {first_name}\nLast Name: {last_name}\n\nScore: {score}\n\n'
+
+        # If the user does not select a file, the browser submits an empty file without a filename
+        if file.filename == '':
+            return jsonify({'error': 'No selected file'}), 400
+
+        if file:
+            # Save the file temporarily
+            report_path = os.path.join('/tmp', file.filename)
+            file.save(report_path)
+
+            # Upload the report to S3
+            s3_client = boto3.client('s3')
+            s3_bucket = 'onlinetest-stag-documents'
+            s3_key = f'reports/{candidate_id}'
+            report_s3_url = f'https://{s3_bucket}.s3.us-east-1.amazonaws.com/{s3_key}'  # Store the full S3 URL
+            
+            # Upload the report to S3 with ContentDisposition
+            try:
+                s3_client.upload_file(
+                    report_path, s3_bucket, s3_key,
+                    ExtraArgs={
+                        "ContentDisposition": "inline",
+                        "ContentType": "application/pdf",
+                        "ACL": "public-read"
+                    }
                 )
 
-            for i in range(len(response.tables)):
-                table = EntityList(response.tables[i])
-                response.tables[i].visualize()
-                table_title = table[0].title
-                if table_title:
-                    if table_title.text in ["ACTIVITY DESCRIPTION"]:
-                        df=table[0].to_pandas()
-                        if len(df) > 2:
-                            for i in range(2, len(df)):
-                                val = df.iloc[i][0]
-                                if not re.match(r'^\d{1,2}/\d{2}', val):
-                                    for j in range(len(df.columns)):
-                                        df.loc[i-1, 0] += ' ' + df.iloc[i][j]
-                                    df.iloc[i,0].strip()
-                        transactions = pd.concat([transactions, df], ignore_index=True)
-
-        
-
-        if len(transactions) > 0:
-            df = transactions[transactions.iloc[:,0].str.match(r'^\d{1,2}/\d{2}.*', na=False)].reset_index(drop=True)
-
-        if len(df) > 0:
-            df[['date', 'description']] = df[0].str.split(' ', n=1, expand=True)
-            new_df = df[['date','description', 1, 2]].rename(columns={1: "debit", 2: "credit"})
-
-        for i in range(len(new_df)):
-            date_str = new_df.iloc[i]['date'].strip() 
-            full_date_str = f"{date_str}/{str(year)[-2:]}"
-            formatted_date = datetime.strptime(full_date_str, "%m/%d/%y").strftime("%m/%d/%y")
-            new_df.loc[i, "date"] = formatted_date
-
-        credit_list = []
-        debit_list = []
-
-        for i in range(len(new_df)):
-            if new_df.iloc[i, -1] == '':
-                debit_list.append(new_df.iloc[i])
-
-            if new_df.iloc[i, -2] == '':
-                credit_list.append(new_df.iloc[i])
-
-        credits_aws = pd.DataFrame(credit_list)
-        debits_aws = pd.DataFrame(debit_list)
-
-        if len(credits_aws) > 0:
-            credits_aws.drop(columns='debit', inplace=True)
-            credits_aws['credit'] = credits_aws['credit'].astype(str).str.replace(r'[$,\s]', '', regex=True)
-            credits_aws['credit'] = pd.to_numeric(credits_aws['credit'])
-
-        if len(debits_aws) > 0:
-            debits_aws.drop(columns='credit', inplace=True)
-            debits_aws['debit'] = debits_aws['debit'].astype(str).replace(r'[-,]', '', regex=True)
-            debits_aws['debit'] = pd.to_numeric(debits_aws['debit'])
-
-        with pd.ExcelWriter('excel2.xlsx', engine='openpyxl') as writer:
-            credits_aws.to_excel(writer, sheet_name='Credit', index=False)
-            debits_aws.to_excel(writer, sheet_name='Debit', index=False)
-
-            workbook2 = writer.book
-            worksheet1 = writer.sheets['Credit']
-            worksheet2 = writer.sheets['Debit']
-
-            temp_excel2 = tempfile.NamedTemporaryFile(suffix='.xlsx', delete=False)
-            workbook2.save(temp_excel2.name)
-
-    except Exception as e:
-        logger.debug("An error occured: ", e)
-
-    try:
-        # excel1_buffer = io.BytesIO()
-        # workbook1.save(excel1_buffer)
-        # excel1_buffer.seek(0)
-        
-        excel2_buffer = io.BytesIO()
-        workbook2.save(excel2_buffer)
-        excel2_buffer.seek(0)
-        
-        # Create a zip file in memory
-        zip_buffer = io.BytesIO()
-        with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
-            # zip_file.writestr('regex.xlsx', excel1_buffer.getvalue())
-            zip_file.writestr('bcb.xlsx', excel2_buffer.getvalue())
-        
-        zip_buffer.seek(0)
-        
-        # Send the zip file
-        return send_file(
-            zip_buffer, 
-            mimetype='application/zip',
-            as_attachment=True,
-            download_name='bcb.zip'
-        )
-    
-    except Exception as e:
-        logger.debug("An error occured: ", e)
-    
-    finally:
-        os.remove(temp_path)
-        # os.remove('excel1.xlsx')
-        os.remove('excel2.xlsx')
-        for f in files:
-            os.remove(f)
-
-
-@app.route('/bofa', methods=['POST'])
-def excel_boa():
-    uploaded_file = request.files.get('file')
-    year = request.form.get('year')
-    if not uploaded_file:
-        return jsonify({'error': 'No file uploaded'}), 400
-    
-    temp_path = tempfile.mktemp(suffix='.pdf')
-    uploaded_file.save(temp_path)
-
-    # try:
-    #     logger.debug("Block 1")
-    #     doc = pymupdf.open(temp_path)
-    #     with open('log.txt', 'w', encoding='utf-8') as f:
-    #         for page in doc:
-    #             text = page.get_text()
-    #             f.write(text + '\n')
-
-    #     with open("log.txt", "r") as f:
-    #         text = f.read()
-
-    #     cr_pattern = r'(\d{2}/\d{2}/\d{2})\s([A-Za-z][A-Za-z0-9\"\'\;\:\#\*\-\&\/ ]+[.|\s][A-Za-z0-9\"\'\;\:\#\*\-\&\/ ]*)\s([0-9,]+[.][0-9]{2})'
-    #     cr_pattern2 = r'(\d{2}/\d{2}/\d{2})\s([0-9]+)[*]?\s([0-9,]+[.][0-9]{2})'
-    #     db_pattern = r'(\d{2}/\d{2}/\d{2})\s([A-Za-z][A-Za-z0-9\"\'\;\:\#\*\-\&\/ ]+[.|\s][A-Za-z0-9\"\'\;\:\#\*\-\&\/ ]*)\s[-]([0-9,]+[.][0-9]{2})'
-    #     db_pattern2 = r'(\d{2}/\d{2}/\d{2})\s([0-9]+)[*]?\s[-]([0-9,]+[.][0-9]{2})'
-
-    #     credits = []
-    #     debits = []
-
-    #     for match in re.finditer(cr_pattern, text):
-    #         date = match.group(1)
-    #         user = match.group(2)
-    #         credit = match.group(3)
-    #         credits.append({
-    #             "date": date,
-    #             "description": user,
-    #             "credit": credit
-    #         })
-
-    #     for match in re.finditer(cr_pattern2, text):
-    #         date = match.group(1)
-    #         user = match.group(2)
-    #         credit = match.group(3)
-    #         credits.append({
-    #             "date": date,
-    #             "description": user,
-    #             "credit": credit
-    #         })
-
-    #     for match in re.finditer(db_pattern, text):
-    #         date = match.group(1)
-    #         user = match.group(2)
-    #         debit = match.group(3)
-    #         debits.append({
-    #             "date": date,
-    #             "description": user,
-    #             "debit": debit
-    #         })
-
-    #     for match in re.finditer(db_pattern2, text):
-    #         date = match.group(1)
-    #         user = match.group(2)
-    #         debit = match.group(3)
-    #         debits.append({
-    #             "date": date,
-    #             "description": user,
-    #             "debit": debit
-    #         })
-
-    #     def clean_amount(amount):
-    #         return float(amount.replace(',', ''))
-
-    #     credits = pd.DataFrame(credits)
-    #     if len(credits) > 0:
-    #         credits['credit'] = credits['credit'].apply(clean_amount)
-
-    #     debits = pd.DataFrame(debits)
-    #     if len(debits) > 0:
-    #         debits['debit'] = debits['debit'].apply(clean_amount)
-
-    #     with pd.ExcelWriter('excel1.xlsx', engine='openpyxl') as writer:
-    #         credits.to_excel(writer, sheet_name='Credit', index=False)
-    #         debits.to_excel(writer, sheet_name='Debit', index=False)
-
-    #         workbook1 = writer.book
-    #         worksheet1 = writer.sheets['Credit']
-    #         worksheet2 = writer.sheets['Debit']
-
-    #         for cell in worksheet1['C'][1:]:
-    #             cell.number_format = '##0.00'
-
-    #         for cell in worksheet2['C'][1:]:
-    #             cell.number_format = '##0.00'
-    
-    #     temp_excel = tempfile.NamedTemporaryFile(suffix='.xlsx', delete=False)
-    #     workbook1.save(temp_excel.name)
-
-    # except Exception as e:
-    #     logger.debug("An error occured: ", e)
-
-    try:
-        logger.debug("Block 2")
-        pages = convert_from_path(temp_path, dpi=700)
-
-        files = []
-        for i in range(len(pages)):
-            pages[i].save("BOA_page_"+str(i+1)+".png", "PNG")
-            files.append("BOA_page_"+str(i+1)+".png")
-
-        credits_aws = pd.DataFrame()
-        debits_aws = pd.DataFrame()
-
-        for f in files:
-            image = Image.open(f) # loads the document image with Pillow
-            extractor = Textractor(region_name="us-east-1") # Initialize textractor client, modify region if required
-            response = extractor.analyze_document(
-                file_source=image,
-                features=[
-                    TextractFeatures.TABLES
-                ],
-                save_image=True
-            )
-
-            for i in range(len(response.tables)):
-                table = EntityList(response.tables[i])
-                response.tables[i].visualize()
-                table_title = table[0].title
-                if table_title:
-                    if "Deposits" in table_title.text:
-                        df=table[0].to_pandas()
-                        if len(df.columns) > 3:
-                            ori_columns = df.columns
-                            for i in range(2, len(df.columns)-1):
-                                df[1] = df[1].astype(str) + ' ' + df[ori_columns[i]].astype(str)
-                        df1 = df[[0,1,len(df.columns)-1]].rename(columns={0: "date", 1: "description", len(df.columns)-1: "amount"})
-                        credits_aws = pd.concat([credits_aws, df1], ignore_index=True)
-                        
-
-                    if "Withdrawals" in table_title.text:
-                        df=table[0].to_pandas()
-                        if len(df.columns) > 3:
-                            ori_columns = df.columns
-                            for i in range(2, len(df.columns)-1):
-                                df[1] = df[1].astype(str) + ' ' + df[ori_columns[i]].astype(str)
-                        df1 = df[[0,1,len(df.columns)-1]].rename(columns={0: "date", 1: "description", len(df.columns)-1: "amount"})
-                        debits_aws = pd.concat([debits_aws, df1], ignore_index=True)
-
-                    if "subtractions" in table_title.text:
-                        df=table[0].to_pandas()
-                        if len(df.columns) > 3:
-                            ori_columns = df.columns
-                            for i in range(2, len(df.columns)-1):
-                                df[1] = df[1].astype(str) + ' ' + df[ori_columns[i]].astype(str)
-                        df1 = df[[0,1,len(df.columns)-1]].rename(columns={0: "date", 1: "description", len(df.columns)-1: "amount"})
-                        debits_aws = pd.concat([debits_aws, df1], ignore_index=True)
-
-
-                    # if "Checks" in table_title.text:
-                    #     df=table[0].to_pandas()
-                    #     debits_aws = pd.concat([debits_aws, df], ignore_index=True)
-
-        if len(debits_aws) > 0:
-            debits_aws1 = debits_aws[debits_aws.iloc[:,0].str.match(r'^\d{2}/\d{2}/\d{2}', na=False)].reset_index(drop=True)
-            if len(debits_aws1) > 0:
-                debits_aws = debits_aws1[['date', 'description', 'amount']]
-                debits_aws['amount'] = debits_aws['amount'].str.replace(r'[-,]', '', regex=True)
-                debits_aws['amount'] = debits_aws['amount'].str.strip()
-                debits_aws['amount'] = pd.to_numeric(debits_aws['amount'])
-
-        if len(credits_aws) > 0:
-            credits_aws1 = credits_aws[credits_aws.iloc[:,0].str.match(r'^\d{2}/\d{2}/\d{2}', na=False)].reset_index(drop=True)
-            if len(credits_aws1) > 0:
-                credits_aws = credits_aws1[['date', 'description', 'amount']]
-                credits_aws['amount'] = credits_aws['amount'].str.strip()
-                credits_aws['amount'] = credits_aws['amount'].str.replace(r'[-,]', '', regex=True) 
-                credits_aws['amount'] = pd.to_numeric(credits_aws['amount'])
-
-        with pd.ExcelWriter('excel2.xlsx', engine='openpyxl') as writer:
-            credits_aws.to_excel(writer, sheet_name='Credit', index=False)
-            debits_aws.to_excel(writer, sheet_name='Debit', index=False)
-
-            workbook2 = writer.book
-            worksheet1 = writer.sheets['Credit']
-            worksheet2 = writer.sheets['Debit']
-
-            temp_excel2 = tempfile.NamedTemporaryFile(suffix='.xlsx', delete=False)
-            workbook2.save(temp_excel2.name)
-
-    except Exception as e:
-        logger.debug("An error occured: ", e)
-
-    # try:
-    #     logger.debug("Block 3")
-
-    #     credit_df = pd.DataFrame()
-    #     debit_df = pd.DataFrame()
-
-    #     project_id = 'techify-446309'
-    #     location = 'us'
-    #     processor_id = '567c2df93ddea10e'
-    #     processor_version = 'rc'
-    #     file_path = temp_path
-    #     mime_type = 'application/pdf'
-    #     credentials_path = '/home/ubuntu/pdf-excel/techify.json'
-
-    #     def clean_description(text: str) -> str:
-    #         """
-    #         Clean description by removing quotation marks only if they appear at both start and end
-    #         """
-    #         if text.startswith('"') and text.endswith('"'):
-    #             return text[1:-1]
-    #         return text
-        
-    #     def is_valid_date_format(date_str: str) -> bool:
-    #         """
-    #         Validate if the date string matches mm/dd/yy format.
-    #         Returns True if the date is valid, False otherwise.
-    #         """
-    #         date_pattern = r'\d{2}/\d{2}/\d{2}'
-            
-    #         if not re.match(date_pattern, date_str):
-    #             return False
-    #         else:
-    #             return True
-            
-    #     def parse_amount(amount_str: str) -> float:
-    #         clean_amount = amount_str.replace('$', '').replace(',', '').replace('"', '').strip()
-            
-    #         try:
-    #             return float(clean_amount)
-    #         except ValueError:
-    #             logger.debug(f"Warning: Could not parse amount: {amount_str}")
-    #             return 0.0
-
-    #     def process_document(
-    #         project_id: str,
-    #         location: str,
-    #         processor_id: str,
-    #         processor_version: str,
-    #         file_path: str,
-    #         mime_type: str,
-    #         credentials_path: str,
-    #         process_options: Optional[documentai.ProcessOptions] = None,
-    #     ) -> documentai.Document:
-            
-    #         credentials = service_account.Credentials.from_service_account_file(
-    #             credentials_path,
-    #             scopes=['https://www.googleapis.com/auth/cloud-platform']
-    #         )
-            
-    #         client = documentai.DocumentProcessorServiceClient(
-    #             credentials=credentials,
-    #             client_options=ClientOptions(
-    #                 api_endpoint=f"{location}-documentai.googleapis.com"
-    #             )
-    #         )
-
-    #         name = client.processor_version_path(
-    #             project_id, location, processor_id, processor_version
-    #         )
-
-    #         with open(file_path, "rb") as image:
-    #             image_content = image.read()
-
-    #         request = documentai.ProcessRequest(
-    #             name=name,
-    #             raw_document=documentai.RawDocument(content=image_content, mime_type=mime_type),
-    #             process_options=process_options,
-    #         )
-
-    #         result = client.process_document(request=request)
-
-    #         return result.document
-
-    #     def layout_to_text(layout: documentai.Document.Page.Layout, text: str) -> str:
-    #         """
-    #         Document AI identifies text in different parts of the document by their
-    #         offsets in the entirety of the document's text. This function converts
-    #         offsets to a string.
-    #         """
-    #         return "".join(
-    #             text[int(segment.start_index) : int(segment.end_index)]
-    #             for segment in layout.text_anchor.text_segments
-    #         )
-
-    #     logger.debug("Starting doc ai")
-        
-    #     document = process_document(
-    #             project_id, location, processor_id, processor_version, file_path, mime_type, credentials_path
-    #         )
-        
-    #     logger.debug("Checkpoint 1")
-
-    #     text = document.text
-    #     logger.debug(f"There are {len(document.pages)} page(s) in this document.")
-
-    #     all_credit_rows = []
-    #     all_debit_rows = []
-    #     headers = None
-
-    #     logger.debug("Checkpoint 2")
-
-    #     for page in document.pages:
-    #         print(f"\n\n**** Page {page.page_number} ****")
-    #         print(f"\nFound {len(page.tables)} table(s):")
-
-    #         for table in page.tables:
-    #             num_columns = len(table.header_rows[0].cells)
-    #             if num_columns == 3:
-    #                 num_rows = len(table.body_rows)
-    #                 print(f"Table with {num_columns} columns and {num_rows} rows:")
-                        
-    #                 if headers is None:
-    #                     headers = []
-    #                     for cell in table.header_rows[0].cells:
-    #                         header_text = layout_to_text(cell.layout, text).strip()
-    #                         headers.append(header_text)
-    #                     logger.debug("Columns:", headers)
-
-    #                 if headers[0].lower() == 'date':
-    #                     for row in table.body_rows:
-    #                         row_data = []
-    #                         for cell in row.cells:
-    #                             cell_text = layout_to_text(cell.layout, text).strip()
-    #                             row_data.append(cell_text)
-
-    #                         if is_valid_date_format(row_data[0]):
-    #                             row_data[1] = clean_description(row_data[1])
-                                    
-    #                             amount = parse_amount(row_data[2])
-                                    
-    #                             if amount >= 0:
-    #                                 row_data[2] = str(amount)  # Clean amount string
-    #                                 all_credit_rows.append(row_data)
-    #                             elif amount < 0:
-    #                                 row_data[2] = str(abs(amount))  # Clean amount string
-    #                                 all_debit_rows.append(row_data)
-    #                         else:
-    #                             logger.debug(f"Skipping row with invalid date format: {row_data[0]}")
-
-
-    #     if all_credit_rows:
-    #         credit_df = pd.DataFrame(all_credit_rows, columns=headers)
-    #         credit_df[headers[1]] = credit_df[headers[1]].apply(clean_description)
-    #         credit_df[headers[2]] = credit_df[headers[2]].str.replace('"', '')
-    #         credit_df[headers[2]] = pd.to_numeric(credit_df[headers[2]], errors='coerce')
-    #             # credit_df.to_excel(writer, sheet_name='Credits', index=False)
-    #     logger.debug(f"Total credit transactions processed: {len(all_credit_rows)}")
-            
-    #     if all_debit_rows:
-    #         debit_df = pd.DataFrame(all_debit_rows, columns=headers)
-    #         debit_df[headers[1]] = debit_df[headers[1]].apply(clean_description)
-    #         debit_df[headers[2]] = debit_df[headers[2]].str.replace('"', '')
-    #         debit_df[headers[2]] = pd.to_numeric(debit_df[headers[2]], errors='coerce')
-    #             # debit_df.to_excel(writer, sheet_name='Debits', index=False)
-    #     logger.debug(f"Total debit transactions processed: {len(all_debit_rows)}")
-            
-    #     if not (all_credit_rows or all_debit_rows):
-    #         logger.debug("No valid transactions found in any table")
-
-    #     with pd.ExcelWriter('excel3.xlsx', engine='openpyxl') as writer:
-    #         credit_df.to_excel(writer, sheet_name='Credit', index=False)
-    #         debit_df.to_excel(writer, sheet_name='Debit', index=False)
-
-    #         workbook3 = writer.book
-    #         worksheet1 = writer.sheets['Credit']
-    #         worksheet2 = writer.sheets['Debit']
-
-    #         temp_excel3 = tempfile.NamedTemporaryFile(suffix='.xlsx', delete=False)
-    #         workbook3.save(temp_excel3.name)
-    
-    # except Exception as e:
-    #     logger.debug("An error occured: ", e)
-
-    try:
-        # excel1_buffer = io.BytesIO()
-        # workbook1.save(excel1_buffer)
-        # excel1_buffer.seek(0)
-        
-        excel2_buffer = io.BytesIO()
-        workbook2.save(excel2_buffer)
-        excel2_buffer.seek(0)
-
-        # excel3_buffer = io.BytesIO()
-        # workbook3.save(excel3_buffer)
-        # excel3_buffer.seek(0)
-        
-        # Create a zip file in memory
-        zip_buffer = io.BytesIO()
-        with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
-            # zip_file.writestr('bofa.xlsx', excel1_buffer.getvalue())
-            zip_file.writestr('textract.xlsx', excel2_buffer.getvalue())
-            # zip_file.writestr('docai.xlsx', excel3_buffer.getvalue())
-        
-        zip_buffer.seek(0)
-        
-        # Send the zip file
-        return send_file(
-            zip_buffer, 
-            mimetype='application/zip',
-            as_attachment=True,
-            download_name='bofa.zip'
-        )
-    
-    except Exception as e:
-        logger.debug("An error occured: ", e)
-        
-    finally:
-        os.remove(temp_path)
-        # os.remove('excel1.xlsx')
-        os.remove('excel2.xlsx')
-        # os.remove('excel3.xlsx')
-        # for f in files:
-        #     os.remove(f)
-
-
-@app.route('/capitalone', methods=['POST'])
-def excel_capitalone():
-    uploaded_file = request.files.get('file')
-    year = request.form.get('year')
-    if not uploaded_file:
-        return jsonify({'error': 'No file uploaded'}), 400
-    
-    temp_path = tempfile.mktemp(suffix='.pdf')
-    uploaded_file.save(temp_path)
-
-    try:
-        doc = pymupdf.open(temp_path)
-        with open('log.txt', 'w', encoding='utf-8') as f:
-            for page in doc:
-                text = page.get_text()
-                f.write(text + '\n')
-
-        with open("log.txt", "r") as f:
-            text = f.read()
-
-        cr_pattern = r'([A-Z][a-z]{2}[ ]+\d{1,2})([\s]+[A-Z][a-z]{2}[ ]+\d{1,2}[\s]+)([A-Za-z0-9\"\'\;\:\#\@\&\*\/\-\.\ ]+)([\s]+)[-]\s[$]([0-9,]+[.][0-9]{2})\s'
-        db_pattern = r'([A-Z][a-z]{2}[ ]+\d{1,2})([\s]+[A-Z][a-z]{2}[ ]+\d{1,2}[\s]+)([A-Za-z0-9\"\'\;\:\#\@\&\*\/\-\.\ ]+)([\s]+)[$]([0-9,]+[.][0-9]{2})\s'
-
-        credits = []
-        debits = []
-
-        for match in re.finditer(cr_pattern, text):
-            date = match.group(1)
-            user = match.group(3)
-            credit = match.group(5)
-            credits.append({
-                "date": date,
-                "description": user,
-                "credit": credit
-            })
-
-
-        for match in re.finditer(db_pattern, text):
-            date = match.group(1)
-            user = match.group(3)
-            debit = match.group(5)
-            debits.append({
-                "date": date,
-                "description": user,
-                "debit": debit
-            })
-
-        def clean_amount(amount):
-            return float(amount.replace(',', ''))
-        
-        def clean_date(date_format):
-            date_str = date_format.strip() 
-            full_date_str = f"{date_str}/{str(year)[-2:]}"
-            formatted_date = datetime.strptime(full_date_str, "%b %d/%y").strftime("%m/%d/%y")
-            return formatted_date
-
-        credits = pd.DataFrame(credits)
-        if len(credits) > 0:
-            credits['credit'] = credits['credit'].apply(clean_amount)
-            credits['date'] = credits['date'].apply(clean_date)
-
-        debits = pd.DataFrame(debits)
-        if len(debits) > 0:
-            debits['debit'] = debits['debit'].apply(clean_amount)
-            debits['date'] = debits['date'].apply(clean_date)
-
-        with pd.ExcelWriter('excel1.xlsx', engine='openpyxl') as writer:
-            credits.to_excel(writer, sheet_name='Credit', index=False)
-            debits.to_excel(writer, sheet_name='Debit', index=False)
-
-            workbook1 = writer.book
-            worksheet1 = writer.sheets['Credit']
-            worksheet2 = writer.sheets['Debit']
-
-            for cell in worksheet1['C'][1:]:
-                cell.number_format = '##0.00'
-
-            for cell in worksheet2['C'][1:]:
-                cell.number_format = '##0.00'
-        
-        temp_excel = tempfile.NamedTemporaryFile(suffix='.xlsx', delete=False)
-        workbook1.save(temp_excel.name)
-
-    except Exception as e:
-        logger.debug("An error occured: ", e)
-
-    # try:
-    #     pages = convert_from_path(temp_path, dpi=700)
-
-    #     files = []
-    #     for i in range(len(pages)):
-    #         pages[i].save("CapitalOne_page_"+str(i+1)+".png", "PNG")
-    #         files.append("CapitalOne_page_"+str(i+1)+".png")
-
-    #     credits_aws = pd.DataFrame()
-    #     debits_aws = pd.DataFrame()
-
-    #     for f in files:
-    #         image = Image.open(f) # loads the document image with Pillow
-    #         extractor = Textractor(region_name="us-east-1") # Initialize textractor client, modify region if required
-    #         response = extractor.analyze_document(
-    #             file_source=image,
-    #             features=[
-    #                 TextractFeatures.TABLES
-    #             ],
-    #             save_image=True
-    #         )
-
-    #         for i in range(len(response.tables)):
-    #             table = EntityList(response.tables[i])
-    #             response.tables[i].visualize()
-    #             table_title = table[0].title
-    #             if table_title:
-    #                 if "Credits" in table_title.text:
-    #                     df=table[0].to_pandas()
-    #                     credits_aws = pd.concat([credits_aws, df], ignore_index=True)
-
-    #                 if "Transactions" in table_title.text:
-    #                     df=table[0].to_pandas()
-    #                     debits_aws = pd.concat([debits_aws, df], ignore_index=True)
-
-    #                 if "Fees" in table_title.text:
-    #                     df=table[0].to_pandas()
-    #                     debits_aws = pd.concat([debits_aws, df], ignore_index=True)
-
-    #                 if "Interests Charged" in table_title.text:
-    #                     df=table[0].to_pandas()
-    #                     debits_aws = pd.concat([debits_aws, df], ignore_index=True)
-
-    #     df = debits_aws
-    #     debits_aws = pd.DataFrame()
-
-    #     if len(df) > 0:
-    #         df1 = df[df.iloc[:,0].str.match(r'^[A-z]{3} \d{1,2}', na=False)].reset_index(drop=True)
-    #         new_df = df1[[0, 2, 3]].rename(columns={0: "date", 2: "description", 3: "amount"})
-
-    #         for i in range(len(new_df)):
-    #                 date = new_df.iloc[i, 0].strip()
-    #                 date_object = datetime.strptime(date, "%b %d")
-    #                 new_df.iloc[i, 0] = date_object.strftime("%m/%d")
-
-    #         for i in range(len(new_df)):
-    #                 date_str = new_df.iloc[i]['date'].strip() 
-    #                 full_date_str = f"{date_str}/{str(year)[-2:]}"
-    #                 formatted_date = datetime.strptime(full_date_str, "%m/%d/%y").strftime("%m/%d/%y")
-    #                 new_df.loc[i, "date"] = formatted_date
-            
-    #         if len(new_df) > 0:
-    #                 new_df['amount'] = new_df['amount'].str.replace(r'[$,]', '', regex=True)
-    #                 new_df['amount'] = pd.to_numeric(new_df['amount'])
-
-    #         debits_aws = new_df
-
-    #     df = credits_aws
-
-    #     if len(df) > 0:
-    #         df1 = df[df.iloc[:,0].str.match(r'^[A-z]{3} \d{1,2}', na=False)].reset_index(drop=True)
-    #         new_df = df1[[0, 2, 3]].rename(columns={0: "date", 2: "description", 3: "amount"})
-        
-    #         for i in range(len(new_df)):
-    #             date = new_df.iloc[i, 0].strip()
-    #             date_object = datetime.strptime(date, "%b %d")
-    #             new_df.iloc[i, 0] = date_object.strftime("%m/%d")
-        
-    #         for i in range(len(new_df)):
-    #             date_str = new_df.iloc[i]['date'].strip() 
-    #             full_date_str = f"{date_str}/{str(year)[-2:]}"
-    #             formatted_date = datetime.strptime(full_date_str, "%m/%d/%y").strftime("%m/%d/%y")
-    #             new_df.loc[i, "date"] = formatted_date
-
-    #         if len(new_df) > 0:
-    #             new_df['amount'] = new_df['amount'].str.replace(r'[$,]', '', regex=True)
-    #             new_df['amount'] = pd.to_numeric(new_df['amount'])
-
-    #         credits_aws = new_df
-
-    #     with pd.ExcelWriter('excel2.xlsx', engine='openpyxl') as writer:
-    #         credits_aws.to_excel(writer, sheet_name='Credit', index=False)
-    #         debits_aws.to_excel(writer, sheet_name='Debit', index=False)
-
-    #         workbook2 = writer.book
-    #         worksheet1 = writer.sheets['Credit']
-    #         worksheet2 = writer.sheets['Debit']
-
-    #         temp_excel2 = tempfile.NamedTemporaryFile(suffix='.xlsx', delete=False)
-    #         workbook2.save(temp_excel2.name)
-
-    # except Exception as e:
-    #     logger.debug("An error occured: ", e)
-
-    # try:
-    #     logger.debug("Block 3")
-
-    #     credit_df = pd.DataFrame()
-    #     debit_df = pd.DataFrame()
-
-    #     project_id = 'techify-446309'
-    #     location = 'us'
-    #     processor_id = '567c2df93ddea10e'
-    #     processor_version = 'rc'
-    #     file_path = temp_path
-    #     mime_type = 'application/pdf'
-    #     credentials_path = '/home/ubuntu/pdf-excel/techify.json'
-
-    #     def clean_date(date_str):
-    #         full_date_str = f"{date_str}/{str(year)[-2:]}"
-    #         formatted_date = datetime.strptime(full_date_str, "%b %d/%y").strftime("%m/%d/%y")
-    #         return formatted_date
-
-    #     def is_valid_date_format(date_str: str) -> str:
-    #         """
-    #         Validate if the date string matches mm/dd/yy format.
-    #         Returns True if the date is valid, False otherwise.
-    #         """
-    #         date_pattern = r'[A-Z]{1}[a-z]{2} \d{1,2}'
-            
-    #         x = re.search(date_pattern, date_str)
-    #         if not x:
-    #             return None
-    #         else:
-    #             return x.group()
-    
-    #     def parse_amount(amount_str: str) -> float:
-    #         clean_amount = amount_str.replace('$', '').replace(',', '').replace('"', '').replace(' ', '').strip()
-            
-    #         try:
-    #             return float(clean_amount)
-    #         except ValueError:
-    #             print(f"Warning: Could not parse amount: {amount_str}")
-    #             return 0.0
-
-    #     def process_document(
-    #         project_id: str,
-    #         location: str,
-    #         processor_id: str,
-    #         processor_version: str,
-    #         file_path: str,
-    #         mime_type: str,
-    #         credentials_path: str,
-    #         process_options: Optional[documentai.ProcessOptions] = None,
-    #     ) -> documentai.Document:
-
-    #         credentials = service_account.Credentials.from_service_account_file(
-    #                 credentials_path,
-    #                 scopes=['https://www.googleapis.com/auth/cloud-platform']
-    #         )
-                
-    #         client = documentai.DocumentProcessorServiceClient(
-    #             credentials=credentials,
-    #             client_options=ClientOptions(
-    #                 api_endpoint=f"{location}-documentai.googleapis.com"
-    #             )
-    #         )
-
-    #         name = client.processor_version_path(
-    #             project_id, location, processor_id, processor_version
-    #         )
-
-    #         with open(file_path, "rb") as image:
-    #             image_content = image.read()
-
-    #         request = documentai.ProcessRequest(
-    #             name=name,
-    #             raw_document=documentai.RawDocument(content=image_content, mime_type=mime_type),
-    #             process_options=process_options,
-    #         )
-
-    #         result = client.process_document(request=request)
-
-    #         return result.document
-
-    #     def layout_to_text(layout: documentai.Document.Page.Layout, text: str) -> str:
-    #         """
-    #         Document AI identifies text in different parts of the document by their
-    #         offsets in the entirety of the document's text. This function converts
-    #         offsets to a string.
-    #         """
-    #         return "".join(
-    #             text[int(segment.start_index) : int(segment.end_index)]
-    #             for segment in layout.text_anchor.text_segments
-    #         )
-
-    #     document = process_document(
-    #             project_id, location, processor_id, processor_version, file_path, mime_type, credentials_path
-    #         )
-
-    #     text = document.text
-    #     print(f"There are {len(document.pages)} page(s) in this document.")
-
-    #     # Initialize lists to store all credit and debit transactions
-    #     all_credit_rows = []
-    #     all_debit_rows = []
-    #     # headers = None
-    #     column_header = ['Date', 'Description', 'Amount']
-
-    #     for page in document.pages:
-    #         print(f"\n\n**** Page {page.page_number} ****")
-    #         print(f"\nFound {len(page.tables)} table(s):")
-
-    #         for table in page.tables:
-    #             num_columns = len(table.header_rows[0].cells)
-    #             if num_columns > 2:
-    #                 num_rows = len(table.body_rows)
-    #                 print(f"Table with {num_columns} columns and {num_rows} rows:")
-                    
-    #                 # if headers is None:
-    #                 #     headers = []
-    #                 #     for cell in table.header_rows[0].cells:
-    #                 #         header_text = layout_to_text(cell.layout, text).strip()
-    #                 #         headers.append(header_text)
-    #                 #     print("Columns:", headers)
-                    
-    #                 for row in table.body_rows:
-    #                         row_data = []
-    #                         for cell in row.cells:
-    #                             cell_text = layout_to_text(cell.layout, text).strip()
-    #                             row_data.append(cell_text)
-
-    #                         date_formatted = is_valid_date_format(row_data[0])
-    #                         if date_formatted:
-    #                             row_data[0] = date_formatted
-                                
-    #                             amount = parse_amount(row_data[-1])
-                                
-    #                             if amount >= 0:
-    #                                 row_data[-1] = str(amount)  # Clean amount string
-    #                                 all_debit_rows.append([row_data[0], row_data[-2], row_data[-1]])
-    #                             elif amount < 0:
-    #                                 row_data[-1] = str(abs(amount))  # Clean amount string
-    #                                 all_credit_rows.append([row_data[0], row_data[-2], row_data[-1]])
-    #                         else:
-    #                             print(f"Skipping row with invalid date format: {row_data[0]}")
-
-    #     # Save credit transactions
-    #     if all_credit_rows:
-    #         credit_df = pd.DataFrame(all_credit_rows, columns=column_header)
-    #         credit_df[column_header[0]] = credit_df[column_header[0]].apply(clean_date)
-    #         credit_df[column_header[-1]] = pd.to_numeric(credit_df[column_header[-1]], errors='coerce')
-    #         # credit_df.to_excel(writer, sheet_name='Credits', index=False)
-    #     print(f"Total credit transactions processed: {len(all_credit_rows)}")
-        
-    #     if all_debit_rows:
-    #         debit_df = pd.DataFrame(all_debit_rows, columns=column_header)
-    #         debit_df[column_header[0]] = debit_df[column_header[0]].apply(clean_date)
-    #         debit_df[column_header[-1]] = pd.to_numeric(debit_df[column_header[-1]], errors='coerce')
-    #         # debit_df.to_excel(writer, sheet_name='Debits', index=False)
-    #     print(f"Total debit transactions processed: {len(all_debit_rows)}")
-    
-    #     if not (all_credit_rows or all_debit_rows):
-    #         print("No valid transactions found in any table")
-
-    #     with pd.ExcelWriter('excel3.xlsx', engine='openpyxl') as writer:
-    #         credit_df.to_excel(writer, sheet_name='Credit', index=False)
-    #         debit_df.to_excel(writer, sheet_name='Debit', index=False)
-
-    #         workbook3 = writer.book
-    #         worksheet1 = writer.sheets['Credit']
-    #         worksheet2 = writer.sheets['Debit']
-
-    #         temp_excel3 = tempfile.NamedTemporaryFile(suffix='.xlsx', delete=False)
-    #         workbook3.save(temp_excel3.name)
-    
-    # except Exception as e:
-    #     logger.debug("An error occured: ", e)
-
-    try:
-        excel1_buffer = io.BytesIO()
-        workbook1.save(excel1_buffer)
-        excel1_buffer.seek(0)
-        
-        # excel2_buffer = io.BytesIO()
-        # workbook2.save(excel2_buffer)
-        # excel2_buffer.seek(0)
-
-        # excel3_buffer = io.BytesIO()
-        # workbook3.save(excel3_buffer)
-        # excel3_buffer.seek(0)
-        
-        # Create a zip file in memory
-        zip_buffer = io.BytesIO()
-        with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
-            zip_file.writestr('capone.xlsx', excel1_buffer.getvalue())
-            # zip_file.writestr('textract.xlsx', excel2_buffer.getvalue())
-            # zip_file.writestr('docai.xlsx', excel3_buffer.getvalue())
-        
-        zip_buffer.seek(0)
-        
-        # Send the zip file
-        return send_file(
-            zip_buffer, 
-            mimetype='application/zip',
-            as_attachment=True,
-            download_name='capone.zip'
-        )
-    
-    except Exception as e:
-        logger.debug("An error occured: ", e)
-        
-    finally:
-        os.remove(temp_path)
-        os.remove('excel1.xlsx')
-        # os.remove('excel2.xlsx')
-        # os.remove('excel3.xlsx')
-        # for f in files:
-        #     os.remove(f)
-
-
-@app.route('/chasechecking', methods=['POST'])
-def excel_chasechecking():
-    uploaded_file = request.files.get('file')
-    year = request.form.get('year')
-    if not uploaded_file:
-        return jsonify({'error': 'No file uploaded'}), 400
-    
-    temp_path = tempfile.mktemp(suffix='.pdf')
-    uploaded_file.save(temp_path)
-
-    # try:
-    #     doc = pymupdf.open(temp_path)
-    #     with open('log.txt', 'w', encoding='utf-8') as f:
-    #         for page in doc:
-    #             text = page.get_text()
-    #             f.write(text + '\n')
-
-    #     with open("log.txt", "r") as f:
-    #         text = f.read()
-
-    #     cr_pattern = (
-    #         r'(\d{2}/\d{2})\n([A-Za-z0-9\"\'\/\\\;\:\,\&\#\*\-\s]+\.\D[A-Za-z0-9\"\'\/\\\;\:\,\&\#\*\-\s]+\.\D[A-Za-z0-9\"\'\/\\\;\:\,\&\#\*\-\s]+)\s[$]*([0-9,]+[.][0-9]{2})'
-    #         r'|'
-    #         r'(\d{2}/\d{2})\n([A-Za-z0-9\"\'\/\\\;\:\,\&\#\*\-\s]+\.\D[A-Za-z0-9\"\'\/\\\;\:\,\&\#\*\-\s]+)\s[$]*([0-9,]+[.][0-9]{2})'
-    #         r'|'
-    #         r'(\d{2}/\d{2})\n([A-Za-z0-9\"\'\/\\\;\:\,\&\#\*\-\s]+)\s[$]*([0-9,]+[.][0-9]{2})'
-    #     )
-
-    #     checks = r'(\d{4})\s[\^\*\s]*\s(A-Za-z0-9\s)*(\d{2}/\d{2})\s[$]*([0-9,]+[.][0-9]{2})'
-
-    #     credits = []
-    #     debits = []
-
-    #     for match in re.finditer(cr_pattern, text):
-    #         date = match.group(1) or match.group(4) or match.group(7)
-    #         user = match.group(2) or match.group(5) or match.group(8)
-    #         credit = match.group(3) or match.group(6) or match.group(9)
-    #         credits.append({
-    #             "date": date,
-    #             "description": user,
-    #             "credit": credit
-    #         })
-
-
-    #     # # for match in re.finditer(db_pattern, text):
-    #     # #     date = match.group(1)
-    #     # #     user = match.group(2)
-    #     # #     debit = match.group(3)
-    #     # #     debits.append({
-    #     # #         "date": date,
-    #     # #         "description": user,
-    #     # #         "debit": debit
-    #     # #     })
-
-    #     for match in re.finditer(checks, text):
-    #         date = match.group(3)
-    #         user = match.group(1)
-    #         debit = match.group(4)
-    #         debits.append({
-    #             "date": date,
-    #             "description": user,
-    #             "debit": debit
-    #         })
-
-
-    #     def clean_amount(amount):
-    #         return float(amount.replace(',', ''))
-        
-    #     def clean_date(date_format):
-    #         date_str = date_format.strip() 
-    #         full_date_str = f"{date_str}/{str(year)[-2:]}"
-    #         formatted_date = datetime.strptime(full_date_str, "%m/%d/%y").strftime("%m/%d/%y")
-    #         return formatted_date
-
-    #     credits = pd.DataFrame(credits)
-    #     if len(credits) > 0:
-    #         credits['credit'] = credits['credit'].apply(clean_amount)
-    #         credits['date'] = credits['date'].apply(clean_date)
-
-    #     debits = pd.DataFrame(debits)
-    #     if len(debits) > 0:
-    #         debits['debit'] = debits['debit'].apply(clean_amount)
-    #         debits['date'] = debits['date'].apply(clean_date)
-
-    #     with pd.ExcelWriter('excel1.xlsx', engine='openpyxl') as writer:
-    #         credits.to_excel(writer, sheet_name='Credit', index=False)
-    #         debits.to_excel(writer, sheet_name='Debit', index=False)
-
-    #         workbook1 = writer.book
-    #         worksheet1 = writer.sheets['Credit']
-    #         worksheet2 = writer.sheets['Debit']
-
-    #         for cell in worksheet1['C'][1:]:
-    #             cell.number_format = '##0.00'
-
-    #         for cell in worksheet2['C'][1:]:
-    #             cell.number_format = '##0.00'
-        
-    #     temp_excel = tempfile.NamedTemporaryFile(suffix='.xlsx', delete=False)
-    #     workbook1.save(temp_excel.name)
-
-    # except Exception as e:
-    #     logger.debug("An error occured: ", e)
-
-    try:
-        pages = convert_from_path(temp_path, dpi=700)
-
-        files = []
-        for i in range(len(pages)):
-            pages[i].save("Chase_page_"+str(i+1)+".png", "PNG")
-            files.append("Chase_page_"+str(i+1)+".png")
-
-        credits_aws = pd.DataFrame()
-        debits_aws = pd.DataFrame()
-
-        for f in files:
-            image = Image.open(f) # loads the document image with Pillow
-            extractor = Textractor(region_name="us-east-1") # Initialize textractor client, modify region if required
-            response = extractor.analyze_document(
-                file_source=image,
-                features=[
-                    TextractFeatures.TABLES
-                ],
-                save_image=True
-            )
-
-            for i in range(len(response.tables)):
-                table = EntityList(response.tables[i])
-                response.tables[i].visualize()
-                table_title = table[0].title
-                if table_title:
-                    # print(table_title.text)
-                    if table_title.text.startswith('DEPOSIT'):
-                        df=table[0].to_pandas()
-                        if len(df.columns) > 3:
-                            for i in range(2, len(df.columns)-1):
-                                df[1] = df[1] + ' ' + df[i]
-                        df1 = df[[0,1,len(df.columns)-1]].copy()
-                        df1 = df1.rename(columns={0: "date", 1: "description", len(df.columns)-1: "amount"})
-                        credits_aws = pd.concat([credits_aws, df1], ignore_index=True)
-
-                    if table_title.text in ['ATM & DEBIT CARD WITHDRAWALS', 'ELECTRONIC WITHDRAWALS', 'FEES']:
-                        df=table[0].to_pandas()
-                        # print(df)
-                        if len(df.columns) > 3:
-                            for i in range(2, len(df.columns)-1):
-                                df[1] = df[1] + ' ' + df[i]
-                        df1 = df[[0,1,len(df.columns)-1]].copy()
-                        df1 = df1.rename(columns={0: "date", 1: "description", len(df.columns)-1: "amount"})
-                        # print(df1)
-                        debits_aws = pd.concat([debits_aws, df1], ignore_index=True)
-
-                    if table_title.text in ['CHECKS PAID']:
-                        df=table[0].to_pandas()
-                        # print(df)
-                        if len(df.columns) > 3:
-                            for i in range(1, len(df.columns)-2):
-                                df[0] = df[0] + ' ' + df[i]
-                        df1 = df[[0,len(df.columns)-2,len(df.columns)-1]].copy()
-                        df1 = df1.rename(columns={len(df.columns)-2: "date", 0: "description", len(df.columns)-1: "amount"})
-                        # print(df1)
-                        debits_aws = pd.concat([debits_aws, df1], ignore_index=True)
-
-        debits_aws = debits_aws[['date', 'description', 'amount']]
-
-        if len(debits_aws) > 0:
-            debits_aws.iloc[:,0] = debits_aws.iloc[:,0].str.extract(r'(\d{2}/\d{2})')
-            debits_aws = debits_aws[debits_aws.iloc[:,0].str.contains(r'\d{2}/\d{2}', na=False)].reset_index(drop=True)
-                
-        if len(credits_aws) > 0:
-            credits_aws.iloc[:,0] = credits_aws.iloc[:,0].str.extract(r'(\d{2}/\d{2})')
-            credits_aws = credits_aws[credits_aws.iloc[:,0].str.contains(r'\d{2}/\d{2}', na=False)].reset_index(drop=True)      
-
-        for i in range(len(debits_aws)):
-            date_str = debits_aws.iloc[i]['date'].strip() 
-            full_date_str = f"{date_str}/{str(year)[-2:]}"
-            formatted_date = datetime.strptime(full_date_str, "%m/%d/%y").strftime("%m/%d/%y")
-            debits_aws.loc[i, "date"] = formatted_date
-
-        for i in range(len(credits_aws)):
-            date_str = credits_aws.iloc[i]['date'].strip()
-            full_date_str = f"{date_str}/{str(year)[-2:]}"
-            formatted_date = datetime.strptime(full_date_str, "%m/%d/%y").strftime("%m/%d/%y")
-            credits_aws.loc[i, "date"] = formatted_date
-
-        if len(debits_aws) > 0:
-            debits_aws['amount'] = debits_aws['amount'].str.replace(r'[$,]', '', regex=True)
-            debits_aws['amount'] = debits_aws['amount'].str.extract(r'([0-9,]*\.\d{2})')
-            debits_aws['amount'] = pd.to_numeric(debits_aws['amount'])
-
-        if len(credits_aws) > 0:
-            credits_aws['amount'] = credits_aws['amount'].str.replace(r'[$,]', '', regex=True)
-            credits_aws['amount'] = credits_aws['amount'].str.extract(r'([0-9]*.\d{2})')
-            credits_aws['amount'] = pd.to_numeric(credits_aws['amount'])
-
-        with pd.ExcelWriter('excel2.xlsx', engine='openpyxl') as writer:
-            credits_aws.to_excel(writer, sheet_name='Credit', index=False)
-            debits_aws.to_excel(writer, sheet_name='Debit', index=False)
-
-            workbook2 = writer.book
-            worksheet1 = writer.sheets['Credit']
-            worksheet2 = writer.sheets['Debit']
-
-            temp_excel2 = tempfile.NamedTemporaryFile(suffix='.xlsx', delete=False)
-            workbook2.save(temp_excel2.name)
-    
-    except Exception as e:
-        logger.debug("An error occured: ", e)
-
-    try:
-        # excel1_buffer = io.BytesIO()
-        # workbook1.save(excel1_buffer)
-        # excel1_buffer.seek(0)
-        
-        excel2_buffer = io.BytesIO()
-        workbook2.save(excel2_buffer)
-        excel2_buffer.seek(0)
-        
-        # Create a zip file in memory
-        zip_buffer = io.BytesIO()
-        with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
-            # zip_file.writestr('regex.xlsx', excel1_buffer.getvalue())
-            zip_file.writestr('chase.xlsx', excel2_buffer.getvalue())
-        
-        zip_buffer.seek(0)
-        
-        # Send the zip file
-        return send_file(
-            zip_buffer, 
-            mimetype='application/zip',
-            as_attachment=True,
-            download_name='chase.zip'
-        )
-    
-    except Exception as e:
-        logger.debug("An error occured: ", e)
-
-    finally:
-        os.remove(temp_path)
-        # os.remove('excel1.xlsx')
-        os.remove('excel2.xlsx')
-        for f in files:
-            os.remove(f)
-
-@app.route('/chase', methods=['POST'])
-def excel_chase():
-    uploaded_file = request.files.get('file')
-    year = request.form.get('year')
-    if not uploaded_file:
-        return jsonify({'error': 'No file uploaded'}), 400
-    
-    temp_path = tempfile.mktemp(suffix='.pdf')
-    uploaded_file.save(temp_path)
-
-    try:
-        pages = convert_from_path(temp_path, dpi=700)
-
-        files = []
-        for i in range(len(pages)):
-            pages[i].save("Chase_page_"+str(i+1)+".png", "PNG")
-            files.append("Chase_page_"+str(i+1)+".png")
-
-        credits_aws = pd.DataFrame()
-        debits_aws = pd.DataFrame()
-        savings_transactions = pd.DataFrame()
-
-        for f in files:
-            image = Image.open(f) # loads the document image with Pillow
-            extractor = Textractor(region_name="us-east-1") # Initialize textractor client, modify region if required
-            response = extractor.analyze_document(
-                file_source=image,
-                features=[
-                    TextractFeatures.TABLES
-                ],
-                save_image=True
-            )
-
-            for i in range(len(response.tables)):
-                table = EntityList(response.tables[i])
-                response.tables[i].visualize()
-                table_title = table[0].title
-                if table_title:
-                    # print(table_title.text)
-
-                    if table_title.text.startswith('DEPOSIT'):
-                        df=table[0].to_pandas()
-                        # print(df)
-                        if len(df.columns) > 3:
-                            for i in range(2, len(df.columns)-1):
-                                df[1] = df[1] + ' ' + df[i]
-                        df1 = df[[0,1,len(df.columns)-1]].copy()
-                        df1 = df1.rename(columns={0: "date", 1: "description", len(df.columns)-1: "amount"})
-                        credits_aws = pd.concat([credits_aws, df1], ignore_index=True)
-
-                    if table_title.text in ['ATM & DEBIT CARD WITHDRAWALS', 'ELECTRONIC WITHDRAWALS', 'ELECTRONIC WITHDRAWALS (continued)', 'FEES', 'OTHER WITHDRAWALS']:
-                        df=table[0].to_pandas()
-                        # print(df)
-                        if len(df.columns) > 3:
-                            for i in range(2, len(df.columns)-1):
-                                df[1] = df[1] + ' ' + df[i]
-                        df1 = df[[0,1,len(df.columns)-1]].copy()
-                        df1 = df1.rename(columns={0: "date", 1: "description", len(df.columns)-1: "amount"})
-                        # print(df1)
-                        debits_aws = pd.concat([debits_aws, df1], ignore_index=True)
-
-                    if table_title.text in ['CHECKS PAID']:
-                        df=table[0].to_pandas()
-                        # print(df)
-                        if len(df.columns) > 3:
-                            for i in range(1, len(df.columns)-2):
-                                df[0] = df[0] + ' ' + df[i]
-                        df1 = df[[0,len(df.columns)-2,len(df.columns)-1]].copy()
-                        df1 = df1.rename(columns={len(df.columns)-2: "date", 0: "description", len(df.columns)-1: "amount"})
-                        # print(df1)
-                        debits_aws = pd.concat([debits_aws, df1], ignore_index=True)
-                    
-                    if table_title.text in ['TRANSACTION DETAIL']:
-                        df=table[0].to_pandas()
-                        # print(df)
-                        if len(df.columns) > 4:
-                            for i in range(2, len(df.columns)-2):
-                                df[1] = df[1] + ' ' + df[i]
-                        df1 = df[[0,1,len(df.columns)-2]].copy()
-                        df1 = df1.rename(columns={0: "date", 1: "description", len(df.columns)-2: "amount"})
-                        # print(df1)
-                        savings_transactions = pd.concat([savings_transactions, df1], ignore_index=True)
-
-        debits_aws = debits_aws[['date', 'description', 'amount']]
-
-        if len(debits_aws) > 0:
-            debits_aws.iloc[:,0] = debits_aws.iloc[:,0].str.extract(r'(\d{2}/\d{2})')
-            debits_aws = debits_aws[debits_aws.iloc[:,0].str.contains(r'\d{2}/\d{2}', na=False)].reset_index(drop=True)
-                
-        if len(credits_aws) > 0:
-            credits_aws.iloc[:,0] = credits_aws.iloc[:,0].str.extract(r'(\d{2}/\d{2})')
-            credits_aws = credits_aws[credits_aws.iloc[:,0].str.contains(r'\d{2}/\d{2}', na=False)].reset_index(drop=True) 
-
-        if len(savings_transactions) > 0:
-            savings_transactions.iloc[:,0] = savings_transactions.iloc[:,0].str.extract(r'(\d{2}/\d{2})')
-            savings_transactions = savings_transactions[savings_transactions.iloc[:,0].str.contains(r'\d{2}/\d{2}', na=False)].reset_index(drop=True) 
-
-        savings_debit = pd.DataFrame()
-        savings_credit = pd.DataFrame()  
-
-        if len(savings_transactions) > 0:
-            savings_transactions['amount'] = savings_transactions['amount'].str.replace(r'[$,]', '', regex=True).astype(float)
-            savings_transactions['amount'] = pd.to_numeric(savings_transactions['amount'], errors='coerce')
-
-            savings_debit = savings_transactions[savings_transactions['amount'] < 0].reset_index(drop=True)
-            savings_credit = savings_transactions[savings_transactions['amount'] > 0].reset_index(drop=True)
-
-            savings_debit.loc[:, 'amount'] = savings_debit['amount'].astype(str).str.replace(r'[-]', '', regex=True).astype(float)       
-
-        for i in range(len(debits_aws)):
-            date_str = debits_aws.iloc[i]['date'].strip() 
-            full_date_str = f"{date_str}/{str(year)[-2:]}"
-            formatted_date = datetime.strptime(full_date_str, "%m/%d/%y").strftime("%m/%d/%y")
-            debits_aws.loc[i, "date"] = formatted_date
-
-        for i in range(len(credits_aws)):
-            date_str = credits_aws.iloc[i]['date'].strip()
-            full_date_str = f"{date_str}/{str(year)[-2:]}"
-            formatted_date = datetime.strptime(full_date_str, "%m/%d/%y").strftime("%m/%d/%y")
-            credits_aws.loc[i, "date"] = formatted_date
-
-        for i in range(len(savings_debit)):
-            date_str = savings_debit.iloc[i]['date'].strip() 
-            full_date_str = f"{date_str}/{str(year)[-2:]}"
-            formatted_date = datetime.strptime(full_date_str, "%m/%d/%y").strftime("%m/%d/%y")
-            savings_debit.loc[i, "date"] = formatted_date
-
-        for i in range(len(savings_credit)):
-            date_str = savings_credit.iloc[i]['date'].strip()
-            full_date_str = f"{date_str}/{str(year)[-2:]}"
-            formatted_date = datetime.strptime(full_date_str, "%m/%d/%y").strftime("%m/%d/%y")
-            savings_credit.loc[i, "date"] = formatted_date
-
-        if len(debits_aws) > 0:
-            debits_aws['amount'] = debits_aws['amount'].str.replace(r'[$,]', '', regex=True)
-            debits_aws['amount'] = debits_aws['amount'].str.extract(r'([0-9,]*\.\d{2})')
-            debits_aws['amount'] = pd.to_numeric(debits_aws['amount'])
-
-        if len(credits_aws) > 0:
-            credits_aws['amount'] = credits_aws['amount'].str.replace(r'[$,]', '', regex=True)
-            credits_aws['amount'] = credits_aws['amount'].str.extract(r'([0-9]*.\d{2})')
-            credits_aws['amount'] = pd.to_numeric(credits_aws['amount'])
-        
-        if len(savings_debit) > 0:
-            savings_debit['amount'] = pd.to_numeric(savings_debit['amount'])
-
-        if len(savings_credit) > 0:
-            savings_credit['amount'] = pd.to_numeric(savings_credit['amount'])
-
-        with pd.ExcelWriter('excel1.xlsx', engine='openpyxl') as writer:
-            credits_aws.to_excel(writer, sheet_name='Credit', index=False)
-            debits_aws.to_excel(writer, sheet_name='Debit', index=False)
-
-            workbook1 = writer.book
-            worksheet1 = writer.sheets['Credit']
-            worksheet2 = writer.sheets['Debit']
-
-            temp_excel1 = tempfile.NamedTemporaryFile(suffix='.xlsx', delete=False)
-            workbook1.save(temp_excel1.name)
-
-        if len(savings_transactions) > 0:
-            with pd.ExcelWriter('excel2.xlsx', engine='openpyxl') as writer:
-                savings_credit.to_excel(writer, sheet_name='Credit', index=False)
-                savings_debit.to_excel(writer, sheet_name='Debit', index=False)
-
-                workbook2 = writer.book
-                worksheet1 = writer.sheets['Credit']
-                worksheet2 = writer.sheets['Debit']
-
-                temp_excel2 = tempfile.NamedTemporaryFile(suffix='.xlsx', delete=False)
-                workbook2.save(temp_excel2.name)
-    
-    except Exception as e:
-        logger.debug("An error occured: ", e)
-
-    try:
-        excel1_buffer = io.BytesIO()
-        workbook1.save(excel1_buffer)
-        excel1_buffer.seek(0)
-        
-        if len(savings_transactions) > 0:
-            excel2_buffer = io.BytesIO()
-            workbook2.save(excel2_buffer)
-            excel2_buffer.seek(0)
-        
-        # Create a zip file in memory
-        zip_buffer = io.BytesIO()
-        with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
-            zip_file.writestr('Checking.xlsx', excel1_buffer.getvalue())
-            if len(savings_transactions) > 0:
-                zip_file.writestr('Saving.xlsx', excel2_buffer.getvalue())
-        
-        zip_buffer.seek(0)
-        
-        # Send the zip file
-        return send_file(
-            zip_buffer, 
-            mimetype='application/zip',
-            as_attachment=True,
-            download_name='chase.zip'
-        )
-    
-    except Exception as e:
-        logger.debug("An error occured: ", e)
-
-    finally:
-        os.remove(temp_path)
-        os.remove('excel1.xlsx')
-        if len(savings_transactions) > 0:
-            os.remove('excel2.xlsx')
-        for f in files:
-            os.remove(f)
-
-
-@app.route('/citi', methods=['POST'])
-def excel_citi():
-    uploaded_file = request.files.get('file')
-    year = request.form.get('year')
-    if not uploaded_file:
-        return jsonify({'error': 'No file uploaded'}), 400
-    
-    temp_path = tempfile.mktemp(suffix='.pdf')
-    uploaded_file.save(temp_path)
-
-    # try:
-    #     doc = pymupdf.open(temp_path)
-    #     with open('log.txt', 'w', encoding='utf-8') as f:
-    #         for page in doc:
-    #             text = page.get_text()
-    #             f.write(text + '\n')
-
-    #     with open("log.txt", "r") as f:
-    #         text = f.read()
-
-    #     # cr_pattern = r'(\d{2}/\d{2})\s([A-Za-z0-9\s\#]+)\s[-]([0-9,]+[.][0-9]{2})'
-    #     db_pattern = r'(\d{2}/\d{2})\s([A-Za-z0-9\s\#]+)\s([0-9,]+[.][0-9]{2})'
-
-    #     credits = []
-    #     debits = []
-
-    #     # for match in re.finditer(cr_pattern, text):
-    #     #     date = match.group(1)
-    #     #     user = match.group(2)
-    #     #     credit = match.group(3)
-    #     #     credits.append({
-    #     #         "date": date,
-    #     #         "description": user,
-    #     #         "credit": credit
-    #     #     })
-
-
-    #     for match in re.finditer(db_pattern, text):
-    #         date = match.group(1)
-    #         user = match.group(2)
-    #         debit = match.group(3)
-    #         debits.append({
-    #             "date": date,
-    #             "description": user,
-    #             "debit": debit
-    #         })
-
-    #     def clean_amount(amount):
-    #         return float(amount.replace(',', ''))
-        
-    #     def clean_date(date_format):
-    #         date_str = date_format.strip() 
-    #         full_date_str = f"{date_str}/{str(year)[-2:]}"
-    #         formatted_date = datetime.strptime(full_date_str, "%m/%d/%y").strftime("%m/%d/%y")
-    #         return formatted_date
-
-    #     credits = pd.DataFrame(credits)
-    #     if len(credits) > 0:
-    #         credits['credit'] = credits['credit'].apply(clean_amount)
-    #         credits['date'] = credits['date'].apply(clean_date)
-
-    #     debits = pd.DataFrame(debits)
-    #     if len(debits) > 0:
-    #         debits['debit'] = debits['debit'].apply(clean_amount)
-    #         debits['date'] = debits['date'].apply(clean_date)
-
-    #     with pd.ExcelWriter('excel1.xlsx', engine='openpyxl') as writer:
-    #         credits.to_excel(writer, sheet_name='Credit', index=False)
-    #         debits.to_excel(writer, sheet_name='Debit', index=False)
-
-    #         workbook1 = writer.book
-    #         worksheet1 = writer.sheets['Credit']
-    #         worksheet2 = writer.sheets['Debit']
-
-    #         for cell in worksheet1['C'][1:]:
-    #             cell.number_format = '##0.00'
-
-    #         for cell in worksheet2['C'][1:]:
-    #             cell.number_format = '##0.00'
-
-    #     temp_excel = tempfile.NamedTemporaryFile(suffix='.xlsx', delete=False)
-    #     workbook1.save(temp_excel.name)
-
-    # except Exception as e:
-    #     logger.debug("An error occured: ", e)
-
-    # try:
-    #     pages = convert_from_path(temp_path, dpi=700)
-
-    #     files = []
-    #     for i in range(len(pages)):
-    #         pages[i].save("Citi_page_"+str(i+1)+".png", "PNG")
-    #         files.append("Citi_page_"+str(i+1)+".png")
-
-    #     credits_aws = pd.DataFrame()
-    #     debits_aws = pd.DataFrame()
-    #     transactions = pd.DataFrame()
-
-    #     for f in files:
-    #         image = Image.open(f) # loads the document image with Pillow
-    #         extractor = Textractor(region_name="us-east-1") # Initialize textractor client, modify region if required
-    #         response = extractor.analyze_document(
-    #             file_source=image,
-    #             features=[
-    #                 TextractFeatures.TABLES
-    #             ],
-    #             save_image=True
-    #         )
-
-    #         for i in range(len(response.tables)):
-    #             table = EntityList(response.tables[i])
-    #             response.tables[i].visualize()
-    #             table_title = table[0].title
-    #             if table_title:
-    #                 if table_title.text in ['CHECKING ACTIVITY']:
-    #                     df=table[0].to_pandas()
-    #                     df1 = df[[0,1,2]].rename(columns={0: "date", 1: "description", 2: "amount"})
-    #                     transactions = pd.concat([transactions, df1], ignore_index=True)
-
-    #     if len(transactions) > 0:
-    #         credits_aws = transactions[transactions.iloc[:,0].str.match(r'^\d{2}/\d{2}', na=False)].reset_index(drop=True)
-        
-    #     if len(credits_aws) > 0:
-    #         credits_aws['amount'] = credits_aws['amount'].str.strip().replace(r'[,]', '', regex=True)
-    #         credits_aws['amount'] = pd.to_numeric(credits_aws['amount'])
-
-    #     for i in range(len(credits_aws)):
-    #         date_str = credits_aws.iloc[i]['date'].strip()
-    #         full_date_str = f"{date_str}/{str(year)[-2:]}"
-    #         formatted_date = datetime.strptime(full_date_str, "%m/%d/%y").strftime("%m/%d/%y")
-    #         credits_aws.loc[i, "date"] = formatted_date
-
-    #     with pd.ExcelWriter('excel2.xlsx', engine='openpyxl') as writer:
-    #         credits_aws.to_excel(writer, sheet_name='Credit', index=False)
-    #         debits_aws.to_excel(writer, sheet_name='Debit', index=False)
-
-    #         workbook2 = writer.book
-    #         worksheet1 = writer.sheets['Credit']
-    #         worksheet2 = writer.sheets['Debit']
-
-    #         temp_excel2 = tempfile.NamedTemporaryFile(suffix='.xlsx', delete=False)
-    #         workbook2.save(temp_excel2.name)
-
-    # except Exception as e:
-    #     logger.debug("An error occured: ", e)
-
-    try:
-        logger.debug("Block 3")
-
-        credit_df = pd.DataFrame()
-        debit_df = pd.DataFrame()
-
-        project_id = 'techify-446309'
-        location = 'us'
-        processor_id = '567c2df93ddea10e'
-        processor_version = 'rc'
-        file_path = temp_path
-        mime_type = 'application/pdf'
-        credentials_path = '/home/ubuntu/pdf-excel/techify.json'
-
-        def clean_date(date_str):
-            full_date_str = f"{date_str}/{str(year)[-2:]}"
-            formatted_date = datetime.strptime(full_date_str, "%m/%d/%y").strftime("%m/%d/%y")
-            return formatted_date
-
-        def is_valid_date_format(date_str: str) -> bool:
-            """
-            Validate if the date string matches mm/dd/yy format.
-            Returns True if the date is valid, False otherwise.
-            """
-            date_pattern = r'\d{2}/\d{2}'
-            
-            if not re.match(date_pattern, date_str):
-                return False
+                s3_client.put_object_acl(Bucket=s3_bucket, Key=s3_key, ACL='public-read')
+            except Exception as e:
+                print(f"Error uploading report to S3: {e}")
+                return jsonify({"error": "Failed to upload report to S3"}), 500
+
+            latitude, longitude = location.split(",")
+            location = get_address_from_coordinates_nominatim(latitude, longitude)
+
+            # print(location)
+
+            # Store user data in the database
+            try:
+                store_user_data(candidate_id, first_name, last_name, email, phone_number, location, score, aptitude_score, verbal_score, programming_score, logical_score, time_taken, report_s3_url, submit_reason)
+            except Exception as e:
+                print(e)
+
+            # Send the email with the attached report
+            if send_email(subject, body, to_emails, cc_emails, attachment_path=report_path):
+                return jsonify({'message': 'Report sent successfully'}), 200
             else:
-                return True
-    
-        def parse_amount(amount_str: str) -> float:
-            clean_amount = amount_str.replace('$', '').replace(',', '').replace('"', '').strip()
-            
-            try:
-                return float(clean_amount)
-            except ValueError:
-                print(f"Warning: Could not parse amount: {amount_str}")
-                return 0.0
-        
-        def layout_to_text(layout: documentai.Document.Page.Layout, text: str) -> str:
-            """
-            Document AI identifies text in different parts of the document by their
-            offsets in the entirety of the document's text. This function converts
-            offsets to a string.
-            """
-            return "".join(
-                text[int(segment.start_index) : int(segment.end_index)]
-                for segment in layout.text_anchor.text_segments
-            )
-        
-        def process_document(
-            project_id: str,
-            location: str,
-            processor_id: str,
-            processor_version: str,
-            file_path: str,
-            mime_type: str,
-            credentials_path: str,
-            process_options: Optional[documentai.ProcessOptions] = None,
-        ) -> documentai.Document:
-        
-            credentials = service_account.Credentials.from_service_account_file(
-                credentials_path,
-                scopes=['https://www.googleapis.com/auth/cloud-platform']
-            )
-            
-            client = documentai.DocumentProcessorServiceClient(
-                credentials=credentials,
-                client_options=ClientOptions(
-                    api_endpoint=f"{location}-documentai.googleapis.com"
-                )
-            )
-
-            name = client.processor_version_path(
-                project_id, location, processor_id, processor_version
-            )
-
-            with open(file_path, "rb") as image:
-                image_content = image.read()
-
-            request = documentai.ProcessRequest(
-                name=name,
-                raw_document=documentai.RawDocument(content=image_content, mime_type=mime_type),
-                process_options=process_options,
-            )
-
-            result = client.process_document(request=request)
-
-            return result.document
-    
-        document = process_document(
-                project_id, location, processor_id, processor_version, file_path, mime_type, credentials_path
-            )
-
-        text = document.text
-        # print(f"There are {len(document.pages)} page(s) in this document.")
-
-        # Initialize lists to store all credit and debit transactions
-        credit_rows = []
-        debit_rows = []
-        headers = None
-
-        for page in document.pages:
-            # print(f"\n\n**** Page {page.page_number} ****")
-            # print(f"\nFound {len(page.tables)} table(s):")
-
-            for table in page.tables:
-                num_columns = len(table.header_rows[0].cells)
-                if num_columns >= 4:
-                    num_rows = len(table.body_rows)
-                    # print(f"Table with {num_columns} columns and {num_rows} rows:")
-                    
-                    # Only store headers from the first valid table we encounter
-                    headers = []
-                    for cell in table.header_rows[0].cells:
-                        header_text = layout_to_text(cell.layout, text).strip()
-                        headers.append(header_text)
-                    # print("Columns:", headers)
-
-                    if 'date' in headers[0].lower():
-                        for row in table.body_rows:
-                            row_data = []
-                            for cell in row.cells:
-                                cell_text = layout_to_text(cell.layout, text).strip()
-                                row_data.append(cell_text)
-
-                            if is_valid_date_format(row_data[0]):
-
-                                credit_amount = parse_amount(row_data[2])
-                                
-                                debit_amount = parse_amount(row_data[3])
-
-                                if debit_amount > 0:
-                                    transactions = [row_data[0], row_data[1], debit_amount]
-                                    debit_rows.append(transactions)
-                                elif credit_amount > 0:
-                                    transactions = [row_data[0], row_data[1], credit_amount]
-                                    credit_rows.append(transactions)
-
-        column_headers = ['Date', 'Description', 'Amount']
-
-        credit_df = pd.DataFrame()
-        debit_df = pd.DataFrame()
-
-        if credit_rows:
-            credit_df = pd.DataFrame(credit_rows, columns=column_headers)
-            credit_df['Amount'] = pd.to_numeric(credit_df['Amount'], errors='coerce')
-            credit_df['Date'] = credit_df['Date'].apply(clean_date)
-            # credit_df.to_excel(writer, sheet_name='Credits', index=False)
-            # print(f"Total credit transactions processed: {len(credit_rows)}")
-        
-        if debit_rows:
-            debit_df = pd.DataFrame(debit_rows, columns=column_headers)
-            debit_df['Amount'] = pd.to_numeric(debit_df['Amount'], errors='coerce')
-            debit_df['Date'] = debit_df['Date'].apply(clean_date)
-            # debit_df.to_excel(writer, sheet_name='Debits', index=False)
-            # print(f"Total debit transactions processed: {len(debit_rows)}")
-        
-
-        if not (credit_rows or debit_rows):
-            print("No valid transactions found in any table")
-
-        with pd.ExcelWriter('excel3.xlsx', engine='openpyxl') as writer:
-            credit_df.to_excel(writer, sheet_name='Credit', index=False)
-            debit_df.to_excel(writer, sheet_name='Debit', index=False)
-
-            workbook3 = writer.book
-            worksheet1 = writer.sheets['Credit']
-            worksheet2 = writer.sheets['Debit']
-
-            temp_excel3 = tempfile.NamedTemporaryFile(suffix='.xlsx', delete=False)
-            workbook3.save(temp_excel3.name)
+                return jsonify({'error': 'Failed to send email'}), 500
     
     except Exception as e:
-        logger.debug("An error occured: ", e)
+        print(e)
+        return jsonify({"error": str(e)}), 500  # Ensure a response is returned in case of an error
 
+    return jsonify({"error": "Unexpected error occurred"}), 500  # Fallback response
+
+@app.route('/submit_feedback', methods=['POST'])
+def submit_feedback():
+    cursor = None
+    conn = None
     try:
-        # excel1_buffer = io.BytesIO()
-        # workbook1.save(excel1_buffer)
-        # excel1_buffer.seek(0)
-        
-        # excel2_buffer = io.BytesIO()
-        # workbook2.save(excel2_buffer)
-        # excel2_buffer.seek(0)
+        data = request.json
+        candidate_id = data.get("candidate_id")
+        feedback = data.get("feedback")
 
-        excel3_buffer = io.BytesIO()
-        workbook3.save(excel3_buffer)
-        excel3_buffer.seek(0)
-        
-        # Create a zip file in memory
-        zip_buffer = io.BytesIO()
-        with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
-            # zip_file.writestr('regex.xlsx', excel1_buffer.getvalue())
-            # zip_file.writestr('textract.xlsx', excel2_buffer.getvalue())
-            zip_file.writestr('citi.xlsx', excel3_buffer.getvalue())
-        
-        zip_buffer.seek(0)
-        
-        # Send the zip file
-        return send_file(
-            zip_buffer, 
-            mimetype='application/zip',
-            as_attachment=True,
-            download_name='citi.zip'
+        if not candidate_id or not feedback:
+            return jsonify({"error": "Candidate ID and feedback are required"}), 400
+
+        conn = psycopg2.connect(
+            dbname='hrtest',
+            user='hruser',
+            password='T@chify$ol8m0s0!',
+            host='localhost',
+            port='5432'
         )
-    
-    except Exception as e:
-        logger.debug("An error occured: ", e)
+
+        # conn = psycopg2.connect(
+        #     dbname='postgres',
+        #     user='postgres',
+        #     password='pwd123',
+        #     host='localhost',
+        #     port='5433'
+        # )
         
+        cursor = conn.cursor()
+
+        sql_query = '''
+        UPDATE hrtest_reports
+        SET feedback = %s
+        WHERE candidate_id = %s;
+        '''
+
+        cursor.execute(sql_query, (feedback, candidate_id))
+
+        # Commit the changes
+        conn.commit()
+        print("Feedback updated successfully.")
+        
+        return jsonify({"message": "Feedback updated successfully"}), 200  # Return a success response
+
+    except Exception as e:
+        print(f"Error updating feedback: {e}")
+        return jsonify({"error": str(e)}), 500  # Return an error response
     finally:
-        os.remove(temp_path)
-        # os.remove('excel1.xlsx')
-        # os.remove('excel2.xlsx')
-        os.remove('excel3.xlsx')
-        # for f in files:
-        #     os.remove(f)
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
 
-@app.route('/citirewards', methods=['POST'])
-def excel_citirewards():
-    uploaded_file = request.files.get('file')
-    year = request.form.get('year')
-    if not uploaded_file:
-        return jsonify({'error': 'No file uploaded'}), 400
-    
-    temp_path = tempfile.mktemp(suffix='.pdf')
-    uploaded_file.save(temp_path)
-
+def store_user_data(candidate_id, first_name, last_name, email, phone_number, location, score, aptitude_score, verbal_score, programming_score, logical_score, time_taken, report_s3_url, submit_reason):
+    cursor = None
+    conn = None
     try:
-        doc = pymupdf.open(temp_path)
-        with open('log.txt', 'w', encoding='utf-8') as f:
-            for page in doc:
-                text = page.get_text()
-                f.write(text + '\n')
+        # Connect to the PostgreSQL database
+        conn = psycopg2.connect(
+            dbname='hrtest',
+            user='hruser',
+            password='T@chify$ol8m0s0!',
+            host='localhost',
+            port='5432'
+        )
 
-        with open("log.txt", "r") as f:
-            text = f.read()
+        # conn = psycopg2.connect(
+        #     dbname='postgres',
+        #     user='postgres',
+        #     password='pwd123',
+        #     host='localhost',
+        #     port='5433'
+        # )
 
-        cr_pattern = r'(\d{2}/\d{2})*\s(\d{2}/\d{2})\s([A-Za-z0-9\s\,\'\_\#\.\*\-]+)\s[-][$]([0-9,]+[.][0-9]{2})'
-        db_pattern = r'(\d{2}/\d{2})*\s(\d{2}/\d{2})\s([A-Za-z0-9\s\,\'\_\#\.\*\-]+)\s[$]([0-9,]+[.][0-9]{2})'
+        cursor = conn.cursor()
 
-        credits = []
-        debits = []
+        # Create a table if it doesn't exist
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS hrtest_reports (
+                candidate_id VARCHAR(50) PRIMARY KEY,
+                first_name VARCHAR(50),
+                last_name VARCHAR(50),
+                email VARCHAR(50),
+                phone_number VARCHAR(15),
+                location VARCHAR(50),
+                score FLOAT,
+                aptitude_score FLOAT,
+                verbal_score FLOAT,
+                programming_score FLOAT,
+                logical_score FLOAT,
+                time_taken VARCHAR(50),
+                feedback TEXT DEFAULT '',
+                report_s3_url TEXT,
+                submission_date TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                submit_reason VARCHAR(50)
+            )
+            ''')
 
-        for match in re.finditer(cr_pattern, text):
-            date = match.group(2)
-            user = match.group(3)
-            credit = match.group(4)
-            credits.append({
-                "date": date,
-                "description": user,
-                "credit": credit
-        })
+        # Get the current timestamp without timezone and fractional seconds
+        submission_date = datetime.now().replace(microsecond=0)
 
+        # Insert user data into the table
+        cursor.execute('''
+            INSERT INTO hrtest_reports (candidate_id, first_name, last_name, email, phone_number, location, score, aptitude_score, verbal_score, programming_score, logical_score, time_taken, report_s3_url, submission_date, submit_reason)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            ''', (candidate_id, first_name, last_name, email, phone_number, location, score, aptitude_score, verbal_score, programming_score, logical_score, time_taken, report_s3_url, submission_date, submit_reason))
+        # Commit the changes
+        conn.commit()
+        
+    except Exception as e:
+        print(f"Error storing user data: {e}")
+        raise  # Raise the exception to be handled by the calling function
+    finally:
+        # Ensure the connection is closed
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
 
-        for match in re.finditer(db_pattern, text):
-            date = match.group(2)
-            user = match.group(3)
-            debit = match.group(4)
-            debits.append({
-                "date": date,
-                "description": user,
-                "debit": debit
+@app.route('/fetch_user_data', methods=['GET'])
+def fetch_user_data():
+    cursor = None
+    conn = None
+    try:
+        # Connect to the PostgreSQL database
+        conn = psycopg2.connect(
+            dbname='hrtest',
+            user='hruser',
+            password='T@chify$ol8m0s0!',
+            host='localhost',
+            port='5432'
+        )
+
+        # conn = psycopg2.connect(
+        #     dbname='postgres',
+        #     user='postgres',
+        #     password='pwd123',
+        #     host='localhost',
+        #     port='5433'
+        # )
+
+        cursor = conn.cursor()
+
+        # Query to fetch user data
+        cursor.execute('SELECT * FROM hrtest_reports ORDER BY submission_date DESC')
+        rows = cursor.fetchall()
+
+        # Prepare the data to be sent as JSON
+        user_data = []
+        for row in rows:
+            user_data.append({
+                "candidate_id": row[0],
+                "first_name": row[1],
+                "last_name": row[2],
+                "email": row[3],
+                "phone_number": row[4],
+                "location": row[5],
+                "score": row[6],
+                "aptitude_score": row[7],
+                "verbal_score": row[8],
+                "programming_score": row[9],
+                "logical_score": row[10],
+                "time_taken": row[11],
+                "feedback": row[12],
+                "report_s3_url": row[13],
+                "submission_date": row[14],
+                "submit_reason": row[15]
             })
 
-
-        def clean_amount(amount):
-            return float(amount.replace(',', ''))
-        
-        def clean_date(date_format):
-            date_str = date_format.strip() 
-            full_date_str = f"{date_str}/{str(year)[-2:]}"
-            formatted_date = datetime.strptime(full_date_str, "%m/%d/%y").strftime("%m/%d/%y")
-            return formatted_date
-
-        credits = pd.DataFrame(credits)
-        if len(credits) > 0:
-            credits['credit'] = credits['credit'].apply(clean_amount)
-            credits['date'] = credits['date'].apply(clean_date)
-
-        debits = pd.DataFrame(debits)
-        if len(debits) > 0:
-            debits['debit'] = debits['debit'].apply(clean_amount)
-            debits['date'] = debits['date'].apply(clean_date)
-
-        with pd.ExcelWriter('excel1.xlsx', engine='openpyxl') as writer:
-            credits.to_excel(writer, sheet_name='Credit', index=False)
-            debits.to_excel(writer, sheet_name='Debit', index=False)
-
-            workbook1 = writer.book
-            worksheet1 = writer.sheets['Credit']
-            worksheet2 = writer.sheets['Debit']
-
-            for cell in worksheet1['C'][1:]:
-                cell.number_format = '##0.00'
-
-            for cell in worksheet2['C'][1:]:
-                cell.number_format = '##0.00'
-        
-        temp_excel = tempfile.NamedTemporaryFile(suffix='.xlsx', delete=False)
-        workbook1.save(temp_excel.name)
+        return jsonify(user_data), 200
 
     except Exception as e:
-        logger.debug("An error occured: ", e)
+        return jsonify({"error": str(e)}), 500
 
-    # try:
-    #     pages = convert_from_path(temp_path, dpi=700)
+    finally:
+        # Ensure the connection is closed
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
 
-    #     files = []
-    #     for i in range(len(pages)):
-    #         pages[i].save("CitiRewards_page_"+str(i+1)+".png", "PNG")
-    #         files.append("CitiRewards_page_"+str(i+1)+".png")
-
-    #     credits_aws = pd.DataFrame()
-    #     debits_aws = pd.DataFrame()
-    #     transactions = pd.DataFrame()
-
-    #     for f in files:
-    #         image = Image.open(f) # loads the document image with Pillow
-    #         extractor = Textractor(region_name="us-east-1") # Initialize textractor client, modify region if required
-    #         response = extractor.analyze_document(
-    #             file_source=image,
-    #             features=[
-    #                 TextractFeatures.TABLES
-    #             ],
-    #             save_image=True
-    #         )
-
-    #         for i in range(len(response.tables)):
-    #             table = EntityList(response.tables[i])
-    #             response.tables[i].visualize()
-    #             df=table[0].to_pandas()
-    #             if len(df.columns) == 3:
-    #                 df1 = df[df.iloc[:,0].str.match(r'^\d{2}/\d{2}', na=False)].reset_index(drop=True)
-    #                 df1.rename(columns={0: 'date', 1: 'Description', 2: 'Amount'}, inplace=True)
-    #                 transactions = pd.concat([transactions, df1], ignore_index=True)
-    #             if len(df.columns) > 3:
-    #                 df1 = df[[1,2,3]].copy()
-    #                 df1.rename(columns={1: 'date', 2: 'Description', 3: 'Amount'}, inplace=True)
-    #                 df1 = df1[df1.iloc[:,0].str.match(r'^\d{2}/\d{2}', na=False)].reset_index(drop=True)
-    #                 transactions = pd.concat([transactions, df1], ignore_index=True)
-
-    #     for i in range(len(transactions)):
-    #         date_str = transactions.iloc[i]['date'].strip() 
-    #         full_date_str = f"{date_str}/{str(year)[-2:]}"
-    #         formatted_date = datetime.strptime(full_date_str, "%m/%d/%y").strftime("%m/%d/%y")
-    #         transactions.loc[i, "date"] = formatted_date
-
-    #     credit_list = []
-    #     debit_list = []
-
-    #     for i in range(len(transactions)):
-    #         amt = transactions.iloc[i]['Amount']
-    #         if '-' in amt:
-    #             debit_list.append(transactions.iloc[i])
-    #         else:
-    #             credit_list.append(transactions.iloc[i])
-
-
-    #     credits_aws = pd.DataFrame(credit_list)
-    #     debits_aws = pd.DataFrame(debit_list)
-
-    #     if len(credits_aws) > 0:
-    #         credits_aws['Amount'] = credits_aws['Amount'].str.replace(r'[$,]', '', regex=True)
-    #         credits_aws['Amount'] = pd.to_numeric(credits_aws['Amount'])
-
-    #     if len(debits_aws) > 0:
-    #         debits_aws['Amount'] = debits_aws['Amount'].str.replace(r'[-$,]', '', regex=True)
-    #         debits_aws['Amount'] = pd.to_numeric(debits_aws['Amount'])
-
-    #     with pd.ExcelWriter('excel2.xlsx', engine='openpyxl') as writer:
-    #         credits_aws.to_excel(writer, sheet_name='Credit', index=False)
-    #         debits_aws.to_excel(writer, sheet_name='Debit', index=False)
-
-    #         workbook2 = writer.book
-    #         worksheet1 = writer.sheets['Credit']
-    #         worksheet2 = writer.sheets['Debit']
-
-    #         temp_excel2 = tempfile.NamedTemporaryFile(suffix='.xlsx', delete=False)
-    #         workbook2.save(temp_excel2.name)
-
-    # except Exception as e:
-    #     logger.debug("An error occured: ", e)
-
+@app.route('/delete_user_data', methods=['DELETE'])
+def delete_user_data():
+    cursor = None
+    conn = None
     try:
-        excel1_buffer = io.BytesIO()
-        workbook1.save(excel1_buffer)
-        excel1_buffer.seek(0)
-        
-        # excel2_buffer = io.BytesIO()
-        # workbook2.save(excel2_buffer)
-        # excel2_buffer.seek(0)
-        
-        # Create a zip file in memory
-        zip_buffer = io.BytesIO()
-        with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
-            zip_file.writestr('citicc.xlsx', excel1_buffer.getvalue())
-            # zip_file.writestr('textract.xlsx', excel2_buffer.getvalue())
-        
-        zip_buffer.seek(0)
-        
-        # Send the zip file
-        return send_file(
-            zip_buffer, 
-            mimetype='application/zip',
-            as_attachment=True,
-            download_name='citicc.zip'
+        data = request.json
+        candidate_ids = data.get("candidate_ids")  # Expecting a list of candidate IDs
+
+        if not candidate_ids or not isinstance(candidate_ids, list):
+            return jsonify({"error": "A list of Candidate IDs is required"}), 400
+
+        # Connect to the PostgreSQL database
+        conn = psycopg2.connect(
+            dbname='hrtest',
+            user='hruser',
+            password='T@chify$ol8m0s0!',
+            host='localhost',
+            port='5432'
         )
 
-    except Exception as e:
-        logger.debug("An error occured: ", e)
+        # conn = psycopg2.connect(
+        #     dbname='postgres',
+        #     user='postgres',
+        #     password='pwd123',
+        #     host='localhost',
+        #     port='5433'
+        # )
+
+        cursor = conn.cursor()
+
+        # SQL query to delete the user data
+        sql_query = '''
+        DELETE FROM hrtest_reports
+        WHERE candidate_id = ANY(%s);
+        '''
+
+        # Delete the reports from S3
+        s3_client = boto3.client('s3')
+        s3_bucket = 'onlinetest-stag-documents'
+        for candidate_id in candidate_ids:
+            s3_key = f'reports/{candidate_id}'
+            try:
+                s3_client.delete_object(Bucket=s3_bucket, Key=s3_key)
+                print(f"Deleted report for candidate ID: {candidate_id} from S3.")
+            except Exception as e:
+                print(f"Error deleting report for candidate ID {candidate_id} from S3: {e}")
+
+        cursor.execute(sql_query, (candidate_ids,))
+
+        # Commit the changes
+        conn.commit()
+        print(f"User data for {len(candidate_ids)} candidates deleted successfully.")
         
+        return jsonify({"message": f"User data for {len(candidate_ids)} candidates deleted successfully"}), 200  # Return a success response
+
+    except Exception as e:
+        print(f"Error deleting user data: {e}")
+        return jsonify({"error": str(e)}), 500  # Return an error response
     finally:
-        os.remove(temp_path)
-        os.remove('excel1.xlsx')
-        # os.remove('excel2.xlsx')
-        # for f in files:
-        #     os.remove(f)
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
 
-
-@app.route('/hab', methods=['POST'])
-def excel_hab():
-    uploaded_file = request.files.get('file')
-    year = request.form.get('year')
-    if not uploaded_file:
-        return jsonify({'error': 'No file uploaded'}), 400
-    
-    temp_path = tempfile.mktemp(suffix='.pdf')
-    uploaded_file.save(temp_path)
-
+@app.route('/export_candidate_data', methods=['POST'])
+def export_candidate_data():
+    cursor = None
+    conn = None
     try:
-        pages = convert_from_path(temp_path, dpi=700)
+        data = request.json
+        candidate_ids = data.get("candidate_ids")  # Expecting a list of candidate IDs
 
-        files = []
-        for i in range(len(pages)):
-            pages[i].save("Hab_page_"+str(i+1)+".png", "PNG")
-            files.append("Hab_page_"+str(i+1)+".png")
+        if not candidate_ids or not isinstance(candidate_ids, list):
+            return jsonify({"error": "A list of Candidate IDs is required"}), 400
 
-        debits_aws = pd.DataFrame()
-        credits_aws = pd.DataFrame()
-        transactions = pd.DataFrame()
+        # Connect to the PostgreSQL database
+        conn = psycopg2.connect(
+            dbname='hrtest',
+            user='hruser',
+            password='T@chify$ol8m0s0!',
+            host='localhost',
+            port='5432'
+        )
 
-        for f in files:
-            image = Image.open(f) # loads the document image with Pillow
-            extractor = Textractor(region_name="ap-south-1") # Initialize textractor client, modify region if required
-            response = extractor.analyze_document(
-                file_source=image,
-                features=[
-                    TextractFeatures.TABLES
-                ],
-                save_image=True
+        # conn = psycopg2.connect(
+        #     dbname='postgres',
+        #     user='postgres',
+        #     password='pwd123',
+        #     host='localhost',
+        #     port='5433'
+        # )
+
+        cursor = conn.cursor()
+
+        # SQL query to fetch user data for the given candidate IDs
+        sql_query = '''
+        SELECT * FROM hrtest_reports
+        WHERE candidate_id = ANY(%s);
+        '''
+
+        cursor.execute(sql_query, (candidate_ids,))
+        rows = cursor.fetchall()
+
+        # Prepare the data for the DataFrame
+        columns = [
+            "candidate_id", "first_name", "last_name", "email", "phone_number",
+            "location", "score", "aptitude_score", "verbal_score",
+            "programming_score", "logical_score", "time_taken", "feedback", 
+            "report_s3_url", "submission_date", "submit_reason"
+        ]
+        data_to_export = [dict(zip(columns, row)) for row in rows]
+
+        # Convert submission_date to timezone-unaware if necessary
+        for entry in data_to_export:
+            if isinstance(entry['submission_date'], datetime):
+                entry['submission_date'] = entry['submission_date'].replace(tzinfo=None)
+
+        # Create a DataFrame and save it to an Excel file
+        df = pd.DataFrame(data_to_export)
+        excel_file_path = '/tmp/candidate_data.xlsx'
+        df.to_excel(excel_file_path, index=False)
+
+        # Send the Excel file back to the frontend
+        return send_file(excel_file_path, as_attachment=True)
+
+    except Exception as e:
+        print(f"Error exporting candidate data: {e}")
+        return jsonify({"error": str(e)}), 500  # Return an error response
+    finally:
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
+
+@app.route('/send_verification', methods=['POST'])
+def send_verification():
+    try:
+        data = request.json  # This will attempt to decode the JSON
+        if data is None:
+            return jsonify({"error": "No JSON data provided"}), 400
+        
+        emails = data.get("emails")
+        
+        for email in emails:
+            send_test(email)
+
+        return jsonify({"message": "Verification email/s sent successfully"}), 200
+        
+    except Exception as e:
+        return jsonify({"error": f"Failed to send verification: {str(e)}"}), 500
+
+def send_test(email):
+    candidate_id = f"{random.randint(0, 999)}{int(datetime.now().timestamp() * 1000)}"
+    candidate_url = f"https://localhost:5173/?candidate_id={candidate_id}"
+    passcode = str(random.randint(100000, 999999))  # Generate a 6-digit passcode
+    
+    cursor = None
+    conn = None
+    
+    try:
+        conn = psycopg2.connect(
+            dbname='hrtest',
+            user='hruser',
+            password='T@chify$ol8m0s0!',
+            host='localhost',
+            port='5432'
+        )
+
+        # conn = psycopg2.connect(
+        #     dbname='postgres',
+        #     user='postgres',
+        #     password='pwd123',
+        #     host='localhost',
+        #     port='5433'
+        # )
+
+        cursor = conn.cursor()
+
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS registration (
+                candidate_id VARCHAR(50) PRIMARY KEY,
+                email VARCHAR(50),
+                passcode VARCHAR(10),
+                test_attempted BOOLEAN DEFAULT FALSE
             )
+        ''')
 
-            for i in range(len(response.tables)):
-                table = EntityList(response.tables[i])
-                response.tables[i].visualize()
-                df=table[0].to_pandas()
-                
-                transaction = pd.DataFrame()
-                # print(df)
+        cursor.execute('''
+            INSERT INTO registration (candidate_id, email, passcode)
+            VALUES (%s, %s, %s)
+            ON CONFLICT (candidate_id) DO UPDATE SET email = EXCLUDED.email, passcode = EXCLUDED.passcode;
+        ''', (candidate_id, email, passcode))
 
-                if len(df.columns) >= 3:
-                    transaction = df[df.iloc[:,0].str.match(r'^\d{1,2}/\d{2}', na=False)].reset_index(drop=True)
-            
-                for i in range(len(transaction)):
-                    j = -2
-                    while transaction.iloc[i, -1] == '':
-                        transaction.iloc[i, -1] = transaction.iloc[i, j]
-                        j -= 1
+        conn.commit()
 
-                # print(transaction)
-
-                if len(transaction.columns) >= 3:
-                    df1 = transaction[[0,1,len(transaction.columns)-1]].rename(columns={0: "date", 1: "description", len(transaction.columns)-1: "amount"})
-                    transactions = pd.concat([transactions, df1], ignore_index=True)
-
-        transactions = transactions[transactions.iloc[:,0].str.match(r'^\d{1,2}/\d{2}', na=False)].reset_index(drop=True)
-        transactions['date'] = transactions['date'].str.extract(r'(\d{1,2}/\d{2})')
-        transactions['amount'] = transactions['amount'].str.extract(r'(-{0,1}[0-9,]*.\d{2}-{0,1})')
-
-        for i in range(len(transactions)):
-            date_str = transactions.iloc[i]['date'].strip() 
-            full_date_str = f"{date_str}/{str(year)[-2:]}"
-            formatted_date = datetime.strptime(full_date_str, "%m/%d/%y").strftime("%m/%d/%y")
-            transactions.loc[i, "date"] = formatted_date
-
-        for i in range(len(transactions)):
-            # print("Transaction ", i)
-            if 'Check' in transactions.iloc[i,1]:
-                debits_aws = pd.concat([debits_aws, transactions.iloc[[i]]], ignore_index=True)
-            elif '-' in transactions.iloc[i,2] and re.match(r'^[A-Za-z0-9* ]*[A-Za-z]', transactions.iloc[i,1]):
-                debits_aws = pd.concat([debits_aws, transactions.iloc[[i]]], ignore_index=True)
-            elif re.match(r'[A-Za-z0-9* ]*[A-Za-z]', transactions.iloc[i,1]):
-                credits_aws = pd.concat([credits_aws, transactions.iloc[[i]]], ignore_index=True)
-
-        if len(debits_aws) > 0:
-            debits_aws['amount'] = debits_aws['amount'].astype(str).replace(r'[-,SC]', '', regex=True)
-            debits_aws['amount'] = pd.to_numeric(debits_aws['amount'])
-
-        if len(credits_aws) > 0:
-            credits_aws['amount'] = credits_aws['amount'].astype(str).str.replace(r'[,]', '', regex=True)
-            credits_aws['amount'] = pd.to_numeric(credits_aws['amount'])
-                                      
-        with pd.ExcelWriter('excel2.xlsx', engine='openpyxl') as writer:
-            credits_aws.to_excel(writer, sheet_name='Credit', index=False)
-            debits_aws.to_excel(writer, sheet_name='Debit', index=False)
-
-            workbook2 = writer.book
-            worksheet1 = writer.sheets['Credit']
-            worksheet2 = writer.sheets['Debit']
-
-            temp_excel2 = tempfile.NamedTemporaryFile(suffix='.xlsx', delete=False)
-            workbook2.save(temp_excel2.name)
+        # Send the email with the passcode
+        subject = "Your Verification Passcode"
+        body = f"Test Link: {candidate_url}\nPasscode: {passcode}\n"
+        send_email(subject, body, [email], [])
     
     except Exception as e:
-        logger.debug("An error occured: ", e)
+        print(f"Error in send_test: {str(e)}")  # Log the error for debugging
+        raise  # Raise the exception to be handled by the calling function
+    
+    finally:
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
 
-    try:    
-        excel2_buffer = io.BytesIO()
-        workbook2.save(excel2_buffer)
-        excel2_buffer.seek(0)
-        
-        # Create a zip file in memory
-        zip_buffer = io.BytesIO()
-        with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
-            zip_file.writestr('hab.xlsx', excel2_buffer.getvalue())
-        
-        zip_buffer.seek(0)
-        
-        # Send the zip file
-        return send_file(
-            zip_buffer, 
-            mimetype='application/zip',
-            as_attachment=True,
-            download_name='hab.zip'
+@app.route('/verify_passcode', methods=['POST'])
+def verify_passcode():
+    data = request.json
+    candidate_id = data.get("candidate_id")
+    passcode = data.get("passcode")
+
+    if not candidate_id or not passcode:
+        return jsonify({"error": "Candidate ID and passcode are required"}), 400
+    cursor = None
+    conn = None
+    try:
+        conn = psycopg2.connect(
+            dbname='hrtest',
+            user='hruser',
+            password='T@chify$ol8m0s0!',
+            host='localhost',
+            port='5432'
         )
 
-    except Exception as e:
-        logger.debug("An error occured: ", e)
+        # conn = psycopg2.connect(
+        #     dbname='postgres',
+        #     user='postgres',
+        #     password='pwd123',
+        #     host='localhost',
+        #     port='5433'
+        # )
 
-    finally:
-        os.remove(temp_path)
-        os.remove('excel2.xlsx')
-        for f in files:
-            os.remove(f)
+        cursor = conn.cursor()
 
-@app.route('/pnc', methods=['POST'])
-def excel_pnc():
-    return 0
+        cursor.execute('''
+            SELECT passcode, test_attempted FROM registration WHERE candidate_id = %s;
+        ''', (candidate_id,))
+        result = cursor.fetchone()
 
-@app.route('/regions', methods=['POST'])
-def excel_regions():
-    uploaded_file = request.files.get('file')
-    year = request.form.get('year')
-    if not uploaded_file:
-        return jsonify({'error': 'No file uploaded'}), 400
-    
-    temp_path = tempfile.mktemp(suffix='.pdf')
-    uploaded_file.save(temp_path)
-
-    # try:
-    #     doc = pymupdf.open(temp_path)
-    #     with open('log.txt', 'w', encoding='utf-8') as f:
-    #         for page in doc:
-    #             text = page.get_text()
-    #             f.write(text + '\n')
-
-    #     with open("log.txt", "r") as f:
-    #         text = f.read()
-
-    #     cr_pattern = r'(\d{2}/\d{2})\s([A-Za-z 0-9\#\-]+)\s([0-9,]+[.]+[0-9]{2}\s)'
-    #     # db_pattern = r'(\d{2}/\d{2})\s([A-Za-z 0-9\#]+)\s([-][0-9,]+[.]+[0-9]{2}\s)'
-
-    #     credits = []
-    #     # debits = []
-
-    #     for match in re.finditer(cr_pattern, text):
-    #         date = match.group(1)
-    #         user = match.group(2)
-    #         credit = match.group(3)
-    #         credits.append({
-    #             "date": date,
-    #             "description": user,
-    #             "credit": credit
-    #         })
-
-    #     # for match in re.finditer(db_pattern, text):
-    #     #     date = match.group(1)
-    #     #     user = match.group(2)
-    #     #     debit = match.group(3)
-    #     #     debits.append({
-    #     #         "date": date,
-    #     #         "description": user,
-    #     #         "debit": debit
-    #     #     })
-
-    #     def clean_amount(amount):
-    #         return float(amount.replace(',', ''))
-        
-    #     def clean_date(date_format):
-    #         date_str = date_format.strip() 
-    #         full_date_str = f"{date_str}/{str(year)[-2:]}"
-    #         formatted_date = datetime.strptime(full_date_str, "%m/%d/%y").strftime("%m/%d/%y")
-    #         return formatted_date
-
-    #     credits = pd.DataFrame(credits)
-    #     if len(credits) > 0:
-    #         credits['credit'] = credits['credit'].apply(clean_amount)
-    #         credits['date'] = credits['date'].apply(clean_date)
-
-    #     # debits = pd.DataFrame(debits)
-
-    #     # debits['debit'] = debits['debit'].apply(clean_amount)
-
-    #     with pd.ExcelWriter('excel1.xlsx', engine='openpyxl') as writer:
-    #         credits.to_excel(writer, sheet_name='Credit', index=False)
-    #         # debits.to_excel(writer, sheet_name='Debit', index=False)
-
-    #         workbook1 = writer.book
-    #         worksheet1 = writer.sheets['Credit']
-    #         # worksheet2 = writer.sheets['Debit']
-
-    #         for cell in worksheet1['C'][1:]:
-    #             cell.number_format = '##0.00'
-
-    #         # for cell in worksheet2['C'][1:]:
-    #             # cell.number_format = '##0.00'
-
-    #     temp_excel = tempfile.NamedTemporaryFile(suffix='.xlsx', delete=False)
-    #     workbook1.save(temp_excel.name)
-
-    # except Exception as e:
-    #     logger.debug("An error occured: ", e)
-
-    # try:
-    #     pages = convert_from_path(temp_path, dpi=700)
-
-    #     files = []
-    #     for i in range(len(pages)):
-    #         pages[i].save("Regions_page_"+str(i+1)+".png", "PNG")   
-    #         files.append("Regions_page_"+str(i+1)+".png")
-
-    #     credits_aws = pd.DataFrame()
-    #     transactions = pd.DataFrame()
-    #     # debits_aws = pd.DataFrame()
-
-    #     for f in files:
-    #         image = Image.open(f)
-    #         extractor = Textractor(region_name="us-east-1")
-    #         response = extractor.analyze_document(
-    #             file_source=image,
-    #             features=[
-    #             TextractFeatures.TABLES
-    #             ],
-    #             save_image=True
-    #         )
-
-    #         for i in range(len(response.tables)):
-    #             table = EntityList(response.tables[i])
-    #             response.tables[i].visualize()
-    #             df=table[0].to_pandas()
-    #             df1 = df[df.iloc[:,0].str.match(r'^\d{2}/\d{1,2}.*', na=False)].reset_index(drop=True)
-    #             df2 = df1[df1.iloc[:,1].str.match(r'^[A-Z].*', na=False)].reset_index(drop=True)
-    #             if len(df2.columns) > 2:
-    #               if df2.shape[0] > 0:
-    #                   df = df2[[0,1,2]].copy()
-    #                   df.rename(columns={0: 'date', 1: 'Description', 2: 'Amount'}, inplace=True)
-    #                   transactions = pd.concat([transactions, df], ignore_index=True)
-        
-    #     for i in range(len(transactions)):
-    #         date_str = transactions.iloc[i]['date'].strip() 
-    #         full_date_str = f"{date_str}/{str(year)[-2:]}"
-    #         formatted_date = datetime.strptime(full_date_str, "%m/%d/%y").strftime("%m/%d/%y")
-    #         transactions.loc[i, "date"] = formatted_date
-
-    #     if len(transactions) > 0:
-    #         transactions['Amount'] = transactions['Amount'].astype(str).str.replace(r'[$,]', '', regex=True)
-    #         transactions['Amount'] = pd.to_numeric(transactions['Amount'])
-
-    #     with pd.ExcelWriter('excel2.xlsx', engine='openpyxl') as writer:
-    #         transactions.to_excel(writer, sheet_name='Transactions', index=False)
-    #         # debits_aws.to_excel(writer, sheet_name='Debit', index=False)
-
-    #         workbook2 = writer.book
-    #         worksheet1 = writer.sheets['Transactions']
-    #         # worksheet2 = writer.sheets['Debit']
-
-    #         temp_excel2 = tempfile.NamedTemporaryFile(suffix='.xlsx', delete=False)
-    #         workbook2.save(temp_excel2.name)
-
-    # except Exception as e:
-    #     logger.debug("An error occured: ", e)
-
-    try:
-        logger.debug("Block 3")
-
-        project_id = 'techify-446309'
-        location = 'us'
-        processor_id = '567c2df93ddea10e'
-        processor_version = 'rc'
-        file_path = temp_path
-        mime_type = 'application/pdf'
-        credentials_path = '/home/ubuntu/pdf-excel/techify.json'
-
-        def clean_date(date_str):
-            full_date_str = f"{date_str}/{str(year)[-2:]}"
-            formatted_date = datetime.strptime(full_date_str, "%m/%d/%y").strftime("%m/%d/%y")
-            return formatted_date
-        
-        def is_valid_date_format(date_str: str) -> bool:
-            """
-            Validate if the date string matches mm/dd/yy format.
-            Returns True if the date is valid, False otherwise.
-            """
-            date_pattern = r'\d{2}/\d{2}'
-            
-            if not re.match(date_pattern, date_str):
-                return False
+        if result:
+            stored_passcode, test_attempted = result
+            if stored_passcode == passcode and not test_attempted:
+                return jsonify({"message": "Verification successful, you can proceed with the test"}), 200
             else:
-                return True
-            
-        def parse_amount(amount_str: str) -> float:
-
-            amount = re.search(r'[0-9,]+\.[0-9]{2}', amount_str).group()
-
-            clean_amount = amount.replace('$', '').replace(',', '').strip()
-            
-            try:
-                return float(clean_amount)
-            
-            except ValueError:
-                print(f"Warning: Could not parse amount: {amount_str}")
-                return 0.0
-
-        def process_document(
-            project_id: str,
-            location: str,
-            processor_id: str,
-            processor_version: str,
-            file_path: str,
-            mime_type: str,
-            credentials_path: str,
-            process_options: Optional[documentai.ProcessOptions] = None,
-        ) -> documentai.Document:
-            
-            credentials = service_account.Credentials.from_service_account_file(
-                credentials_path,
-                scopes=['https://www.googleapis.com/auth/cloud-platform']
-            )
-                
-            client = documentai.DocumentProcessorServiceClient(
-                credentials=credentials,
-                client_options=ClientOptions(
-                    api_endpoint=f"{location}-documentai.googleapis.com"
-                )
-            )
-
-            name = client.processor_version_path(
-                project_id, location, processor_id, processor_version
-            )
-
-            with open(file_path, "rb") as image:
-                image_content = image.read()
-
-            request = documentai.ProcessRequest(
-                name=name,
-                raw_document=documentai.RawDocument(content=image_content, mime_type=mime_type),
-                process_options=process_options,
-            )
-
-            result = client.process_document(request=request)
-
-            return result.document
-
-        def layout_to_text(layout: documentai.Document.Page.Layout, text: str) -> str:
-            """
-            Document AI identifies text in different parts of the document by their
-            offsets in the entirety of the document's text. This function converts
-            offsets to a string.
-            """
-            return "".join(
-                text[int(segment.start_index) : int(segment.end_index)]
-                for segment in layout.text_anchor.text_segments
-            )
-
-        document = process_document(
-                project_id, location, processor_id, processor_version, file_path, mime_type, credentials_path
-            )
-
-        text = document.text
-        # print(f"There are {len(document.pages)} page(s) in this document.")
-
-        COLUMN_NAMES = ['Date', 'Description', 'Amount']
-
-        credits_df = pd.DataFrame()
-        debits_df = pd.DataFrame()
-        rows = []
-
-        for page in document.pages:
-                # print(f"\n\n**** Page {page.page_number} ****")
-                # print(f"\nFound {len(page.tables)} table(s):")
-
-                for table in page.tables:
-                    num_columns = len(table.header_rows[0].cells)
-                    if num_columns == 1:
-                        num_rows = len(table.body_rows)
-                        # print(f"Table with {num_columns} columns and {num_rows} rows:")
-
-                        headers = []
-                        row_data = []
-                        rows = []
-                        
-                        for cell in table.header_rows[0].cells:
-                            header_text = layout_to_text(cell.layout, text).strip()
-                            headers.append(header_text)
-                            row_data.append(header_text)
-                        rows.append(row_data)
-
-                        for row in table.body_rows:
-                            row_data = []
-                            for cell in row.cells:
-                                cell_text = layout_to_text(cell.layout, text).strip()
-                                row_data.append(cell_text)
-                            rows.append(row_data)
-
-                        for r in rows:
-                            x = re.search(r'(\d{2}/\d{2})\n(.*)\n([0-9,]*.\d{2})', r[0])
-
-                            if x is not None:           
-                                dates = []
-                                descriptions = []
-                                amounts = []    
-
-                                dates.append(x.group(1))
-                                descriptions.append(x.group(2))
-                                amounts.append(x.group(3))
-
-                                df = pd.DataFrame({
-                                    'date': dates,
-                                    'description': descriptions,
-                                    'amount': amounts
-                                })
-
-                                if 'Analysis' in descriptions[0]:
-                                    debits_df = pd.concat([debits_df, df])
-
-                                            
-                    if num_columns == 2:
-                        num_rows = len(table.body_rows)
-                        
-                        headers = []                        
-                        row_data = []
-                        rows = []
-
-                        for cell in table.header_rows[0].cells:
-                            header_text = layout_to_text(cell.layout, text).strip()
-                            headers.append(header_text)
-                            row_data.append(header_text)
-                        rows.append(row_data)
-
-                        for row in table.body_rows:
-                            row_data = []
-                            for cell in row.cells:
-                                cell_text = layout_to_text(cell.layout, text).strip()
-                                row_data.append(cell_text)
-                            rows.append(row_data)
-
-                        for r in rows:
-                            dates = []
-                            descriptions = []
-                            amounts = []
-
-                            pattern1 = r'(\d{2}/\d{2}) (.+)$'
-                            match1 = re.search(pattern1, r[0])
-                            pattern2 = r'([0-9,]+.\d{2})'
-                            match2 = re.search(pattern2, r[1])
-
-                            if match1 and match2:
-                                dates.append(match1.group(1))
-                                descriptions.append(match1.group(2))
-                                amounts.append(match2.group(1))
-
-                                amount = parse_amount(amounts[0])
-
-                                df = pd.DataFrame({
-                                    'date': dates,
-                                    'description': descriptions[0],
-                                    'amount': amount
-                                })
-
-                                # print(df)
-
-                                if 'check' in headers[1].lower():
-                                    debits_df = pd.concat([debits_df, df])
-
-                                elif 'Analysis' in descriptions[0]:
-                                    debits_df = pd.concat([debits_df, df])
-
-                                else:
-                                    credits_df = pd.concat([credits_df, df])
-
-                    if num_columns == 3:
-                        num_rows = len(table.body_rows)
-
-                        headers = []
-                        row_data = []
-                        rows = []
-                                    
-                        for cell in table.header_rows[0].cells:
-                            header_text = layout_to_text(cell.layout, text).strip()
-                            headers.append(header_text)
-                            row_data.append(header_text)
-                        # print(row_data)
-                        rows.append(row_data)
-
-                        for row in table.body_rows:
-                            row_data = []
-                            for cell in row.cells:
-                                cell_text = layout_to_text(cell.layout, text).strip()
-                                row_data.append(cell_text)
-                            # print(row_data)
-                            rows.append(row_data)
-
-                        for r in rows:
-                            if is_valid_date_format(r[0]):
-                                dates = []
-                                descriptions = []
-                                amounts = []
-                                
-                                amt = parse_amount(r[2])
-
-                                x = re.search(r'^\d{2}/\d{2}$', r[0])
-
-                                if x is not None:
-                                    dates.append(x.group())
-                                    descriptions.append(r[1])
-                                    amounts.append(amt)
-
-                                    df = pd.DataFrame({
-                                        'date': dates,
-                                        'description': descriptions,
-                                        'amount': amounts
-                                    })
-
-                                    # print(df)
-
-                                    if 'check' in headers[1].lower():
-                                        debits_df = pd.concat([debits_df, df])
-                                            
-                                    elif 'Analysis' in descriptions[0]:
-                                        debits_df = pd.concat([debits_df, df])
-
-                                    else:
-                                        credits_df = pd.concat([credits_df, df])
-
-        credits_df['amount'] = pd.to_numeric(credits_df['amount'], errors='coerce')
-        credits_df['date'] = credits_df['date'].apply(clean_date)
-        debits_df['amount'] = pd.to_numeric(debits_df['amount'], errors='coerce')
-        debits_df['date'] = debits_df['date'].apply(clean_date)
-
-        with pd.ExcelWriter('excel3.xlsx', engine='openpyxl') as writer:
-            credits_df.to_excel(writer, sheet_name='Credit', index=False)
-            debits_df.to_excel(writer, sheet_name='Debit', index=False)
-
-            workbook3 = writer.book
-            worksheet1 = writer.sheets['Credit']
-            worksheet2 = writer.sheets['Debit']
-
-            temp_excel3 = tempfile.NamedTemporaryFile(suffix='.xlsx', delete=False)
-            workbook3.save(temp_excel3.name)
-    
-            with pd.ExcelWriter('excel3.xlsx', engine='openpyxl') as writer:
-                credits_df.to_excel(writer, sheet_name='Credit', index=False)
-                debits_df.to_excel(writer, sheet_name='Debit', index=False)
+                return jsonify({"error": "Invalid passcode or test already attempted"}), 400
+        else:
+            return jsonify({"error": "Candidate ID not found"}), 404
 
     except Exception as e:
-        logger.debug("An error occured: ", e)
-
-    try:
-        # excel1_buffer = io.BytesIO()
-        # workbook1.save(excel1_buffer)
-        # excel1_buffer.seek(0)
-        
-        # excel2_buffer = io.BytesIO()
-        # workbook2.save(excel2_buffer)
-        # excel2_buffer.seek(0)
-
-        excel3_buffer = io.BytesIO()
-        workbook3.save(excel3_buffer)
-        excel3_buffer.seek(0)
-        
-        # Create a zip file in memory
-        zip_buffer = io.BytesIO()
-        with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
-            # zip_file.writestr('regex.xlsx', excel1_buffer.getvalue())
-            # zip_file.writestr('textract.xlsx', excel2_buffer.getvalue())
-            zip_file.writestr('regions.xlsx', excel3_buffer.getvalue())
-        
-        zip_buffer.seek(0)
-        
-        # Send the zip file
-        return send_file(
-            zip_buffer, 
-            mimetype='application/zip',
-            as_attachment=True,
-            download_name='regions.zip'
-        )
+        return jsonify({"error": str(e)}), 500
     
-    except Exception as e:
-        logger.debug("An error occured: ", e)
-        
     finally:
-        os.remove(temp_path)
-        # os.remove('excel1.xlsx')
-        # os.remove('excel2.xlsx')
-        os.remove('excel3.xlsx')
-        # for f in files:
-        #     os.remove(f)
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
 
-@app.route('/santander', methods=['POST'])
-def excel_santander():
-    uploaded_file = request.files.get('file')
-    year = request.form.get('year')
-    if not uploaded_file:
-        return jsonify({'error': 'No file uploaded'}), 400
-    
-    temp_path = tempfile.mktemp(suffix='.pdf')
-    uploaded_file.save(temp_path)
+@app.route('/start_test', methods=['POST'])
+def start_test():
+    data = request.json
+    candidate_id = data.get("candidate_id")
 
-    # try:
-    #     doc = pymupdf.open(temp_path)
-    #     with open('log.txt', 'w', encoding='utf-8') as f:
-    #         for page in doc:
-    #             text = page.get_text()
-    #             f.write(text + '\n')
-
-    #     with open("log.txt", "r") as f:
-    #         text = f.read()
-
-    #     cr_pattern = r'(\d{2}-\d{2})\s([A-Za-z][A-Za-z0-9\*\/\.\-\s]+)\n[$]([0-9,]+[.]+[0-9]{2})\s[$][0-9,]+[.]+[0-9]{2}\s'
-
-    #     credits = []
-    #     # # debits = []
-
-    #     for match in re.finditer(cr_pattern, text):
-    #         date = match.group(1)
-    #         user = match.group(2)
-    #         credit = match.group(3)
-    #         credits.append({
-    #             "date": date,
-    #             "description": user,
-    #             "credit": credit
-    #         })
-
-    #     # # for match in re.finditer(db_pattern, text):
-    #     # #     date = match.group(1)
-    #     # #     user = match.group(2)
-    #     # #     debit = match.group(3)
-    #     # #     debits.append({
-    #     # #         "date": date,
-    #     # #         "description": user,
-    #     # #         "debit": debit
-    #     # #     })
-
-    #     def clean_amount(amount):
-    #         return float(amount.replace(',', ''))
-        
-    #     def format_date(date_format):
-    #         return date_format.replace('-', '/')
-        
-    #     def clean_date(date_format):
-    #         date_str = date_format.strip() 
-    #         full_date_str = f"{date_str}/{str(year)[-2:]}"
-    #         formatted_date = datetime.strptime(full_date_str, "%m/%d/%y").strftime("%m/%d/%y")
-    #         return formatted_date
-
-
-
-    #     credits = pd.DataFrame(credits)
-    #     if len(credits) > 0:
-    #         credits['credit'] = credits['credit'].apply(clean_amount)
-    #         credits['date'] = credits['date'].apply(format_date)
-    #         credits['date'] = credits['date'].apply(clean_date)
-
-    #     # debits = pd.DataFrame(debits)
-
-    #     # debits['debit'] = debits['debit'].apply(clean_amount)
-
-    #     with pd.ExcelWriter('excel1.xlsx', engine='openpyxl') as writer:
-    #         credits.to_excel(writer, sheet_name='Credit', index=False)
-    #     #     debits.to_excel(writer, sheet_name='Debit', index=False)
-
-    #         workbook1 = writer.book
-    #         worksheet1 = writer.sheets['Credit']
-    #     #     worksheet2 = writer.sheets['Debit']
-
-    #         for cell in worksheet1['C'][1:]:
-    #             cell.number_format = '##0.00'
-
-    #     #     for cell in worksheet2['C'][1:]:
-    # #         cell.number_format = '##0.00'
-
-    #     temp_excel = tempfile.NamedTemporaryFile(suffix='.xlsx', delete=False)
-    #     workbook1.save(temp_excel.name)
-    
-    # except Exception as e:
-    #     logger.debug("An error occured: ", e)
-
+    if not candidate_id:
+        return jsonify({"error": "Candidate ID is required"}), 400
+    cursor = None
+    conn = None
     try:
-        # Send the file as response
-        pages = convert_from_path(temp_path, dpi=700)
-
-        files = []
-        for i in range(len(pages)):
-            pages[i].save("Santander_page_"+str(i+1)+".png", "PNG")
-            files.append("Santander_page_"+str(i+1)+".png")
-
-        credits_aws = pd.DataFrame()
-        debits_aws = pd.DataFrame()
-        transactions = pd.DataFrame()
-
-        for f in files:
-            image = Image.open(f) # loads the document image with Pillow
-            extractor = Textractor(region_name="us-east-1") # Initialize textractor client, modify region if required
-            response = extractor.analyze_document(
-                file_source=image,
-                features=[
-                    TextractFeatures.TABLES
-                ],
-                save_image=True
-            )
-
-            for i in range(len(response.tables)):
-                table = EntityList(response.tables[i])
-                response.tables[i].visualize()
-                table_title = table[0].title
-                if table_title:
-                    if table_title.text.startswith('Account Activity'):
-                        df=table[0].to_pandas()
-                        if len(df.columns) > 4:
-                            for i in range(1, len(df.columns)-3):
-                                df[0] = df[0] + ' ' + df[i]
-                        df1 = df[[0, len(df.columns)-3, len(df.columns)-2]].rename(columns={0: "description", len(df.columns)-3: "credit", len(df.columns)-2: "debit"})
-                        transactions = pd.concat([transactions, df1], ignore_index=True)
-                        
-        if len(transactions) > 0:
-            transactions[['date', 'description']] = transactions.iloc[:,0].str.split(' ', n=1, expand=True)
-            transactions = transactions[['date','description','credit','debit']]
-            transactions = transactions[transactions.iloc[:,0].str.match(r'^\d{2}-\d{1,2}.*', na=False)].reset_index(drop=True)
-            transactions['date'] = transactions['date'].str.replace('-', '/')
-
-        for i in range(len(transactions)):
-            date_str = transactions.loc[i, 'date'].strip() 
-            full_date_str = f"{date_str}/{str(year)[-2:]}"
-            formatted_date = datetime.strptime(full_date_str, "%m/%d/%y").strftime("%m/%d/%y")
-            transactions.loc[i, "date"] = formatted_date
-
-        credit_list = []
-        debit_list = []
-
-        for i in range(len(transactions)):
-            if transactions.iloc[i, 3] != '':
-                debit_list.append(transactions.iloc[i])
-
-            if transactions.iloc[i, 2] != '':
-                credit_list.append(transactions.iloc[i])
-
-        if len(credit_list) > 0:
-            credits_aws = pd.DataFrame(credit_list)
-            credits_aws['credit'] = credits_aws['credit'].str.replace(r'[$,]', '', regex=True)
-            credits_aws['credit'] = pd.to_numeric(credits_aws['credit'])
-
-            credits_aws.drop(columns='debit', inplace=True)
-
-        if len(debit_list) > 0:
-            debits_aws = pd.DataFrame(debit_list)
-            debits_aws['debit'] = debits_aws['debit'].str.replace(r'[$,]', '', regex=True)
-            debits_aws['debit'] = pd.to_numeric(debits_aws['debit'])
-
-            debits_aws.drop(columns='credit', inplace=True)
-
-        with pd.ExcelWriter('excel2.xlsx', engine='openpyxl') as writer:
-            credits_aws.to_excel(writer, sheet_name='Credit', index=False)
-            debits_aws.to_excel(writer, sheet_name='Debit', index=False)
-
-            workbook2 = writer.book
-            worksheet1 = writer.sheets['Credit']
-            worksheet2 = writer.sheets['Debit']
-
-            temp_excel2 = tempfile.NamedTemporaryFile(suffix='.xlsx', delete=False)
-            workbook2.save(temp_excel2.name)
-    
-    except Exception as e:
-        logger.debug("An error occured: ", e)
-
-    # try:
-    #     logger.debug("Block 3")
-
-    #     credit_df = pd.DataFrame()
-    #     debit_df = pd.DataFrame()
-
-    #     project_id = 'techify-446309'
-    #     location = 'us'
-    #     processor_id = '567c2df93ddea10e'
-    #     processor_version = 'rc'
-    #     file_path = temp_path
-    #     mime_type = 'application/pdf'
-    #     credentials_path = '/home/ubuntu/pdf-excel/techify.json'
-
-    #     def clean_date(date_str):
-    #         full_date_str = f"{date_str}/{str(year)[-2:]}"
-    #         formatted_date = datetime.strptime(full_date_str, "%m/%d/%y").strftime("%m/%d/%y")
-    #         return formatted_date
-        
-    #     def clean_description(text: str) -> str:
-    #         """
-    #         Clean description by removing quotation marks only if they appear at both start and end
-    #         """
-    #         if text.startswith('"') and text.endswith('"'):
-    #             return text[1:-1]
-    #         return text
-
-    #     def parse_amount(amount_str: str) -> float:
-    #         """
-    #         Parse amount string to float, handling empty strings and invalid formats
-    #         """
-    #         if not amount_str or amount_str.isspace():
-    #             return 0.0
-            
-    #         clean_amount = amount_str.replace('$', '').replace(',', '').replace('"', '').strip()
-    #         try:
-    #             return float(clean_amount)
-    #         except ValueError:
-    #             print(f"Warning: Could not parse amount: {amount_str}")
-    #             return 0.0
-            
-    #     def is_valid_date_format(date_str: str) -> bool:
-    #         date_pattern = r'\d{2}-\d{2}'
-    #         return bool(re.match(date_pattern, date_str))
-
-    #     def layout_to_text(layout: documentai.Document.Page.Layout, text: str) -> str:
-    #         return "".join(
-    #             text[int(segment.start_index) : int(segment.end_index)]
-    #             for segment in layout.text_anchor.text_segments
-    #         )
-
-    #     def process_document(
-    #         project_id: str,
-    #         location: str,
-    #         processor_id: str,
-    #         processor_version: str,
-    #         file_path: str,
-    #         mime_type: str,
-    #         credentials_path: str,
-    #         process_options: Optional[documentai.ProcessOptions] = None,
-    #     ) -> documentai.Document:
-            
-    #         credentials = service_account.Credentials.from_service_account_file(
-    #             credentials_path,
-    #             scopes=['https://www.googleapis.com/auth/cloud-platform']
-    #         )
-                
-    #         client = documentai.DocumentProcessorServiceClient(
-    #             credentials=credentials,
-    #             client_options=ClientOptions(
-    #                 api_endpoint=f"{location}-documentai.googleapis.com"
-    #             )
-    #         )
-
-    #         name = client.processor_version_path(
-    #             project_id, location, processor_id, processor_version
-    #         )
-
-    #         with open(file_path, "rb") as image:
-    #             image_content = image.read()
-
-    #         request = documentai.ProcessRequest(
-    #             name=name,
-    #             raw_document=documentai.RawDocument(content=image_content, mime_type=mime_type),
-    #             process_options=process_options,
-    #         )
-
-    #         result = client.process_document(request=request)
-    #         return result.document
-        
-    #     document = process_document(
-    #             project_id, location, processor_id, processor_version, file_path, mime_type, credentials_path
-    #         )
-
-    #     text = document.text
-    #     print(f"There are {len(document.pages)} page(s) in this document.")
-
-    #     # Initialize lists to store credit and debit transactions
-    #     credit_rows = []
-    #     debit_rows = []
-    #     headers = None
-
-    #     for page in document.pages:
-    #         print(f"\n\n**** Page {page.page_number} ****")
-    #         print(f"\nFound {len(page.tables)} table(s):")
-
-    #         for table in page.tables:
-    #             num_columns = len(table.header_rows[0].cells)
-    #             if num_columns == 5:  # Verify we have the expected number of columns
-    #                 num_rows = len(table.body_rows)
-    #                 print(f"Table with {num_columns} columns and {num_rows} rows:")
-                    
-    #                 # Store headers from the first valid table
-    #                 headers = []
-    #                 for cell in table.header_rows[0].cells:
-    #                     header_text = layout_to_text(cell.layout, text).strip()
-    #                     headers.append(header_text)
-    #                 print("Columns:", headers)
-
-    #     #             # Process only if we have the expected date column
-    #                 if headers[0].lower() == 'date':
-    #                     for row in table.body_rows:
-    #                         row_data = []
-    #                         for cell in row.cells:
-    #                             cell_text = layout_to_text(cell.layout, text).strip()
-    #                             row_data.append(cell_text)
-
-    #                         if is_valid_date_format(row_data[0]):
-    #                             # Clean the description
-    #                             row_data[1] = clean_description(row_data[1])
-                                
-    #                             # Parse credit amount (index 3 for Deposits/Credits)
-    #                             credit_amount = parse_amount(row_data[2])
-                                
-    #                             # Parse debit amount (index 4 for Withdrawals/Debits)
-    #                             debit_amount = parse_amount(row_data[3])
-
-    #                             if credit_amount == 0.0 and debit_amount > 0:
-    #                                 transactions = [row_data[0], row_data[1], debit_amount]
-    #                                 debit_rows.append(transactions)
-    #                             elif debit_amount == 0.0 and credit_amount > 0:
-    #                                 transactions = [row_data[0], row_data[1], credit_amount]
-    #                                 credit_rows.append(transactions)
-
-    #     # Define column names for the Excel sheets
-    #     output_columns = ['Date', 'Description', 'Amount']
-        
-    #     if credit_rows:
-    #         credit_df = pd.DataFrame(credit_rows, columns=output_columns)
-    #         credit_df['Date'] = credit_df['Date'].replace('-', '/', regex=True)
-    #         credit_df['Amount'] = pd.to_numeric(credit_df['Amount'], errors='coerce')
-    #         credit_df['Date'] = credit_df['Date'].apply(clean_date)
-    #         # credit_df['Ending Balance'] = pd.to_numeric(credit_df['Ending Balance'], errors='coerce')
-    #         # credit_df.to_excel(writer, sheet_name='Credits', index=False)
-    #         print(f"Total credit transactions processed: {len(credit_rows)}")
-        
-    #     # Save debit transactions
-    #     if debit_rows:
-    #         debit_df = pd.DataFrame(debit_rows, columns=output_columns)
-    #         debit_df['Date'] = debit_df['Date'].replace('-', '/', regex=True)
-    #         debit_df['Amount'] = pd.to_numeric(debit_df['Amount'], errors='coerce')
-    #         debit_df['Date'] = debit_df['Date'].apply(clean_date)
-    #         # debit_df['Ending Balance'] = pd.to_numeric(debit_df['Ending Balance'], errors='coerce')
-    #         # debit_df.to_excel(writer, sheet_name='Debits', index=False)
-    #         print(f"Total debit transactions processed: {len(debit_rows)}") 
-    
-    #     if not (credit_rows or debit_rows):
-    #         print("No valid transactions found in any table")
-
-    #     with pd.ExcelWriter('excel3.xlsx', engine='openpyxl') as writer:
-    #         credit_df.to_excel(writer, sheet_name='Credit', index=False)
-    #         debit_df.to_excel(writer, sheet_name='Debit', index=False)
-
-    #         workbook3 = writer.book
-    #         worksheet1 = writer.sheets['Credit']
-    #         worksheet2 = writer.sheets['Debit']
-
-    #         temp_excel3 = tempfile.NamedTemporaryFile(suffix='.xlsx', delete=False)
-    #         workbook3.save(temp_excel3.name)
-    
-    # except Exception as e:
-    #     logger.debug("An error occured: ", e)
-
-    try:
-        # excel1_buffer = io.BytesIO()
-        # workbook1.save(excel1_buffer)
-        # excel1_buffer.seek(0)
-            
-        excel2_buffer = io.BytesIO()
-        workbook2.save(excel2_buffer)
-        excel2_buffer.seek(0)
-
-        # excel3_buffer = io.BytesIO()
-        # workbook3.save(excel3_buffer)
-        # excel3_buffer.seek(0)
-        
-        # Create a zip file in memory
-        zip_buffer = io.BytesIO()
-        with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
-            # zip_file.writestr('regex.xlsx', excel1_buffer.getvalue())
-            zip_file.writestr('santander.xlsx', excel2_buffer.getvalue())
-            # zip_file.writestr('docai.xlsx', excel3_buffer.getvalue())
-            
-        zip_buffer.seek(0)
-        
-        # Send the zip file
-        return send_file(
-            zip_buffer, 
-            mimetype='application/zip',
-            as_attachment=True,
-            download_name='santander.zip'
+        conn = psycopg2.connect(
+            dbname='hrtest',
+            user='hruser',
+            password='T@chify$ol8m0s0!',
+            host='localhost',
+            port='5432'
         )
-    
-    except Exception as e:
-        logger.debug("An error occured: ", e)
+
+        # conn = psycopg2.connect(
+        #     dbname='postgres',
+        #     user='postgres',
+        #     password='pwd123',
+        #     host='localhost',
+        #     port='5433'
+        # )
         
+        cursor = conn.cursor()
+
+        cursor.execute('''
+            UPDATE registration SET test_attempted = TRUE WHERE candidate_id = %s;
+        ''', (candidate_id,))
+        conn.commit()
+
+        return jsonify({"message": "Test started successfully"}), 200
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
     finally:
-        os.remove(temp_path)
-        # os.remove('excel1.xlsx')
-        os.remove('excel2.xlsx')
-        # os.remove('excel3.xlsx')
-        for f in files:
-            os.remove(f)      
-
-@app.route('/seacoast', methods=['POST'])
-def excel_seacoast():
-    uploaded_file = request.files.get('file')
-    year = request.form.get('year')
-    if not uploaded_file:
-        return jsonify({'error': 'No file uploaded'}), 400
-    
-    temp_path = tempfile.mktemp(suffix='.pdf')
-    uploaded_file.save(temp_path)
-
-    # try:
-        # images = convert_from_path(temp_path)
-        # len_images = len(images)
-        # logfiles = []
-
-        # with open('log.txt', 'w', encoding='utf-8') as f:
-        #     for i in range(len_images):
-        #         images[i].save('seacoast' + str(i) + '.jpg', 'JPEG')
-        #         logfiles.append("Seacoast_page_"+str(i+1)+".png")
-
-        #         loader = AmazonTextractPDFLoader("seacoast" + str(i) + ".jpg")
-        #         documents = loader.load()
-
-        #         for document in documents:
-        #             text = document.page_content
-        #             f.write(text + '\n') 
-
-        # with open("log.txt", "r") as f:
-        #     text = f.read()
-
-        # cr_pattern = r'\n(\d{2}-\d{2})\n\n\n([A-Za-z\*\#]+[A-Za-z 0-9\*\/\#]+)\n\n\n([0-9,]+[.]+[0-9]+)\n\n\n[^-]'
-        # db_pattern = r'\n(\d{2}-\d{2})\n\n\n([A-Za-z\*\#]+[A-Za-z 0-9\*\/\#]+)\n\n\n([-][0-9,]+[.]+[0-9]+)\n'
-
-        # credits = []
-        # debits = []
-
-        # for match in re.finditer(cr_pattern, text):
-        #     date = match.group(1)
-        #     user = match.group(2)
-        #     credit = match.group(3)
-        #     credits.append({
-        #         "date": date,
-        #         "description": user,
-        #         "credit": credit
-        #     })
-
-        # for match in re.finditer(db_pattern, text):
-        #     date = match.group(1)
-        #     user = match.group(2)
-        #     debit = match.group(3)
-        #     debits.append({
-        #         "date": date,
-        #         "description": user,
-        #         "debit": debit
-        #     })
-
-        # def clean_amount(amount):
-        #             return float(amount.replace(',', ''))
-
-        # def sign(amount):
-        #             return amount.replace('-', '')
-
-        # def date_modify(dates):
-        #             return dates.replace('-', '/')
-
-        # credits = pd.DataFrame(credits)
-
-        # credits['date'] = credits['date'].apply(date_modify)
-
-        # credits['credit'] = credits['credit'].apply(clean_amount)
-
-        # debits = pd.DataFrame(debits)
-
-        # debits['date'] = debits['date'].apply(date_modify)
-
-        # debits['debit'] = debits['debit'].apply(sign)
-
-        # debits['debit'] = debits['debit'].apply(clean_amount)
-
-        # with pd.ExcelWriter('excel1.xlsx', engine='openpyxl') as writer:
-        #     credits.to_excel(writer, sheet_name='Credit', index=False)
-        #     debits.to_excel(writer, sheet_name='Debit', index=False)
-
-        #     workbook1 = writer.book
-        #     worksheet1 = writer.sheets['Credit']
-        #     worksheet2 = writer.sheets['Debit']
-
-        #     for cell in worksheet1['C'][1:]:
-        #         cell.number_format = '##0.00'
-
-        #     for cell in worksheet2['C'][1:]:
-        #         cell.number_format = '##0.00'
-        
-        # temp_excel = tempfile.NamedTemporaryFile(suffix='.xlsx', delete=False)
-        # workbook1.save(temp_excel.name)
-    try:
-        pages = convert_from_path(temp_path, dpi=700)
-
-        files = []
-
-        for i in range(len(pages)):
-            pages[i].save("Seacoast_page_"+str(i+1)+".png", "PNG")
-            files.append("Seacoast_page_"+str(i+1)+".png")
-
-        credits_aws = pd.DataFrame()
-        debits_aws = pd.DataFrame()
-        transactions = pd.DataFrame()
-
-        for f in files:
-            image = Image.open(f) # loads the document image with Pillow
-            extractor = Textractor(region_name="us-east-1") # Initialize textractor client, modify region if required
-            response = extractor.analyze_document(
-                file_source=image,
-                features=[
-                    TextractFeatures.TABLES
-                ],
-                save_image=True
-            )
-
-            for i in range(len(response.tables)):
-                table = EntityList(response.tables[i])
-                response.tables[i].visualize()
-                table_title = table[0].title
-                if table_title:
-                    if table_title.text in ['Business Checking*', 'Business Checking']:
-                        df=table[0].to_pandas()
-                        transactions = pd.concat([transactions, df], ignore_index=True)
-
-        if len(transactions) > 0:
-            transactions = transactions[transactions.iloc[:,0].str.match(r'^\d{2}-\d{1,2}.*', na=False)].reset_index(drop=True)
-            transactions = transactions[[0,1,2,3]].rename(columns={0:'date', 1: 'description', 2:'credit', 3:'debit'})
-            transactions['date'] = transactions['date'].str.replace(r'[-]', '/', regex=True)
-            transactions['credit'] = transactions['credit'].str.replace(r'[$,]', '', regex=True)
-            transactions['debit'] = transactions['debit'].str.replace(r'[-$,]', '', regex=True)
-
-        for i in range(len(transactions)):
-            date_str = transactions.loc[i, 'date'].strip() 
-            full_date_str = f"{date_str}/{str(year)[-2:]}"
-            formatted_date = datetime.strptime(full_date_str, "%m/%d/%y").strftime("%m/%d/%y")
-            transactions.loc[i, "date"] = formatted_date
-        
-        credit_list = []
-        debit_list = []
-
-        for i in range(len(transactions)):
-            if transactions.iloc[i, 2] == '':
-                debit_list.append(transactions.iloc[i])
-
-            if transactions.iloc[i, 3] == '':
-                credit_list.append(transactions.iloc[i])
-
-        credits = pd.DataFrame(credit_list)
-        debits = pd.DataFrame(debit_list)
-
-        if len(credits) > 0:
-            credits_aws = credits[credits['credit'] != '']
-            for index in credits_aws.index:
-                val = credits_aws.loc[index, 'credit'].split(' ')
-                credits_aws.loc[index, 'credit'] = val[0]  
-
-        if len(debits) > 0:
-            debits_aws = debits[debits['debit'] != '']
-            for index in debits_aws.index:
-                val = debits_aws.loc[index, 'debit'].split(' ')
-                debits_aws.loc[index, 'debit'] = val[0]
-
-        if len(credits_aws) > 0:
-            credits_aws.drop(columns='debit', inplace=True)
-            credits_aws['credit'] = credits_aws['credit'].astype(str).str.replace(r'[$,\s]', '', regex=True)
-            credits_aws['credit'] = pd.to_numeric(credits_aws['credit'])
-
-        if len(debits_aws) > 0:
-            debits_aws.drop(columns='credit', inplace=True)
-            debits_aws['debit'] = debits_aws['debit'].astype(str).replace(r'[-,]', '', regex=True)
-            debits_aws['debit'] = pd.to_numeric(debits_aws['debit'])
-
-        with pd.ExcelWriter('excel2.xlsx', engine='openpyxl') as writer:
-            credits_aws.to_excel(writer, sheet_name='Credit', index=False)
-            debits_aws.to_excel(writer, sheet_name='Debit', index=False)
-
-            workbook2 = writer.book
-            worksheet1 = writer.sheets['Credit']
-            worksheet2 = writer.sheets['Debit']
-
-            temp_excel2 = tempfile.NamedTemporaryFile(suffix='.xlsx', delete=False)
-            workbook2.save(temp_excel2.name)
-    
-    except Exception as e:
-        logger.debug("An error occured: ", e)
-
-    # try:
-    #     logger.debug("Block 3")
-
-    #     credit_df = pd.DataFrame()
-    #     debit_df = pd.DataFrame()
-
-    #     project_id = 'techify-446309'
-    #     location = 'us'
-    #     processor_id = '567c2df93ddea10e'
-    #     processor_version = 'rc'
-    #     file_path = temp_path
-    #     mime_type = 'application/pdf'
-    #     credentials_path = '/home/ubuntu/pdf-excel/techify.json'
-
-    #     def clean_date(date_str):
-    #         full_date_str = f"{date_str}/{str(year)[-2:]}"
-    #         formatted_date = datetime.strptime(full_date_str, "%m/%d/%y").strftime("%m/%d/%y")
-    #         return formatted_date
-        
-    #     def clean_description(text: str) -> str:
-    #         """
-    #         Clean description by removing quotation marks only if they appear at both start and end
-    #         """
-    #         if text.startswith('"') and text.endswith('"'):
-    #             return text[1:-1]
-    #         return text
-        
-    #     def is_valid_date_format(date_str: str) -> bool:
-    #         """
-    #         Validate if the date string matches mm/dd/yy format.
-    #         Returns True if the date is valid, False otherwise.
-    #         """
-    #         date_pattern = r'\d{2}-\d{2}'
-            
-    #         if not re.match(date_pattern, date_str):
-    #             return False
-    #         else:
-    #             return True
-    
-    #     def parse_amount(amount_str: str) -> float:
-    #         print("New: ", amount_str)
-    #         try:
-    #             amount = re.search(r'-?[0-9,]+\.[0-9]{2}', amount_str).group()
-    #             clean_amount = amount.replace('$', '').replace(',', '').strip()
-    #             print(float(clean_amount))
-    #             return float(clean_amount)
-    #         except AttributeError or ValueError:
-    #             print(f"Warning: Could not parse amount: {amount_str}")
-    #             return 0.0
-
-    #     def process_document(
-    #         project_id: str,
-    #         location: str,
-    #         processor_id: str,
-    #         processor_version: str,
-    #         file_path: str,
-    #         mime_type: str,
-    #         credentials_path: str,
-    #         process_options: Optional[documentai.ProcessOptions] = None,
-    #     ) -> documentai.Document:
-            
-    #         credentials = service_account.Credentials.from_service_account_file(
-    #             credentials_path,
-    #             scopes=['https://www.googleapis.com/auth/cloud-platform']
-    #         )
-            
-    #         client = documentai.DocumentProcessorServiceClient(
-    #             credentials=credentials,
-    #             client_options=ClientOptions(
-    #                 api_endpoint=f"{location}-documentai.googleapis.com"
-    #             )
-    #         )
-
-    #         name = client.processor_version_path(
-    #             project_id, location, processor_id, processor_version
-    #         )
-
-    #         with open(file_path, "rb") as image:
-    #             image_content = image.read()
-
-    #         request = documentai.ProcessRequest(
-    #             name=name,
-    #             raw_document=documentai.RawDocument(content=image_content, mime_type=mime_type),
-    #             process_options=process_options,
-    #         )
-
-    #         result = client.process_document(request=request)
-
-    #         return result.document
-
-    #     def layout_to_text(layout: documentai.Document.Page.Layout, text: str) -> str:
-    #         """
-    #         Document AI identifies text in different parts of the document by their
-    #         offsets in the entirety of the document's text. This function converts
-    #         offsets to a string.
-    #         """
-    #         return "".join(
-    #             text[int(segment.start_index) : int(segment.end_index)]
-    #             for segment in layout.text_anchor.text_segments
-    #         )
-    
-    #     document = process_document(
-    #             project_id, location, processor_id, processor_version, file_path, mime_type, credentials_path
-    #         )
-
-    #     text = document.text
-    #     print(f"There are {len(document.pages)} page(s) in this document.")
-
-    #     # Initialize lists to store all credit and debit transactions
-    #     all_credit_rows = []
-    #     all_debit_rows = []
-    #     headers = None
-
-    #     for page in document.pages:
-    #         print(f"\n\n**** Page {page.page_number} ****")
-    #         print(f"\nFound {len(page.tables)} table(s):")
-
-    #         for table in page.tables:
-    #             num_columns = len(table.header_rows[0].cells)
-    #             if num_columns == 5:
-    #                 num_rows = len(table.body_rows)
-    #                 print(f"Table with {num_columns} columns and {num_rows} rows:")
-                    
-    #                 # Only store headers from the first valid table we encounter
-    #                 headers = []
-    #                 for cell in table.header_rows[0].cells:
-    #                     header_text = layout_to_text(cell.layout, text).strip()
-    #                     headers.append(header_text)
-    #                 print("Columns:", headers)
-
-    #                 for row in table.body_rows:
-    #                     row_data = []
-    #                     for cell in row.cells:
-    #                         cell_text = layout_to_text(cell.layout, text).strip()
-    #                         row_data.append(cell_text)
-
-    #                     if is_valid_date_format(row_data[0]):
-    #                         row_data[1] = clean_description(row_data[1])
-                                
-    #                         credit_amount = parse_amount(row_data[2])
-    #                         debit_amount = parse_amount(row_data[3])
-                            
-    #                         if credit_amount == 0.0 and debit_amount < 0:
-    #                             transactions = [row_data[0], row_data[1], debit_amount]
-    #                             all_debit_rows.append(transactions)
-    #                         elif debit_amount == 0.0 and credit_amount > 0:
-    #                             transactions = [row_data[0], row_data[1], credit_amount]
-    #                             all_credit_rows.append(transactions)
-        
-    #     column_headers = ['Date', 'Description', 'Amount']
-        
-    #     if all_credit_rows:
-    #         credit_df = pd.DataFrame(all_credit_rows, columns=column_headers)
-    #         credit_df[column_headers[0]] = credit_df[column_headers[0]].replace('-','/', regex=True)
-    #         credit_df[column_headers[0]] = credit_df[column_headers[0]].apply(clean_date)
-    #         credit_df[column_headers[1]] = credit_df[column_headers[1]].apply(clean_description)
-    #         credit_df[column_headers[2]] = pd.to_numeric(credit_df[column_headers[2]], errors='coerce')
-    #         # credit_df.to_excel(writer, sheet_name='Credits', index=False)
-    #         print(f"Total credit transactions processed: {len(all_credit_rows)}")
-            
-    #     if all_debit_rows:
-    #         debit_df = pd.DataFrame(all_debit_rows, columns=column_headers)
-    #         debit_df[column_headers[0]] = debit_df[column_headers[0]].replace('-', '/', regex=True)
-    #         debit_df[column_headers[0]] = debit_df[column_headers[0]].apply(clean_date)
-    #         debit_df[column_headers[1]] = debit_df[column_headers[1]].apply(clean_description)
-    #         debit_df[column_headers[2]] = debit_df[column_headers[2]].astype(str)
-    #         debit_df[column_headers[2]] = debit_df[column_headers[2]].replace('-', '', regex=True)
-    #         debit_df[column_headers[2]] = pd.to_numeric(debit_df[column_headers[2]], errors='coerce')
-    #         print(f"Total debit transactions processed: {len(all_debit_rows)}")
-        
-    #     if not (all_credit_rows or all_debit_rows):
-    #         print("No valid transactions found in any table")
-
-    #     with pd.ExcelWriter('excel3.xlsx', engine='openpyxl') as writer:
-    #         credit_df.to_excel(writer, sheet_name='Credit', index=False)
-    #         debit_df.to_excel(writer, sheet_name='Debit', index=False)
-
-    #         workbook3 = writer.book
-    #         worksheet1 = writer.sheets['Credit']
-    #         worksheet2 = writer.sheets['Debit']
-
-    #         temp_excel3 = tempfile.NamedTemporaryFile(suffix='.xlsx', delete=False)
-    #         workbook3.save(temp_excel3.name)
-    
-    # except Exception as e:
-    #     logger.debug("An error occured: ", e)
-
-    try:
-        # excel1_buffer = io.BytesIO()
-        # workbook1.save(excel1_buffer)
-        # excel1_buffer.seek(0)
-        
-        excel2_buffer = io.BytesIO()
-        workbook2.save(excel2_buffer)
-        excel2_buffer.seek(0)
-
-        # excel3_buffer = io.BytesIO()
-        # workbook3.save(excel3_buffer)
-        # excel3_buffer.seek(0)
-        
-        # Create a zip file in memory
-        zip_buffer = io.BytesIO()
-        with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
-            # zip_file.writestr('regex.xlsx', excel1_buffer.getvalue())
-            zip_file.writestr('seacoast.xlsx', excel2_buffer.getvalue())
-            # zip_file.writestr('docai.xlsx', excel3_buffer.getvalue())
-        
-        zip_buffer.seek(0)
-        
-        # Send the zip file
-        return send_file(
-            zip_buffer, 
-            mimetype='application/zip',
-            as_attachment=True,
-            download_name='seacoast.zip'
-        )
-    
-    except Exception as e:
-        logger.debug("An error occured: ", e)
-        
-    finally:
-        os.remove(temp_path)
-        # os.remove('excel1.xlsx')
-        os.remove('excel2.xlsx')
-        # os.remove('excel3.xlsx')
-        for f in files:
-            os.remove(f)
-    
-@app.route('/synovus', methods=['POST'])
-def excel_synovus():
-    uploaded_file = request.files.get('file')
-    year = request.form.get('year')
-    if not uploaded_file:
-        return jsonify({'error': 'No file uploaded'}), 400
-    
-    temp_path = tempfile.mktemp(suffix='.pdf')
-    uploaded_file.save(temp_path)
-
-    try:
-        doc = pymupdf.open(temp_path)
-        with open('log.txt', 'w', encoding='utf-8') as f:
-            for page in doc:
-                text = page.get_text()
-                f.write(text + '\n')
-
-        with open("log.txt", "r") as f:
-            text = f.read()
-
-        cr_pattern = r'(\d{2}-\d{2})\sPreauthorized Credit\s([A-Za-z 0-9\#]+\s+[A-Za-z 0-9]*)\s([0-9,]+[.]+[0-9]{2})\s'
-
-        db_pattern = r'(\d{2}-\d{2})\sPreauthorized Wd\s([A-Za-z 0-9\#\&]+\s+[A-Za-z 0-9]*)\s([0-9,]+[.]+[0-9]{2})\s'
-
-        credits = []
-        debits = []
-
-        for match in re.finditer(cr_pattern, text):
-            date = match.group(1)
-            user = match.group(2)
-            credit = match.group(3)
-            credits.append({
-                "date": date,
-                "description": user,
-                "credit": credit
-            })
-
-        for match in re.finditer(db_pattern, text):
-            date = match.group(1)
-            user = match.group(2)
-            debit = match.group(3)
-            debits.append({
-                "date": date,
-                "description": user,
-                "debit": debit
-            })
-
-        def clean_amount(amount):
-            return float(amount.replace(',', ''))
-        
-        def clean_date(date_format):
-            date_str = date_format.strip() 
-            date_str.replace('-','/')
-            full_date_str = f"{date_str}/{str(year)[-2:]}"
-            formatted_date = datetime.strptime(full_date_str, "%m/%d/%y").strftime("%m/%d/%y")
-            return formatted_date
-
-        credits = pd.DataFrame(credits)
-        for i in range(len(credits)):
-            credits.iloc[i]['date'] = credits.iloc[i]['date'].replace('-', '/')
-
-        if len(credits) > 0:
-            credits['credit'] = credits['credit'].apply(clean_amount)
-            credits['date'] = credits['date'].apply(clean_date)
-
-        debits = pd.DataFrame(debits)
-        for i in range(len(debits)):
-            debits.iloc[i]['date'] = debits.iloc[i]['date'].replace('-', '/')
-
-        if len(debits) > 0:
-            debits['debit'] = debits['debit'].apply(clean_amount)
-            debits['date'] = debits['date'].apply(clean_date)
-
-        with pd.ExcelWriter('excel1.xlsx', engine='openpyxl') as writer:
-            credits.to_excel(writer, sheet_name='Credit', index=False)
-            debits.to_excel(writer, sheet_name='Debit', index=False)
-
-            workbook1 = writer.book
-            worksheet1 = writer.sheets['Credit']
-            worksheet2 = writer.sheets['Debit']
-
-            for cell in worksheet1['C'][1:]:
-                cell.number_format = '##0.00'
-
-            for cell in worksheet2['C'][1:]:
-                cell.number_format = '##0.00'
-        
-        temp_excel = tempfile.NamedTemporaryFile(suffix='.xlsx', delete=False)
-        workbook1.save(temp_excel.name)
-
-    except Exception as e:
-        logger.debug("An error occured: ", e)
-
-    # try:
-    #     pages = convert_from_path(temp_path, dpi=700)
-
-    #     files = []
-    #     for i in range(len(pages)):
-    #         pages[i].save("Synovus_page_"+str(i+1)+".png", "PNG")
-    #         files.append("Synovus_page_"+str(i+1)+".png")
-
-    #     credits_aws = pd.DataFrame()
-    #     debits_aws = pd.DataFrame()
-    #     transactions = pd.DataFrame()
-
-    #     for f in files:
-    #         image = Image.open(f) # loads the document image with Pillow
-    #         extractor = Textractor(region_name="us-east-1") # Initialize textractor client, modify region if required
-    #         response = extractor.analyze_document(
-    #             file_source=image,
-    #             features=[
-    #                     TextractFeatures.TABLES
-    #                 ],
-    #                 save_image=True
-    #             )
-            
-    #         for i in range(len(response.tables)):
-    #             table = EntityList(response.tables[i])
-    #             response.tables[i].visualize()
-    #             df = table[0].to_pandas()
-    #             transactions = pd.concat([transactions, df], ignore_index=True)
-
-    #     if len(transactions) > 0:
-    #         transactions = transactions[transactions.iloc[:,0].str.match(r'^\d{2}-\d{1,2}.*', na=False)].reset_index(drop=True)
-    #         transactions = transactions[transactions.iloc[:,1].str.match(r'^[A-Za-a]', na=False)].reset_index(drop=True)
-
-    #     for i in range(len(transactions)):
-    #         if pd.isna(transactions.iloc[i, -1]):
-    #             transactions.iloc[i, -1] = transactions.iloc[i, transactions.iloc[i].last_valid_index()]
-
-    #     if len(transactions) > 0:
-    #         new_df = transactions[[0,1,2,len(transactions.columns)-1]].rename(columns={0: "date", 1: "type", 2: "description", len(transactions.columns)-1: "amount"})
-    #         new_df['date'] = new_df['date'].str.replace('-', '/')
-        
-    #     debits = ['Preauthorized Wd']
-    #     credits = ['Preauthorized Credit']
-
-    #     for i in range(len(new_df)):
-    #         date_str = new_df.loc[i, 'date'].strip() 
-    #         full_date_str = f"{date_str}/{str(year)[-2:]}"
-    #         formatted_date = datetime.strptime(full_date_str, "%m/%d/%y").strftime("%m/%d/%y")
-    #         new_df.loc[i, "date"] = formatted_date
-
-    #     credit_list = []
-    #     debit_list = []
-
-    #     for i in range(len(new_df)):
-    #         if new_df.iloc[i, 1].strip() in debits:
-    #             debit_list.append(new_df.iloc[i])
-
-    #         if new_df.iloc[i, 1].strip() in credits:
-    #             credit_list.append(new_df.iloc[i])
-
-    #     credits_aws = pd.DataFrame(credit_list)
-    #     debits_aws = pd.DataFrame(debit_list)
-
-    #     if len(debits_aws) > 0:
-    #         debits_aws['amount'] = debits_aws['amount'].astype(str).replace(r'[-,]', '', regex=True)
-    #         debits_aws['amount'] = pd.to_numeric(debits_aws['amount'])
-
-    #     if len(credits_aws) > 0:
-    #         credits_aws['amount'] = credits_aws['amount'].astype(str).str.replace(r'[$,\s]', '', regex=True)
-    #         credits_aws['amount'] = pd.to_numeric(credits_aws['amount'])
-
-    #     with pd.ExcelWriter('excel2.xlsx', engine='openpyxl') as writer:
-    #         credits_aws.to_excel(writer, sheet_name='Credit', index=False)
-    #         debits_aws.to_excel(writer, sheet_name='Debit', index=False)
-
-    #         workbook2 = writer.book
-    #         worksheet1 = writer.sheets['Credit']
-    #         worksheet2 = writer.sheets['Debit']
-
-    #         temp_excel2 = tempfile.NamedTemporaryFile(suffix='.xlsx', delete=False)
-    #         workbook2.save(temp_excel2.name)
-
-    # except Exception as e:
-    #     logger.debug("An error occured: ", e)
-
-    # try:
-    #     logger.debug("Block 3")
-
-    #     credit_df = pd.DataFrame()
-    #     debit_df = pd.DataFrame()
-
-    #     project_id = 'techify-446309'
-    #     location = 'us'
-    #     processor_id = '567c2df93ddea10e'
-    #     processor_version = 'rc'
-    #     file_path = temp_path
-    #     mime_type = 'application/pdf'
-    #     credentials_path = '/home/ubuntu/pdf-excel/techify.json'
-
-    #     def clean_date(date_str):
-    #         full_date_str = f"{date_str}/{str(year)[-2:]}"
-    #         formatted_date = datetime.strptime(full_date_str, "%m/%d/%y").strftime("%m/%d/%y")
-    #         return formatted_date
-        
-    #     def clean_description(text: str) -> str:
-    #         """
-    #         Clean description by removing quotation marks only if they appear at both start and end
-    #         """
-    #         if text.startswith('"') and text.endswith('"'):
-    #             return text[1:-1]
-    #         return text
-        
-    #     def is_valid_date_format(date_str: str) -> bool:
-    #         """
-    #         Validate if the date string matches mm/dd/yy format.
-    #         Returns True if the date is valid, False otherwise.
-    #         """
-    #         date_pattern = r'\d{2}-\d{2}'
-            
-    #         if not re.match(date_pattern, date_str):
-    #             return False
-    #         else:
-    #             return True
-            
-    #     def parse_amount(amount_str: str) -> float:
-    #         clean_amount = amount_str.replace('$', '').replace(',', '').replace('"', '').strip()
-            
-    #         try:
-    #             return float(clean_amount)
-    #         except ValueError:
-    #             print(f"Warning: Could not parse amount: {amount_str}")
-    #             return 0.0
-            
-    #     def process_document(
-    #         project_id: str,
-    #         location: str,
-    #         processor_id: str,
-    #         processor_version: str,
-    #         file_path: str,
-    #         mime_type: str,
-    #         credentials_path: str,
-    #         process_options: Optional[documentai.ProcessOptions] = None,
-    #     ) -> documentai.Document:
-            
-    #         credentials = service_account.Credentials.from_service_account_file(
-    #             credentials_path,
-    #             scopes=['https://www.googleapis.com/auth/cloud-platform']
-    #         )
-            
-    #         client = documentai.DocumentProcessorServiceClient(
-    #             credentials=credentials,
-    #             client_options=ClientOptions(
-    #                 api_endpoint=f"{location}-documentai.googleapis.com"
-    #             )
-    #         )
-
-    #         name = client.processor_version_path(
-    #             project_id, location, processor_id, processor_version
-    #         )
-
-    #         with open(file_path, "rb") as image:
-    #             image_content = image.read()
-
-    #         request = documentai.ProcessRequest(
-    #             name=name,
-    #             raw_document=documentai.RawDocument(content=image_content, mime_type=mime_type),
-    #             process_options=process_options,
-    #         )
-
-    #         result = client.process_document(request=request)
-
-    #         return result.document
-
-    #     def layout_to_text(layout: documentai.Document.Page.Layout, text: str) -> str:
-    #         """
-    #         Document AI identifies text in different parts of the document by their
-    #         offsets in the entirety of the document's text. This function converts
-    #         offsets to a string.
-    #         """
-    #         return "".join(
-    #             text[int(segment.start_index) : int(segment.end_index)]
-    #             for segment in layout.text_anchor.text_segments
-    #         )
-
-    
-    #     document = process_document(
-    #                 project_id, location, processor_id, processor_version, file_path, mime_type, credentials_path
-    #             )
-
-    #     text = document.text
-    #     print(f"There are {len(document.pages)} page(s) in this document.")
-
-    #     # Initialize lists to store all credit and debit transactions
-    #     all_credit_rows = []
-    #     all_debit_rows = []
-    #     headers = None
-
-    #     for page in document.pages:
-    #         print(f"\n\n**** Page {page.page_number} ****")
-    #         print(f"\nFound {len(page.tables)} table(s):")
-
-    #         for table in page.tables:
-    #             num_columns = len(table.header_rows[0].cells)
-    #             if num_columns == 4:
-    #                 num_rows = len(table.body_rows)
-    #                 print(f"Table with {num_columns} columns and {num_rows} rows:")
-                    
-    #                 # Only store headers from the first valid table we encounter
-    #                 headers = []
-    #                 for cell in table.header_rows[0].cells:
-    #                     header_text = layout_to_text(cell.layout, text).strip()
-    #                     headers.append(header_text)
-    #                 print("Columns:", headers)
-
-    #                 if 'date' in headers[0].lower() and 'description' in headers[2].lower():
-    #                     for row in table.body_rows:
-    #                         row_data = []
-    #                         for cell in row.cells:
-    #                             cell_text = layout_to_text(cell.layout, text).strip()
-    #                             row_data.append(cell_text)
-
-    #                         if is_valid_date_format(row_data[0]):
-    #                             # Clean the description (second column)
-    #                             row_data[2] = clean_description(row_data[2])
-                                
-    #                             amount = parse_amount(row_data[3])
-                                
-    #                             if 'credit' in row_data[1].lower():
-    #                                 row_data[3] = str(amount)  # Clean amount string
-    #                                 all_credit_rows.append(row_data)
-    #                             elif 'wd' in row_data[1].lower():
-    #                                 row_data[3] = str(abs(amount))  # Clean amount string
-    #                                 all_debit_rows.append(row_data)
-    #                         else:
-    #                             print(f"Skipping row with invalid date format: {row_data[0]}")
-        
-    #     column_headers = ['Date', 'Transaction Type', 'Description', 'Amount']
-        
-    #     if all_credit_rows:
-    #         credit_df = pd.DataFrame(all_credit_rows, columns=column_headers)
-    #         credit_df[column_headers[0]] = credit_df[column_headers[0]].replace('-','/', regex=True)
-    #         credit_df[column_headers[0]] = credit_df[column_headers[0]].apply(clean_date)
-    #         credit_df[column_headers[2]] = credit_df[column_headers[2]].apply(clean_description)
-    #         credit_df[column_headers[3]] = pd.to_numeric(credit_df[column_headers[3]], errors='coerce')
-    #         # credit_df.to_excel(writer, sheet_name='Credits', index=False)
-    #         print(f"Total credit transactions processed: {len(all_credit_rows)}")
-            
-    #     if all_debit_rows:
-    #         debit_df = pd.DataFrame(all_debit_rows, columns=column_headers)
-    #         debit_df[column_headers[0]] = debit_df[column_headers[0]].replace('-', '/', regex=True)
-    #         debit_df[column_headers[0]] = debit_df[column_headers[0]].apply(clean_date)
-    #         debit_df[column_headers[2]] = debit_df[column_headers[2]].apply(clean_description)
-    #         debit_df[column_headers[3]] = pd.to_numeric(debit_df[column_headers[3]], errors='coerce')
-    #         # debit_df.to_excel(writer, sheet_name='Debits', index=False)
-    #         print(f"Total debit transactions processed: {len(all_debit_rows)}")
-            
-            
-    #     if not (all_credit_rows or all_debit_rows):
-    #         print("No valid transactions found in any table")
-
-    #     with pd.ExcelWriter('excel3.xlsx', engine='openpyxl') as writer:
-    #         credit_df.to_excel(writer, sheet_name='Credit', index=False)
-    #         debit_df.to_excel(writer, sheet_name='Debit', index=False)
-
-    #         workbook3 = writer.book
-    #         worksheet1 = writer.sheets['Credit']
-    #         worksheet2 = writer.sheets['Debit']
-
-    #         temp_excel3 = tempfile.NamedTemporaryFile(suffix='.xlsx', delete=False)
-    #         workbook3.save(temp_excel3.name)
-    
-    # except Exception as e:
-    #     logger.debug("An error occured: ", e)
-
-    try:
-        excel1_buffer = io.BytesIO()
-        workbook1.save(excel1_buffer)
-        excel1_buffer.seek(0)
-        
-        # excel2_buffer = io.BytesIO()
-        # workbook2.save(excel2_buffer)
-        # excel2_buffer.seek(0)
-
-        # excel3_buffer = io.BytesIO()
-        # workbook3.save(excel3_buffer)
-        # excel3_buffer.seek(0)
-        
-        # Create a zip file in memory
-        zip_buffer = io.BytesIO()
-        with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
-            zip_file.writestr('synovus.xlsx', excel1_buffer.getvalue())
-            # zip_file.writestr('textract.xlsx', excel2_buffer.getvalue())
-            # zip_file.writestr('docai.xlsx', excel3_buffer.getvalue())
-        
-        zip_buffer.seek(0)
-        
-        # Send the zip file
-        return send_file(
-            zip_buffer, 
-            mimetype='application/zip',
-            as_attachment=True,
-            download_name='synovus.zip'
-        )
-    
-    except Exception as e:
-        logger.debug("An error occured: ", e)
-        
-    finally:
-        os.remove(temp_path)
-        os.remove('excel1.xlsx')
-        # os.remove('excel2.xlsx')
-        # os.remove('excel3.xlsx')
-        # for f in files:
-        #     os.remove(f) 
-
-@app.route('/tdbank', methods=['POST'])
-def excel_tdbank():
-    uploaded_file = request.files.get('file')
-    year = request.form.get('year')
-    if not uploaded_file:
-        return jsonify({'error': 'No file uploaded'}), 400
-    
-    temp_path = tempfile.mktemp(suffix='.pdf')
-    uploaded_file.save(temp_path)
-
-    # try:
-    #     doc = pymupdf.open(temp_path)
-    #     with open('log.txt', 'w', encoding='utf-8') as f:
-    #         for page in doc:
-    #             text = page.get_text()
-    #             f.write(text + '\n')
-
-    #     with open("log.txt", "r") as f:
-    #         text = f.read()
-
-    #     cr_pattern = r'(\d{2}/\d{2})\s([A-Za-z 0-9\#\-\,\*\.\s]+)\s([0-9,]+[.]+[0-9]{2}\s)'
-    #     # db_pattern = r'(\d{2}/\d{2})\s([A-Za-z 0-9\#]+)\s([-][0-9,]+[.]+[0-9]{2}\s)'
-
-    #     credits = []
-    #     # debits = []
-
-    #     for match in re.finditer(cr_pattern, text):
-    #         date = match.group(1)
-    #         user = match.group(2)
-    #         credit = match.group(3)
-    #         credits.append({
-    #             "date": date,
-    #             "description": user,
-    #             "credit": credit
-    #         })
-
-    #     # for match in re.finditer(db_pattern, text):
-    #     #     date = match.group(1)
-    #     #     user = match.group(2)
-    #     #     debit = match.group(3)
-    #     #     debits.append({
-    #     #         "date": date,
-    #     #         "description": user,
-    #     #         "debit": debit
-    #     #     })
-
-    #     def clean_amount(amount):
-    #         return float(amount.replace(',', ''))
-        
-    #     def clean_date(date_format):
-    #         date_str = date_format.strip() 
-    #         full_date_str = f"{date_str}/{str(year)[-2:]}"
-    #         formatted_date = datetime.strptime(full_date_str, "%m/%d/%y").strftime("%m/%d/%y")
-    #         return formatted_date
-
-    #     credits = pd.DataFrame(credits)
-    #     if len(credits) > 0:
-    #         credits['credit'] = credits['credit'].apply(clean_amount)
-    #         credits['date'] = credits['date'].apply(clean_date)
-
-    #     # debits = pd.DataFrame(debits)
-
-    #     # debits['debit'] = debits['debit'].apply(clean_amount)
-
-    #     with pd.ExcelWriter('excel1.xlsx', engine='openpyxl') as writer:
-    #         credits.to_excel(writer, sheet_name='Credit', index=False)
-    #     #     debits.to_excel(writer, sheet_name='Debit', index=False)
-
-    #         workbook1 = writer.book
-    #         worksheet1 = writer.sheets['Credit']
-    #     #     worksheet2 = writer.sheets['Debit']
-
-    #         for cell in worksheet1['C'][1:]:
-    #             cell.number_format = '##0.00'
-
-    #     #     for cell in worksheet2['C'][1:]:
-    #     #         cell.number_format = '##0.00'
-
-    #     temp_excel = tempfile.NamedTemporaryFile(suffix='.xlsx', delete=False)
-    #     workbook1.save(temp_excel.name)
-
-    # except Exception as e:
-    #     logger.debug("An error occured: ", e)
-
-    try:
-        pages = convert_from_path(temp_path, dpi=700)
-
-        files = []
-        for i in range(len(pages)):
-            pages[i].save("TD_page_"+str(i+1)+".png", "PNG")
-            files.append("TD_page_"+str(i+1)+".png")
-
-
-        credits_aws = pd.DataFrame()
-        debits_aws = pd.DataFrame()
-
-        for f in files:
-            image = Image.open(f) # loads the document image with Pillow
-            extractor = Textractor(region_name="ap-south-1") # Initialize textractor client, modify region if required
-            response = extractor.analyze_document(
-                file_source=image,
-                features=[
-                    TextractFeatures.TABLES
-                ],
-                save_image=True
-            )
-
-            for i in range(len(response.tables)):
-                table = EntityList(response.tables[i])
-                response.tables[i].visualize()
-                table_title = table[0].title
-                if table_title:
-                    if table_title.text in ['DAILY ACCOUNT ACTIVITY', 'DEPOSIT']:
-                        df=table[0].to_pandas()
-                        df1 = df[[0,1, len(df.columns)-1]].rename(columns={0: "date", 1: "Description",  len(df.columns)-1: "Credits"})
-                        credits_aws = pd.concat([credits_aws, df1], ignore_index=True)
-
-                    if table_title.text in ['Electronic Payments', 'DAILY ACCOUNT ACTIVITY Electronic Payments (continued)', 'Electronic Payments (continued)', 'Other Withdrawals', 'Service Charges']:
-                        df=table[0].to_pandas()
-                        df1 = df[[0,1, len(df.columns)-1]].rename(columns={0: "date", 1: "Description",  len(df.columns)-1: "Debits"})
-                        debits_aws = pd.concat([debits_aws, df1], ignore_index=True)
-
-        if len(credits_aws) > 0:
-            credits_aws = credits_aws[credits_aws.iloc[:,0].str.match(r'^\d{2}/\d{2}.*', na=False)].reset_index(drop=True)
-        
-        if len(debits_aws) > 0:
-            debits_aws = debits_aws[debits_aws.iloc[:,0].str.match(r'^\d{2}/\d{2}.*', na=False)].reset_index(drop=True)
-
-        for i in range(len(credits_aws)):
-            date_str = credits_aws.iloc[i]['date'].strip() 
-            full_date_str = f"{date_str}/{str(year)[-2:]}"
-            formatted_date = datetime.strptime(full_date_str, "%m/%d/%y").strftime("%m/%d/%y")
-            credits_aws.loc[i, "date"] = formatted_date
-
-        for i in range(len(debits_aws)):
-            date_str = debits_aws.iloc[i]['date'].strip() 
-            full_date_str = f"{date_str}/{str(year)[-2:]}"
-            formatted_date = datetime.strptime(full_date_str, "%m/%d/%y").strftime("%m/%d/%y")
-            debits_aws.loc[i, "date"] = formatted_date
-
-        if len(debits_aws) > 0:
-            debits_aws['Debits'] = debits_aws['Debits'].astype(str).replace(r'[-,]', '', regex=True)
-            debits_aws['Debits'] = pd.to_numeric(debits_aws['Debits'])
-
-        if len(credits_aws) > 0:
-            credits_aws['Credits'] = credits_aws['Credits'].astype(str).str.replace(r'[$,\s]', '', regex=True)
-            credits_aws['Credits'] = pd.to_numeric(credits_aws['Credits'])
-
-        with pd.ExcelWriter('excel2.xlsx', engine='openpyxl') as writer:
-            credits_aws.to_excel(writer, sheet_name='Credit', index=False)
-            debits_aws.to_excel(writer, sheet_name='Debit', index=False)
-
-            workbook2 = writer.book
-            worksheet1 = writer.sheets['Credit']
-            worksheet2 = writer.sheets['Debit']
-
-            temp_excel2 = tempfile.NamedTemporaryFile(suffix='.xlsx', delete=False)
-            workbook2.save(temp_excel2.name)
-    
-    except Exception as e:
-        logger.debug("An error occured: ", e)
-
-    # try:
-    #     logger.debug("Block 3")
-
-    #     credit_df = pd.DataFrame()
-    #     debit_df = pd.DataFrame()
-
-    #     project_id = 'techify-446309'
-    #     location = 'us'
-    #     processor_id = '567c2df93ddea10e'
-    #     processor_version = 'rc'
-    #     file_path = temp_path
-    #     mime_type = 'application/pdf'
-    #     credentials_path = '/home/ubuntu/pdf-excel/techify.json'
-
-    #     def clean_date(date_str):
-    #         full_date_str = f"{date_str}/{str(year)[-2:]}"
-    #         formatted_date = datetime.strptime(full_date_str, "%m/%d/%y").strftime("%m/%d/%y")
-    #         return formatted_date
-        
-    #     def clean_description(text: str) -> str:
-    #         """
-    #         Clean description by removing quotation marks only if they appear at both start and end
-    #         """
-    #         if text.startswith('"') and text.endswith('"'):
-    #             return text[1:-1]
-    #         return text
-        
-    #     def is_valid_date_format(date_str: str) -> bool:
-    #         """
-    #         Validate if the date string matches mm/dd/yy format.
-    #         Returns True if the date is valid, False otherwise.
-    #         """
-    #         date_pattern = r'\d{2}/\d{2}'
-            
-    #         if not re.match(date_pattern, date_str):
-    #             return False
-    #         else:
-    #             return True
-            
-    #     def parse_amount(amount_str: str) -> float:
-    #         clean_amount = amount_str.replace('$', '').replace(',', '').replace('"', '').strip()
-            
-    #         try:
-    #             return float(clean_amount)
-    #         except ValueError:
-    #             print(f"Warning: Could not parse amount: {amount_str}")
-    #             return 0.0
-
-    #     def process_document(
-    #         project_id: str,
-    #         location: str,
-    #         processor_id: str,
-    #         processor_version: str,
-    #         file_path: str,
-    #         mime_type: str,
-    #         credentials_path: str,
-    #         process_options: Optional[documentai.ProcessOptions] = None,
-    #     ) -> documentai.Document:
-            
-    #         credentials = service_account.Credentials.from_service_account_file(
-    #             credentials_path,
-    #             scopes=['https://www.googleapis.com/auth/cloud-platform']
-    #         )
-                    
-    #         client = documentai.DocumentProcessorServiceClient(
-    #             credentials=credentials,
-    #             client_options=ClientOptions(
-    #                 api_endpoint=f"{location}-documentai.googleapis.com"
-    #             )
-    #         )
-
-    #         name = client.processor_version_path(
-    #             project_id, location, processor_id, processor_version
-    #         )
-
-    #         with open(file_path, "rb") as image:
-    #             image_content = image.read()
-
-    #         request = documentai.ProcessRequest(
-    #             name=name,
-    #             raw_document=documentai.RawDocument(content=image_content, mime_type=mime_type),
-    #             process_options=process_options,
-    #         )
-
-    #         result = client.process_document(request=request)
-
-    #         return result.document
-
-    #     def layout_to_text(layout: documentai.Document.Page.Layout, text: str) -> str:
-    #         """
-    #         Document AI identifies text in different parts of the document by their
-    #         offsets in the entirety of the document's text. This function converts
-    #         offsets to a string.
-    #         """
-    #         return "".join(
-    #             text[int(segment.start_index) : int(segment.end_index)]
-    #             for segment in layout.text_anchor.text_segments
-    #         )
-
-    
-    #     document = process_document(
-    #             project_id, location, processor_id, processor_version, file_path, mime_type, credentials_path
-    #         )  
-
-    #     text = document.text
-    #     print(f"There are {len(document.pages)} page(s) in this document.")
-
-    #     # Initialize lists to store all credit and debit transactions
-    #     all_credit_rows = []
-    #     all_debit_rows = []
-    #     headers = None
-
-    #     for page in document.pages:
-    #         print(f"\n\n**** Page {page.page_number} ****")
-    #         print(f"\nFound {len(page.tables)} table(s):")
-
-    #         for table in page.tables:
-    #             num_columns = len(table.header_rows[0].cells)
-    #             if num_columns == 3:
-    #                 num_rows = len(table.body_rows)
-    #                 print(f"Table with {num_columns} columns and {num_rows} rows:")
-                    
-    #                 # Only store headers from the first valid table we encounter
-    #                 headers = []
-    #                 for cell in table.header_rows[0].cells:
-    #                     header_text = layout_to_text(cell.layout, text).strip()
-    #                     headers.append(header_text)
-    #                 print("Columns:", headers)
-
-    #                 if 'date' in headers[0].lower() and 'description' in headers[1].lower():
-    #                     for row in table.body_rows:
-    #                         row_data = []
-    #                         for cell in row.cells:
-    #                             cell_text = layout_to_text(cell.layout, text).strip()
-    #                             row_data.append(cell_text)
-
-    #                         if is_valid_date_format(row_data[0]):
-    #                             # Clean the description (second column)
-    #                             row_data[1] = clean_description(row_data[1])
-                                
-    #                             amount = parse_amount(row_data[2])
-                                
-    #                             if 'deposit' in headers[0].lower():
-    #                                 row_data[2] = str(amount)  # Clean amount string
-    #                                 all_credit_rows.append(row_data)
-    #                             else:
-    #                                 row_data[2] = str(abs(amount))  # Clean amount string
-    #                                 all_debit_rows.append(row_data)
-    #                         else:
-    #                             print(f"Skipping row with invalid date format: {row_data[0]}")
-    
-    #     column_headers = ['Date', 'Description', 'Amount']
-        
-    #     if all_credit_rows:
-    #         credit_df = pd.DataFrame(all_credit_rows, columns=column_headers)
-    #         credit_df[column_headers[0]] = credit_df[column_headers[0]].apply(clean_date)
-    #         credit_df[column_headers[1]] = credit_df[column_headers[1]].apply(clean_description)
-    #         credit_df[column_headers[2]] = pd.to_numeric(credit_df[column_headers[2]], errors='coerce')
-    #         # credit_df.to_excel(writer, sheet_name='Credits', index=False)
-    #         print(f"Total credit transactions processed: {len(all_credit_rows)}")
-        
-    #     if all_debit_rows:
-    #         debit_df = pd.DataFrame(all_debit_rows, columns=column_headers)
-    #         debit_df[column_headers[0]] = debit_df[column_headers[0]].apply(clean_date)
-    #         debit_df[column_headers[1]] = debit_df[column_headers[1]].apply(clean_description)
-    #         debit_df[column_headers[2]] = pd.to_numeric(debit_df[column_headers[2]], errors='coerce')
-    #         # debit_df.to_excel(writer, sheet_name='Debits', index=False)
-    #         print(f"Total debit transactions processed: {len(all_debit_rows)}")
-        
-        # if not (all_credit_rows or all_debit_rows):
-        #     print("No valid transactions found in any table")
-
-        # with pd.ExcelWriter('excel3.xlsx', engine='openpyxl') as writer:
-        #     credit_df.to_excel(writer, sheet_name='Credit', index=False)
-        #     debit_df.to_excel(writer, sheet_name='Debit', index=False)
-
-        #     workbook3 = writer.book
-        #     worksheet1 = writer.sheets['Credit']
-        #     worksheet2 = writer.sheets['Debit']
-
-    #         temp_excel3 = tempfile.NamedTemporaryFile(suffix='.xlsx', delete=False)
-    #         workbook3.save(temp_excel3.name)
-    
-    # except Exception as e:
-    #     logger.debug("An error occured: ", e)
-
-    try:
-        # excel1_buffer = io.BytesIO()
-        # workbook1.save(excel1_buffer)
-        # excel1_buffer.seek(0)
-        
-        excel2_buffer = io.BytesIO()
-        workbook2.save(excel2_buffer)
-        excel2_buffer.seek(0)
-
-        # excel3_buffer = io.BytesIO()
-        # workbook3.save(excel3_buffer)
-        # excel3_buffer.seek(0)
-        
-        # Create a zip file in memory
-        zip_buffer = io.BytesIO()
-        with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
-            # zip_file.writestr('regex.xlsx', excel1_buffer.getvalue())
-            zip_file.writestr('tdbank.xlsx', excel2_buffer.getvalue())
-            # zip_file.writestr('docai.xlsx', excel3_buffer.getvalue())
-        
-        zip_buffer.seek(0)
-        
-        # Send the zip file
-        return send_file(
-            zip_buffer, 
-            mimetype='application/zip',
-            as_attachment=True,
-            download_name='tdbank.zip'
-        )
-    
-    except Exception as e:
-        logger.debug("An error occured: ", e)
-        
-    finally:
-        os.remove(temp_path)
-        # os.remove('excel1.xlsx')
-        os.remove('excel2.xlsx')
-        # os.remove('excel3.xlsx')
-        for f in files:
-            os.remove(f)
-
-   
-
-@app.route('/wellsfargo', methods=['POST'])
-def excel_wellsfargo():
-    uploaded_file = request.files.get('file')
-    year = request.form.get('year')
-    if not uploaded_file:
-        return jsonify({'error': 'No file uploaded'}), 400
-    
-    temp_path = tempfile.mktemp(suffix='.pdf')
-    uploaded_file.save(temp_path)
-
-    # try:
-    #     doc = pymupdf.open(temp_path)
-    #     with open('log.txt', 'w', encoding='utf-8') as f:
-    #         for page in doc:
-    #             text = page.get_text()
-    #             f.write(text + '\n')
-
-    #     with open("log.txt", "r") as f:
-    #         text = f.read()
-
-    #     cr_pattern = r'\s(\d{1,2}/\d{1,2})\s+[< ]*([A-Za-z0-9\s\*\-\\\/\#\~]+)\s+([0-9,]+[.]+[0-9]{2})\s'
-    #     # db_pattern = r'(\d{2}/\d{2})\s([A-Za-z 0-9\#]+)\s([-][0-9,]+[.]+[0-9]{2}\s)'
-
-    #     credits = []
-    #     # debits = []
-
-    #     for match in re.finditer(cr_pattern, text):
-    #         date = match.group(1)
-    #         user = match.group(2)
-    #         credit = match.group(3)
-    #         credits.append({
-    #             "date": date,
-    #             "description": user,
-    #             "credit": credit
-    #         })
-
-    #     # for match in re.finditer(db_pattern, text):
-    #     #     date = match.group(1)
-    #     #     user = match.group(2)
-    #     #     debit = match.group(3)
-    #     #     debits.append({
-    #     #         "date": date,
-    #     #         "description": user,
-    #     #         "debit": debit
-    #     #     })
-
-    #     def clean_date(date_format):
-    #         date_str = date_format.strip() 
-    #         full_date_str = f"{date_str}/{str(year)[-2:]}"
-    #         formatted_date = datetime.strptime(full_date_str, "%m/%d/%y").strftime("%m/%d/%y")
-    #         return formatted_date
-
-
-    #     def clean_amount(amount):
-    #         return float(amount.replace(',', ''))
-
-    #     credits = pd.DataFrame(credits)
-    #     if len(credits) > 0:
-    #         credits['credit'] = credits['credit'].apply(clean_amount)
-    #         credits['date'] = credits['date'].apply(clean_date)
-
-    #     # debits = pd.DataFrame(debits)
-
-    #     # debits['debit'] = debits['debit'].apply(clean_amount)
-
-    #     with pd.ExcelWriter('excel1.xlsx', engine='openpyxl') as writer:
-    #         credits.to_excel(writer, sheet_name='Credit', index=False)
-    #     #     debits.to_excel(writer, sheet_name='Debit', index=False)
-
-    #         workbook1 = writer.book
-    #         worksheet1 = writer.sheets['Credit']
-    #     #     worksheet2 = writer.sheets['Debit']
-
-    #         for cell in worksheet1['C'][1:]:
-    #             cell.number_format = '##0.00'
-
-    #     #     for cell in worksheet2['C'][1:]:
-    #     #         cell.number_format = '##0.00'
-    #     temp_excel = tempfile.NamedTemporaryFile(suffix='.xlsx', delete=False)
-    #     workbook1.save(temp_excel.name)
-
-    # except Exception as e:
-    #     logger.debug("An error occured: ", e)
-
-    # try:
-    #     pages = convert_from_path(temp_path, dpi=700)
-
-    #     files = []
-    #     for i in range(len(pages)):
-    #         pages[i].save("WellsFargo_page_"+str(i+1)+".png", "PNG")
-    #         files.append("WellsFargo_page_"+str(i+1)+".png")
-
-    #     transactions = pd.DataFrame()
-    #     credits_aws = pd.DataFrame()
-    #     debits_aws = pd.DataFrame()
-
-    #     for f in files:
-    #         image = Image.open(f) # loads the document image with Pillow
-    #         extractor = Textractor(region_name="us-east-1") # Initialize textractor client, modify region if required
-    #         response = extractor.analyze_document(
-    #             file_source=image,
-    #             features=[
-    #                 TextractFeatures.TABLES
-    #             ],
-    #             save_image=True
-    #         )
-
-    #         for i in range(len(response.tables)):
-    #             table = EntityList(response.tables[i])
-    #             response.tables[i].visualize()
-    #             table_title = table[0].title
-    #             if table_title:
-    #                 if "Transaction history" in table_title.text:
-    #                     df=table[0].to_pandas()
-    #                     transactions = pd.concat([transactions, df], ignore_index=True)
-            
-    #     if len(transactions) > 0:
-    #         df1 = transactions[transactions.iloc[:,0].str.match(r'^\d{2}/\d{1,2}.*', na=False)].reset_index(drop=True)
-
-    #     if len(df1) > 0:
-    #         df1.drop(df1.columns[5], axis=1, inplace=True)
-    #         df1.drop(df1.columns[1], axis=1, inplace=True)
-
-    #         new_df = df1[[0,2,3,4]].rename(columns={df.columns[0]: "date", df.columns[2]: "Description", df.columns[3]: "Credits", df.columns[4]: "Debits"})
-
-    #     for i in range(len(new_df)):
-    #         date_str = new_df.iloc[i]['date'].strip() 
-    #         full_date_str = f"{date_str}/{str(year)[-2:]}"
-    #         formatted_date = datetime.strptime(full_date_str, "%m/%d/%y").strftime("%m/%d/%y")
-    #         new_df.loc[i, "date"] = formatted_date
-        
-    #     credit_list = []
-    #     debit_list = []
-
-    #     for i in range(len(new_df)):
-    #         if new_df.iloc[i, 2] == '':
-    #             debit_list.append(new_df.iloc[i])
-
-    #         else:
-    #             credit_list.append(new_df.iloc[i])
-
-    #     credits_aws = pd.DataFrame(credit_list)
-    #     debits_aws = pd.DataFrame(debit_list)
-
-    #     if len(credits_aws) > 0:
-    #         credits_aws.drop(columns='Debits', inplace=True)
-    #         credits_aws['Credits'] = credits_aws['Credits'].astype(str).str.replace(r'[$,\s]', '', regex=True)
-    #         credits_aws['Credits'] = pd.to_numeric(credits_aws['Credits'])
-
-    #     if len(debits_aws) > 0:
-    #         debits_aws.drop(columns='Credits', inplace=True)
-    #         debits_aws['Debits'] = debits_aws['Debits'].astype(str).replace(r'[-,]', '', regex=True)
-    #         debits_aws['Debits'] = pd.to_numeric(debits_aws['Debits'])
-
-    #     with pd.ExcelWriter('excel2.xlsx', engine='openpyxl') as writer:
-    #         credits_aws.to_excel(writer, sheet_name='Credit', index=False)
-    #         debits_aws.to_excel(writer, sheet_name='Debit', index=False)
-
-    #         workbook2 = writer.book
-    #         worksheet1 = writer.sheets['Credit']
-    #         worksheet2 = writer.sheets['Debit']
-
-    #         temp_excel2 = tempfile.NamedTemporaryFile(suffix='.xlsx', delete=False)
-    #         workbook2.save(temp_excel2.name)
-
-    # except Exception as e:
-    #     logger.debug("An error occured: ", e)
-
-    try:
-        logger.debug("Block 3")
-
-        credit_df = pd.DataFrame()
-        debit_df = pd.DataFrame()
-
-        project_id = 'techify-446309'
-        location = 'us'
-        processor_id = '567c2df93ddea10e'
-        processor_version = 'rc'
-        file_path = temp_path
-        mime_type = 'application/pdf'
-        credentials_path = '/home/ubuntu/pdf-excel/techify.json'
-
-        def clean_date(date_str):
-            full_date_str = f"{date_str}/{str(year)[-2:]}"
-            formatted_date = datetime.strptime(full_date_str, "%m/%d/%y").strftime("%m/%d/%y")
-            return formatted_date
-        
-        def clean_description(text: str) -> str:
-            """
-            Clean description by removing quotation marks only if they appear at both start and end
-            """
-            if text.startswith('"') and text.endswith('"'):
-                return text[1:-1]
-            return text
-
-        def parse_amount(amount_str: str) -> float:
-            """
-            Parse amount string to float, handling empty strings and invalid formats
-            """
-            if not amount_str or amount_str.isspace():
-                return 0.0
-            
-            clean_amount = amount_str.replace('$', '').replace(',', '').replace('"', '').strip()
-            try:
-                return float(clean_amount)
-            except ValueError:
-                print(f"Warning: Could not parse amount: {amount_str}")
-                return 0.0
-            
-        def is_valid_date_format(date_str: str) -> bool:
-            date_pattern = r'\d{1,2}/\d{1,2}'
-            return bool(re.match(date_pattern, date_str))
-
-        def layout_to_text(layout: documentai.Document.Page.Layout, text: str) -> str:
-            return "".join(
-                text[int(segment.start_index) : int(segment.end_index)]
-                for segment in layout.text_anchor.text_segments
-            )
-        
-        def process_document(
-            project_id: str,
-            location: str,
-            processor_id: str,
-            processor_version: str,
-            file_path: str,
-            mime_type: str,
-            credentials_path: str,
-            process_options: Optional[documentai.ProcessOptions] = None,
-        ) -> documentai.Document:
-            
-            credentials = service_account.Credentials.from_service_account_file(
-                credentials_path,
-                scopes=['https://www.googleapis.com/auth/cloud-platform']
-            )
-                                
-            client = documentai.DocumentProcessorServiceClient(
-                credentials=credentials,
-                client_options=ClientOptions(
-                    api_endpoint=f"{location}-documentai.googleapis.com"
-                )
-            )
-
-            name = client.processor_version_path(
-                project_id, location, processor_id, processor_version
-            )
-
-            with open(file_path, "rb") as image:
-                image_content = image.read()
-
-            request = documentai.ProcessRequest(
-                name=name,
-                raw_document=documentai.RawDocument(content=image_content, mime_type=mime_type),
-                process_options=process_options,
-            )
-
-            result = client.process_document(request=request)
-            return result.document
-
-    
-        document = process_document(
-                project_id, location, processor_id, processor_version, file_path, mime_type, credentials_path
-            )  
-
-        text = document.text
-        # print(f"There are {len(document.pages)} page(s) in this document.")
-
-        # Initialize lists to store credit and debit transactions
-        credit_rows = []
-        debit_rows = []
-        headers = None
-
-        for page in document.pages:
-            # print(f"\n\n**** Page {page.page_number} ****")
-            # print(f"\nFound {len(page.tables)} table(s):")
-
-            for table in page.tables:
-                num_columns = len(table.header_rows[0].cells)
-                if num_columns == 6:  # Verify we have the expected number of columns
-                    num_rows = len(table.body_rows)
-                    # print(f"Table with {num_columns} columns and {num_rows} rows:")
-                    
-                    # Store headers from the first valid table
-                    if headers is None:
-                        headers = []
-                        for cell in table.header_rows[0].cells:
-                            header_text = layout_to_text(cell.layout, text).strip()
-                            headers.append(header_text)
-                        # print("Columns:", headers)
-
-                    # Process only if we have the expected date column
-                    if headers[0].lower() == 'date':
-                        for row in table.body_rows:
-                            row_data = []
-                            for cell in row.cells:
-                                cell_text = layout_to_text(cell.layout, text).strip()
-                                row_data.append(cell_text)
-
-                            if is_valid_date_format(row_data[0]):
-                                # Clean the description
-                                row_data[2] = clean_description(row_data[2])
-                                
-                                # Parse credit amount (index 3 for Deposits/Credits)
-                                credit_amount = parse_amount(row_data[3])
-                                
-                                # Parse debit amount (index 4 for Withdrawals/Debits)
-                                debit_amount = parse_amount(row_data[4])
-                                
-                                # Create transaction record with relevant fields
-                                transaction = [
-                                    row_data[0],  # Date
-                                    row_data[1],  # Check Number
-                                    row_data[2],  # Description
-                                    credit_amount if credit_amount > 0 else debit_amount,  # Amount
-                                ]
-                                
-                                # Add to appropriate list based on transaction type
-                                if credit_amount > 0:
-                                    credit_rows.append(transaction)
-                                elif debit_amount > 0:
-                                    debit_rows.append(transaction)
-
-        # Define column names for the Excel sheets
-        output_columns = ['Date', 'Check Number', 'Description', 'Amount']
-    
-        if credit_rows:
-            credit_df = pd.DataFrame(credit_rows, columns=output_columns)
-            credit_df['Date'] = credit_df['Date'].apply(clean_date)
-            credit_df['Amount'] = pd.to_numeric(credit_df['Amount'], errors='coerce')
-            # credit_df['Ending Balance'] = pd.to_numeric(credit_df['Ending Balance'], errors='coerce')
-            # credit_df.to_excel(writer, sheet_name='Credits', index=False)
-            # print(f"Total credit transactions processed: {len(credit_rows)}")
-        
-        # Save debit transactions
-        if debit_rows:
-            debit_df = pd.DataFrame(debit_rows, columns=output_columns)
-            debit_df['Date'] = debit_df['Date'].apply(clean_date)
-            debit_df['Amount'] = pd.to_numeric(debit_df['Amount'], errors='coerce')
-            # debit_df['Ending Balance'] = pd.to_numeric(debit_df['Ending Balance'], errors='coerce')
-            # debit_df.to_excel(writer, sheet_name='Debits', index=False)
-            # print(f"Total debit transactions processed: {len(debit_rows)}")
-        
-        
-        if not (credit_rows or debit_rows):
-            print("No valid transactions found in any table")
-
-        with pd.ExcelWriter('excel3.xlsx', engine='openpyxl') as writer:
-            credit_df.to_excel(writer, sheet_name='Credit', index=False)
-            debit_df.to_excel(writer, sheet_name='Debit', index=False)
-
-            workbook3 = writer.book
-            worksheet1 = writer.sheets['Credit']
-            worksheet2 = writer.sheets['Debit']
-
-            temp_excel3 = tempfile.NamedTemporaryFile(suffix='.xlsx', delete=False)
-            workbook3.save(temp_excel3.name)
-    
-    except Exception as e:
-        logger.debug("An error occured: ", e)
-
-    try:
-        # excel1_buffer = io.BytesIO()
-        # workbook1.save(excel1_buffer)
-        # excel1_buffer.seek(0)
-        
-        # excel2_buffer = io.BytesIO()
-        # workbook2.save(excel2_buffer)
-        # excel2_buffer.seek(0)
-
-        excel3_buffer = io.BytesIO()
-        workbook3.save(excel3_buffer)
-        excel3_buffer.seek(0)
-        
-        # Create a zip file in memory
-        zip_buffer = io.BytesIO()
-        with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zip_file:
-            # zip_file.writestr('regex.xlsx', excel1_buffer.getvalue())
-            # zip_file.writestr('textract.xlsx', excel2_buffer.getvalue())
-            zip_file.writestr('wellsfargo.xlsx', excel3_buffer.getvalue())
-        
-        zip_buffer.seek(0)
-        
-        # Send the zip file
-        return send_file(
-            zip_buffer, 
-            mimetype='application/zip',
-            as_attachment=True,
-            download_name='wellsfargo.zip'
-        )
-    
-    except Exception as e:
-        logger.debug("An error occured: ", e)
-        
-    finally:
-        os.remove(temp_path)
-        # os.remove('excel1.xlsx')
-        # os.remove('excel2.xlsx')
-        os.remove('excel3.xlsx')
-        # for f in files:
-        #     os.remove(f)
-
-
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=9595, debug=True)  # Enable debug mode for development
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
+
+@app.route('/health', methods=['GET'])
+def health_check():
+    return jsonify({"status": "healthy"}), 200
+
+if __name__ == "__main__":
+    app.run(host='0.0.0.0', port=5001, debug=True)
