@@ -641,7 +641,7 @@ def send_verification():
 
 def send_test(email):
     candidate_id = f"{random.randint(0, 999)}{int(datetime.now().timestamp() * 1000)}"
-    candidate_url = f"https://localhost:5173/?candidate_id={candidate_id}"
+    candidate_url = f"https://stag-onlinetest.techifysolutions.com/?candidate_id={candidate_id}"
     passcode = str(random.randint(100000, 999999))  # Generate a 6-digit passcode
     
     cursor = None
