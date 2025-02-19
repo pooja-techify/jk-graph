@@ -641,7 +641,7 @@ def send_verification():
 
 def send_test(email):
     candidate_id = f"{random.randint(0, 999)}{int(datetime.now().timestamp() * 1000)}"
-    candidate_url = f"https://localhost:5173/?candidate_id={candidate_id}"
+    candidate_url = f"https://stag-onlinetest.techifysolutions.com/?candidate_id={candidate_id}"
     passcode = str(random.randint(100000, 999999))  # Generate a 6-digit passcode
     
     cursor = None
@@ -685,9 +685,9 @@ def send_test(email):
 
         # Update the email body
         body = f"""
-            Dear Candidate,\n
+            Dear Candidate,\n\n
             Greetings!!\n\n
-            Techify's DNA is about Solutions & Technologies. We believe that "Every problem has a solution".\n
+            Techify's DNA is about Solutions & Technologies. We believe that "Every problem has a solution".\n\n
             To take your first step to be part of our amazing team, you are invited to appear in a test for your candidature.\n\n
             The test link will work only for one attempt so please use high speed internet and after one attempt link will be disabled.\n\n
             Please read the instructions carefully before appearing in the test.\n\n
