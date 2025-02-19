@@ -196,7 +196,7 @@ def send_email(subject, body, to_recipients, cc_recipients, attachment_path=None
         msg['To'] = ', '.join(to_recipients)
         msg['Cc'] = ', '.join(cc_recipients)
         msg['Subject'] = subject
-        msg.attach(MIMEText(body, 'plain'))
+        msg.attach(MIMEText(body, 'html'))
 
         # Attach the file if provided
         if attachment_path:
@@ -691,7 +691,7 @@ def send_test(email):
             To take your first step to be part of our amazing team, you are invited to appear in a test for your candidature.\n\n
             The test link will work only for one attempt so please use high speed internet and after one attempt link will be disabled.\n\n
             Please read the instructions carefully before appearing in the test.\n\n
-            To appear in the test please [click here]({candidate_url})\n\n
+            To appear in the test please click here: <a href="{candidate_url}">Test Link</a>\n\n
             You will need the following passcode to appear in the test: {passcode}\n\n
             All the best!\n\n
             Talent Acquisition Team\n
