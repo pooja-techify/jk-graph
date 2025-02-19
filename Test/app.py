@@ -702,7 +702,7 @@ def send_test(email):
 
         # Send the email with the passcode
         subject = "Invite to test from Techify Solutions Pvt Ltd"
-        body = f"Test Link: {candidate_url}\nPasscode: {passcode}\n"
+        # body = f"Test Link: {candidate_url}\nPasscode: {passcode}\n"
         send_email(subject, body, [email], [])
     
     except Exception as e:
