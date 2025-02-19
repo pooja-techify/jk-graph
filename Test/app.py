@@ -685,18 +685,18 @@ def send_test(email):
 
         # Update the email body
         body = f"""
-            Dear Candidate,\n\n
-            Greetings!!\n\n
-            Techify's DNA is about Solutions & Technologies. We believe that "Every problem has a solution".\n\n
-            To take your first step to be part of our amazing team, you are invited to appear in a test for your candidature.\n\n
-            The test link will work only for one attempt so please use high speed internet and after one attempt link will be disabled.\n\n
-            Please read the instructions carefully before appearing in the test.\n\n
-            To appear in the test please click here: <a href="{candidate_url}">Test Link</a>\n\n
-            You will need the following passcode to appear in the test: {passcode}\n\n
-            All the best!\n\n
-            Talent Acquisition Team\n
-            Email: hr@techifysolutions.com\n
-            Mobile: +917862063131\n\n
+            Dear Candidate,<br><br>
+            Greetings!!<br><br>
+            Techify's DNA is about Solutions & Technologies. We believe that "Every problem has a solution".<br><br>
+            To take your first step to be part of our amazing team, you are invited to appear in a test for your candidature.<br><br>
+            The test link will work only for one attempt so please use high speed internet and after one attempt link will be disabled.<br><br>
+            Please read the instructions carefully before appearing in the test.<br><br>
+            To appear in the test please click here: <a href="{candidate_url}">Test Link</a><br><br>
+            You will need the following passcode to appear in the test: {passcode}<br><br>
+            All the best!<br><br>
+            Talent Acquisition Team<br>
+            Email: hr@techifysolutions.com<br>
+            Mobile: +917862063131<br><br>
             **If you face any difficulty while giving the test please reach us at 8390849886 for technical support.
             """
 
