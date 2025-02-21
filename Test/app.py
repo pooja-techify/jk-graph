@@ -12,7 +12,6 @@ from flask_cors import CORS
 from datetime import datetime
 import boto3
 import psycopg2
-from geopy.geocoders import Nominatim
 import pandas as pd
 import base64
 import logging
