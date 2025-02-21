@@ -30,7 +30,13 @@ EMAIL_SENDER = 'hrtest.techify@gmail.com'
 EMAIL_PASSWORD = 'twar fdoi zxau djde'
 
 # Set up logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler("app.log")
+    ]
+)
 logger = logging.getLogger(__name__)
 
 def get_address_from_coordinates_nominatim(latitude, longitude):
