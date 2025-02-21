@@ -327,7 +327,7 @@ def submit_test():
             print("Report sent successfully")
         
             try:
-                to_emails = email
+                to_email = email
                 subject = "Test Submitted Successfully"
                 body = f"""
                 Your test has been submitted successfully. Someone from our side will get back to you soon. Thank you for your time and effort.<br><br>
@@ -335,11 +335,13 @@ def submit_test():
                 Email: hr@techifysolutions.com<br>
                 Mobile: +917862063131<br><br>
                 """
-                send_email(subject, body, to_emails, [])
+                send_email(subject, body, [to_email], [])
             except Exception as e:
                 logger.error(f"Error sending submission confirmation mail: {e}")
                 return jsonify({"error": "Failed to send submission confirmation mail"}), 500
             print("Submission confirmation mail sent successfully")
+
+            return jsonify({"message": "Test submitted successfully"}), 200
 
     except Exception as e:
         logger.error(f"Error in submit_test: {e}")
