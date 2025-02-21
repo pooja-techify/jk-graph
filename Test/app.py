@@ -9,56 +9,59 @@ from email.mime.text import MIMEText
 from email.mime.base import MIMEBase
 from email import encoders
 from flask_cors import CORS
-# import gspread
-# from oauth2client.service_account import ServiceAccountCredentials
 from datetime import datetime
 import boto3
 import psycopg2
 from geopy.geocoders import Nominatim
 import pandas as pd
 import base64
+import logging
 
 app = Flask(__name__)
 CORS(app, resources={r"/*": {
-    "origins": "*",  # Allow all origins (or replace with specific origins like "http://localhost:5173")
+    "origins": "*",
     "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    "allow_headers": ["Content-Type", "Authorization", "X-Requested-With"],  # Add "Content-Type" here
-    "supports_credentials": True  # If you need to handle cookies or authentication headers
+    "allow_headers": ["Content-Type", "Authorization", "X-Requested-With"],
+    "supports_credentials": True
 }})
 
-# Configure your email settings
 SMTP_SERVER = 'smtp.gmail.com'
 SMTP_PORT = 587
 EMAIL_SENDER = 'hrtest.techify@gmail.com'
 EMAIL_PASSWORD = 'twar fdoi zxau djde'
 
+# Set up logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logger = logging.getLogger(__name__)
+
 def get_address_from_coordinates_nominatim(latitude, longitude):
     try:
         url = f"https://nominatim.openstreetmap.org/reverse?lat={latitude}&lon={longitude}&format=json"
         headers = {
-            'User-Agent': 'YourAppName/1.0'  # Replace with your app name and version
+            'User-Agent': 'YourAppName/1.0'
         }
         response = requests.get(url, headers=headers)
 
-        # Check if the response status code is OK
         if response.status_code == 200:
             data = response.json()
             if 'address' in data:
                 state_district = data['address'].get('state_district') or data['address'].get('state')
                 if state_district:
-                    return state_district  # Return the state or district
+                    return state_district
                 return 'State/District not found'
             return 'Address not found'
         else:
-            print(f"Error: Received response with status code {response.status_code}")
+            logger.error(f"Error receiving response while getting address from coordinates with status code {response.status_code}")
             return None
+    except requests.RequestException as e:
+        logger.error(f"Request error while getting address from coordinates: {e}")
+        return jsonify({"error": f"Request error: {str(e)}"}), 500
     except Exception as e:
-        print(f"Error getting address: {e}")
-        return None
+        logger.error(f"Error getting address from coordinates: {e}")
+        return jsonify({"error": f"General error: {str(e)}"}), 500
 
 def select_questions(input_file, level, num_questions, output_file, append=False):
     try:
-        # Check if the input file exists
         if not os.path.exists(input_file):
             raise FileNotFoundError(f"Input file does not exist: {input_file}")
 
@@ -83,11 +86,11 @@ def select_questions(input_file, level, num_questions, output_file, append=False
         available_questions = [q for q in level_questions if q not in existing_questions]
         
         if not available_questions:
-            print(f"Warning: All questions for level {level} have already been selected")
+            logger.error(f"Warning: All questions for level {level} have already been selected")
             return
             
         if num_questions > len(available_questions):
-            print(f"Warning: Only {len(available_questions)} new questions available for level {level}")
+            logger.error(f"Warning: Only {len(available_questions)} new questions available for level {level}")
             selected = available_questions
         else:
             selected = random.sample(available_questions, num_questions)
@@ -97,16 +100,21 @@ def select_questions(input_file, level, num_questions, output_file, append=False
         with open(json_output, 'w') as f:
             json.dump(final_questions, f, indent=2)
         
-        print(f"Successfully {'appended' if append else 'saved'} {len(selected)} questions of level {level}")
-        print(f"Total questions in output files: {len(final_questions)}")
+        # print(f"Successfully {'appended' if append else 'saved'} {len(selected)} questions of level {level}")
+        # print(f"Total questions in output files: {len(final_questions)}")
         
     except FileNotFoundError as e:
-        print(f"Error: {str(e)}")
+        logger.error(f"File not found: {e}")
+        return jsonify({"error while selecting questions": str(e)}), 400
+    
     except json.JSONDecodeError:
-        print("Error: Invalid JSON format in input file")
+        logger.error("Invalid JSON format in input file")
+        return jsonify({"error while selecting questions": "Invalid JSON format in input file"}), 400
+    
     except Exception as e:
-        print(f"An error occurred: {str(e)}")
-
+        logger.error(f"Error while selecting questions: {e}")
+        return jsonify({"error while selecting questions": str(e)}), 500
+    
 @app.route('/generate_questions', methods=['GET'])
 def generate_questions():
     try:
@@ -122,11 +130,12 @@ def generate_questions():
         select_questions(input_file="reasoning.txt", level="Basic", num_questions=2, output_file="reasoning_questions.json", append=False)
         select_questions(input_file="reasoning.txt", level="Intermediate", num_questions=11, output_file="reasoning_questions.json", append=True)
         select_questions(input_file="reasoning.txt", level="Advanced", num_questions=2, output_file="reasoning_questions.json", append=True)
-
+        print("Questions generated successfully")
         return jsonify({"message": "Questions generated successfully"}), 200
     
     except Exception as e:
-        return jsonify({"error": str(e)}), 400
+        logger.error(f"Error while generating questions: {e}")
+        return jsonify({"error while generating questions": str(e)}), 500
 
 @app.route('/get_aptitude_questions', methods=['GET'])
 def get_aptitude_questions():
@@ -141,7 +150,8 @@ def get_aptitude_questions():
         return jsonify({"encoded": encoded_data})
     
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        logger.error(f"Error while getting aptitude questions: {e}")
+        return jsonify({"error while getting aptitude questions": str(e)}), 500
 
 @app.route('/get_verbal_questions', methods=['GET'])
 def get_verbal_questions():
@@ -156,7 +166,8 @@ def get_verbal_questions():
         return jsonify({"encoded": encoded_data})
     
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        logger.error(f"Error while getting verbal questions: {e}")
+        return jsonify({"error while getting verbal questions": str(e)}), 500
     
 @app.route('/get_programming_questions', methods=['GET'])
 def get_programming_questions():
@@ -171,7 +182,8 @@ def get_programming_questions():
         return jsonify({"encoded": encoded_data})
     
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        logger.error(f"Error while getting programming questions: {e}")
+        return jsonify({"error while getting programming questions": str(e)}), 500
     
 @app.route('/get_reasoning_questions', methods=['GET'])
 def get_reasoning_questions():
@@ -186,7 +198,8 @@ def get_reasoning_questions():
         return jsonify({"encoded": encoded_data})
     
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        logger.error(f"Error while getting reasoning questions: {e}")
+        return jsonify({"error while getting reasoning questions": str(e)}), 500
     
 
 def send_email(subject, body, to_recipients, cc_recipients, attachment_path=None):
@@ -198,7 +211,6 @@ def send_email(subject, body, to_recipients, cc_recipients, attachment_path=None
         msg['Subject'] = subject
         msg.attach(MIMEText(body, 'html'))
 
-        # Attach the file if provided
         if attachment_path:
             with open(attachment_path, 'rb') as attachment:
                 part = MIMEBase('application', 'octet-stream')
@@ -219,13 +231,15 @@ def send_email(subject, body, to_recipients, cc_recipients, attachment_path=None
         server.quit()
         return True
     
+    except smtplib.SMTPException as e:
+        logger.error(f'SMTP error: {e}')
+        return jsonify({"error": f"SMTP error: {str(e)}"}), 500
     except Exception as e:
-        print(f'Error sending email: {e}')
-        return False
+        logger.error(f'Error sending email: {e}')
+        return jsonify({"error": f"Error sending email: {str(e)}"}), 500
 
 @app.route('/submit_test', methods=['POST'])
 def submit_test():
-    # Check if the post request has the file part
     try:
         if 'report' not in request.files:
             return jsonify({'error': 'No report file part'}), 400
@@ -245,30 +259,18 @@ def submit_test():
         submit_reason = request.form.get('submit_reason')
         time_taken = request.form.get('time_taken')
 
-        # Define the email addresses on the backend
-        to_emails = ['firefans121@gmail.com']
-        cc_emails = ['pooja.shah@techifysolutions.com']
-        # hr@techifysolutions.com
-        # , 'jobs@techifysolutions.com', 'zankhan.kukadiya@techifysolutions.com'
-        subject = 'Test Report'
-        body = f'Please find the attached test report.\nCandidate ID: {candidate_id}\nFirst Name: {first_name}\nLast Name: {last_name}\n\nScore: {score}\n\n'
-
-        # If the user does not select a file, the browser submits an empty file without a filename
         if file.filename == '':
             return jsonify({'error': 'No selected file'}), 400
 
         if file:
-            # Save the file temporarily
             report_path = os.path.join('/tmp', file.filename)
             file.save(report_path)
 
-            # Upload the report to S3
             s3_client = boto3.client('s3')
             s3_bucket = 'onlinetest-stag-documents'
             s3_key = f'reports/{candidate_id}'
-            report_s3_url = f'https://{s3_bucket}.s3.us-east-1.amazonaws.com/{s3_key}'  # Store the full S3 URL
+            report_s3_url = f'https://{s3_bucket}.s3.us-east-1.amazonaws.com/{s3_key}'
             
-            # Upload the report to S3 with ContentDisposition
             try:
                 s3_client.upload_file(
                     report_path, s3_bucket, s3_key,
@@ -281,31 +283,64 @@ def submit_test():
 
                 s3_client.put_object_acl(Bucket=s3_bucket, Key=s3_key, ACL='public-read')
             except Exception as e:
-                print(f"Error uploading report to S3: {e}")
+                logger.error(f"Error uploading report to S3: {e}")
                 return jsonify({"error": "Failed to upload report to S3"}), 500
+            print("Report uploaded to S3 successfully")
+            
+            try:
+                latitude, longitude = location.split(",")
+                location = get_address_from_coordinates_nominatim(latitude, longitude)
+            except Exception as e:
+                logger.error(f"Error getting address from coordinates: {e}")
+                return jsonify({"error": "Failed to get address from coordinates"}), 500
+            print("Address fetched successfully")
 
-            latitude, longitude = location.split(",")
-            location = get_address_from_coordinates_nominatim(latitude, longitude)
-
-            # print(location)
-
-            # Store user data in the database
             try:
                 store_user_data(candidate_id, first_name, last_name, email, phone_number, location, score, aptitude_score, verbal_score, programming_score, logical_score, time_taken, report_s3_url, submit_reason)
             except Exception as e:
-                print(e)
+                logger.error(f"Error storing user data: {e}")
+                return jsonify({"error": "Failed to store user data"}), 500
+            print("User data stored successfully")
 
-            # Send the email with the attached report
-            if send_email(subject, body, to_emails, cc_emails, attachment_path=report_path):
-                return jsonify({'message': 'Report sent successfully'}), 200
-            else:
-                return jsonify({'error': 'Failed to send email'}), 500
-    
+            try:
+                to_emails = ['firefans121@gmail.com']
+                cc_emails = ['pooja.shah@techifysolutions.com']
+                # hr@techifysolutions.com
+                # , 'jobs@techifysolutions.com', 'zankhan.kukadiya@techifysolutions.com'
+                subject = f'Test Report {first_name} {last_name}'
+                body = f"""
+                Please find the attached test report.<br><br>
+                Candidate ID: {candidate_id}<br>
+                First Name: {first_name}<br>
+                Last Name: {last_name}<br>
+                Score: {score}<br><br>
+                """
+                send_email(subject, body, to_emails, cc_emails, attachment_path=report_path)
+            except Exception as e:
+                logger.error(f"Error sending report email: {e}")
+                return jsonify({"error": "Failed to send report email"}), 500
+            print("Report sent successfully")
+        
+            try:
+                to_emails = email
+                subject = "Test Submitted Successfully"
+                body = f"""
+                Your test has been submitted successfully. Someone from our side will get back to you soon. Thank you for your time and effort.<br><br>
+                Talent Acquisition Team<br>
+                Email: hr@techifysolutions.com<br>
+                Mobile: +917862063131<br><br>
+                """
+                send_email(subject, body, to_emails, [])
+            except Exception as e:
+                logger.error(f"Error sending submission confirmation mail: {e}")
+                return jsonify({"error": "Failed to send submission confirmation mail"}), 500
+            print("Submission confirmation mail sent successfully")
+
     except Exception as e:
-        print(e)
-        return jsonify({"error": str(e)}), 500  # Ensure a response is returned in case of an error
+        logger.error(f"Error in submit_test: {e}")
+        return jsonify({"error": str(e)}), 500
 
-    return jsonify({"error": "Unexpected error occurred"}), 500  # Fallback response
+    return jsonify({"error": "Unexpected error occurred"}), 500
 
 @app.route('/submit_feedback', methods=['POST'])
 def submit_feedback():
@@ -326,14 +361,6 @@ def submit_feedback():
             host='localhost',
             port='5432'
         )
-
-        # conn = psycopg2.connect(
-        #     dbname='postgres',
-        #     user='postgres',
-        #     password='pwd123',
-        #     host='localhost',
-        #     port='5433'
-        # )
         
         cursor = conn.cursor()
 
@@ -345,15 +372,15 @@ def submit_feedback():
 
         cursor.execute(sql_query, (feedback, candidate_id))
 
-        # Commit the changes
         conn.commit()
         print("Feedback updated successfully.")
         
-        return jsonify({"message": "Feedback updated successfully"}), 200  # Return a success response
+        return jsonify({"message": "Feedback updated successfully"}), 200
 
     except Exception as e:
-        print(f"Error updating feedback: {e}")
-        return jsonify({"error": str(e)}), 500  # Return an error response
+        logger.error(f"Error updating feedback: {e}")
+        return jsonify({"error": str(e)}), 500
+    
     finally:
         if cursor:
             cursor.close()
@@ -364,7 +391,6 @@ def store_user_data(candidate_id, first_name, last_name, email, phone_number, lo
     cursor = None
     conn = None
     try:
-        # Connect to the PostgreSQL database
         conn = psycopg2.connect(
             dbname='hrtest',
             user='hruser',
@@ -373,17 +399,8 @@ def store_user_data(candidate_id, first_name, last_name, email, phone_number, lo
             port='5432'
         )
 
-        # conn = psycopg2.connect(
-        #     dbname='postgres',
-        #     user='postgres',
-        #     password='pwd123',
-        #     host='localhost',
-        #     port='5433'
-        # )
-
         cursor = conn.cursor()
 
-        # Create a table if it doesn't exist
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS hrtest_reports (
                 candidate_id VARCHAR(50) PRIMARY KEY,
@@ -405,22 +422,26 @@ def store_user_data(candidate_id, first_name, last_name, email, phone_number, lo
             )
             ''')
 
-        # Get the current timestamp without timezone and fractional seconds
         submission_date = datetime.now().replace(microsecond=0)
 
-        # Insert user data into the table
         cursor.execute('''
             INSERT INTO hrtest_reports (candidate_id, first_name, last_name, email, phone_number, location, score, aptitude_score, verbal_score, programming_score, logical_score, time_taken, report_s3_url, submission_date, submit_reason)
             VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             ''', (candidate_id, first_name, last_name, email, phone_number, location, score, aptitude_score, verbal_score, programming_score, logical_score, time_taken, report_s3_url, submission_date, submit_reason))
-        # Commit the changes
-        conn.commit()
         
+        conn.commit()
+
+        print("User data stored successfully")
+        
+    except psycopg2.DatabaseError as e:
+        logger.error(f"Database error: {e}")
+        return jsonify({"error": f"Database error: {str(e)}"}), 500
+
     except Exception as e:
-        print(f"Error storing user data: {e}")
-        raise  # Raise the exception to be handled by the calling function
+        logger.error(f"Error storing user data: {e}")
+        return jsonify({"error": f"Error storing user data: {str(e)}"}), 500
+
     finally:
-        # Ensure the connection is closed
         if cursor:
             cursor.close()
         if conn:
@@ -431,7 +452,6 @@ def fetch_user_data():
     cursor = None
     conn = None
     try:
-        # Connect to the PostgreSQL database
         conn = psycopg2.connect(
             dbname='hrtest',
             user='hruser',
@@ -440,21 +460,11 @@ def fetch_user_data():
             port='5432'
         )
 
-        # conn = psycopg2.connect(
-        #     dbname='postgres',
-        #     user='postgres',
-        #     password='pwd123',
-        #     host='localhost',
-        #     port='5433'
-        # )
-
         cursor = conn.cursor()
 
-        # Query to fetch user data
         cursor.execute('SELECT * FROM hrtest_reports ORDER BY submission_date DESC')
         rows = cursor.fetchall()
 
-        # Prepare the data to be sent as JSON
         user_data = []
         for row in rows:
             user_data.append({
@@ -476,13 +486,15 @@ def fetch_user_data():
                 "submit_reason": row[15]
             })
 
+        print("User data fetched successfully")
+
         return jsonify(user_data), 200
 
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        logger.error(f"Error fetching user data: {str(e)}")
+        return jsonify({"error": f"Error fetching user data: {str(e)}"}), 500
 
     finally:
-        # Ensure the connection is closed
         if cursor:
             cursor.close()
         if conn:
@@ -494,12 +506,11 @@ def delete_user_data():
     conn = None
     try:
         data = request.json
-        candidate_ids = data.get("candidate_ids")  # Expecting a list of candidate IDs
+        candidate_ids = data.get("candidate_ids")
 
         if not candidate_ids or not isinstance(candidate_ids, list):
             return jsonify({"error": "A list of Candidate IDs is required"}), 400
 
-        # Connect to the PostgreSQL database
         conn = psycopg2.connect(
             dbname='hrtest',
             user='hruser',
@@ -508,23 +519,13 @@ def delete_user_data():
             port='5432'
         )
 
-        # conn = psycopg2.connect(
-        #     dbname='postgres',
-        #     user='postgres',
-        #     password='pwd123',
-        #     host='localhost',
-        #     port='5433'
-        # )
-
         cursor = conn.cursor()
 
-        # SQL query to delete the user data
         sql_query = '''
         DELETE FROM hrtest_reports
         WHERE candidate_id = ANY(%s);
         '''
 
-        # Delete the reports from S3
         s3_client = boto3.client('s3')
         s3_bucket = 'onlinetest-stag-documents'
         for candidate_id in candidate_ids:
@@ -533,19 +534,19 @@ def delete_user_data():
                 s3_client.delete_object(Bucket=s3_bucket, Key=s3_key)
                 print(f"Deleted report for candidate ID: {candidate_id} from S3.")
             except Exception as e:
-                print(f"Error deleting report for candidate ID {candidate_id} from S3: {e}")
+                logger.error(f"Error deleting report for candidate ID {candidate_id} from S3: {e}")
+                return jsonify({"error": f"Error deleting report for candidate ID {candidate_id} from S3: {e}"}), 500
 
         cursor.execute(sql_query, (candidate_ids,))
 
-        # Commit the changes
         conn.commit()
         print(f"User data for {len(candidate_ids)} candidates deleted successfully.")
         
-        return jsonify({"message": f"User data for {len(candidate_ids)} candidates deleted successfully"}), 200  # Return a success response
+        return jsonify({"message": f"User data for {len(candidate_ids)} candidates deleted successfully"}), 200
 
     except Exception as e:
-        print(f"Error deleting user data: {e}")
-        return jsonify({"error": str(e)}), 500  # Return an error response
+        logger.error(f"Error deleting user data: {e}")
+        return jsonify({"error": str(e)}), 500
     finally:
         if cursor:
             cursor.close()
@@ -558,12 +559,11 @@ def export_candidate_data():
     conn = None
     try:
         data = request.json
-        candidate_ids = data.get("candidate_ids")  # Expecting a list of candidate IDs
+        candidate_ids = data.get("candidate_ids")
 
         if not candidate_ids or not isinstance(candidate_ids, list):
             return jsonify({"error": "A list of Candidate IDs is required"}), 400
 
-        # Connect to the PostgreSQL database
         conn = psycopg2.connect(
             dbname='hrtest',
             user='hruser',
@@ -572,17 +572,8 @@ def export_candidate_data():
             port='5432'
         )
 
-        # conn = psycopg2.connect(
-        #     dbname='postgres',
-        #     user='postgres',
-        #     password='pwd123',
-        #     host='localhost',
-        #     port='5433'
-        # )
-
         cursor = conn.cursor()
 
-        # SQL query to fetch user data for the given candidate IDs
         sql_query = '''
         SELECT * FROM hrtest_reports
         WHERE candidate_id = ANY(%s);
@@ -591,7 +582,6 @@ def export_candidate_data():
         cursor.execute(sql_query, (candidate_ids,))
         rows = cursor.fetchall()
 
-        # Prepare the data for the DataFrame
         columns = [
             "candidate_id", "first_name", "last_name", "email", "phone_number",
             "location", "score", "aptitude_score", "verbal_score",
@@ -600,22 +590,21 @@ def export_candidate_data():
         ]
         data_to_export = [dict(zip(columns, row)) for row in rows]
 
-        # Convert submission_date to timezone-unaware if necessary
         for entry in data_to_export:
             if isinstance(entry['submission_date'], datetime):
                 entry['submission_date'] = entry['submission_date'].replace(tzinfo=None)
 
-        # Create a DataFrame and save it to an Excel file
         df = pd.DataFrame(data_to_export)
         excel_file_path = '/tmp/candidate_data.xlsx'
         df.to_excel(excel_file_path, index=False)
 
-        # Send the Excel file back to the frontend
+        print("Candidate data exported successfully")
+
         return send_file(excel_file_path, as_attachment=True)
 
     except Exception as e:
-        print(f"Error exporting candidate data: {e}")
-        return jsonify({"error": str(e)}), 500  # Return an error response
+        logger.error(f"Error exporting candidate data: {e}")
+        return jsonify({"error": f"Error exporting candidate data: {str(e)}"}), 500
     finally:
         if cursor:
             cursor.close()
@@ -625,7 +614,7 @@ def export_candidate_data():
 @app.route('/send_verification', methods=['POST'])
 def send_verification():
     try:
-        data = request.json  # This will attempt to decode the JSON
+        data = request.json
         if data is None:
             return jsonify({"error": "No JSON data provided"}), 400
         
@@ -634,15 +623,18 @@ def send_verification():
         for email in emails:
             send_test(email)
 
+        print("Verification email/s sent successfully")
+
         return jsonify({"message": "Verification email/s sent successfully"}), 200
         
     except Exception as e:
+        logger.error(f"Failed to send verification: {str(e)}")
         return jsonify({"error": f"Failed to send verification: {str(e)}"}), 500
 
 def send_test(email):
     candidate_id = f"{random.randint(0, 999)}{int(datetime.now().timestamp() * 1000)}"
     candidate_url = f"https://stag-onlinetest.techifysolutions.com/?candidate_id={candidate_id}"
-    passcode = str(random.randint(100000, 999999))  # Generate a 6-digit passcode
+    passcode = str(random.randint(100000, 999999))
     
     cursor = None
     conn = None
@@ -655,14 +647,6 @@ def send_test(email):
             host='localhost',
             port='5432'
         )
-
-        # conn = psycopg2.connect(
-        #     dbname='postgres',
-        #     user='postgres',
-        #     password='pwd123',
-        #     host='localhost',
-        #     port='5433'
-        # )
 
         cursor = conn.cursor()
 
@@ -683,7 +667,6 @@ def send_test(email):
 
         conn.commit()
 
-        # Update the email body
         body = f"""
             Dear Candidate,<br><br>
             Greetings!!<br><br>
@@ -700,14 +683,13 @@ def send_test(email):
             **If you face any difficulty while giving the test please reach us at 8390849886 for technical support.
             """
 
-        # Send the email with the passcode
         subject = "Invite to test from Techify Solutions Pvt Ltd"
-        # body = f"Test Link: {candidate_url}\nPasscode: {passcode}\n"
         send_email(subject, body, [email], [])
+        print("Verification email sent successfully")
     
     except Exception as e:
-        print(f"Error in send_test: {str(e)}")  # Log the error for debugging
-        raise  # Raise the exception to be handled by the calling function
+        logger.error(f"Error in send_test: {str(e)}")
+        return jsonify({"error": f"Error in send_test: {str(e)}"}), 500
     
     finally:
         if cursor:
@@ -725,6 +707,7 @@ def verify_passcode():
         return jsonify({"error": "Candidate ID and passcode are required"}), 400
     cursor = None
     conn = None
+
     try:
         conn = psycopg2.connect(
             dbname='hrtest',
@@ -733,14 +716,6 @@ def verify_passcode():
             host='localhost',
             port='5432'
         )
-
-        # conn = psycopg2.connect(
-        #     dbname='postgres',
-        #     user='postgres',
-        #     password='pwd123',
-        #     host='localhost',
-        #     port='5433'
-        # )
 
         cursor = conn.cursor()
 
@@ -752,6 +727,7 @@ def verify_passcode():
         if result:
             stored_passcode, test_attempted = result
             if stored_passcode == passcode and not test_attempted:
+                print("Verification successful")
                 return jsonify({"message": "Verification successful, you can proceed with the test"}), 200
             else:
                 return jsonify({"error": "Invalid passcode or test already attempted"}), 400
@@ -759,7 +735,8 @@ def verify_passcode():
             return jsonify({"error": "Candidate ID not found"}), 404
 
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        logger.error(f"Error verifying passcode: {str(e)}")
+        return jsonify({"error": f"Error verifying passcode: {str(e)}"}), 500
     
     finally:
         if cursor:
@@ -784,14 +761,6 @@ def start_test():
             host='localhost',
             port='5432'
         )
-
-        # conn = psycopg2.connect(
-        #     dbname='postgres',
-        #     user='postgres',
-        #     password='pwd123',
-        #     host='localhost',
-        #     port='5433'
-        # )
         
         cursor = conn.cursor()
 
@@ -800,10 +769,13 @@ def start_test():
         ''', (candidate_id,))
         conn.commit()
 
+        print("Test started successfully")
+
         return jsonify({"message": "Test started successfully"}), 200
 
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        logger.error(f"Error starting test: {str(e)}")
+        return jsonify({"error": f"Error starting test: {str(e)}"}), 500
     finally:
         if cursor:
             cursor.close()
@@ -812,6 +784,7 @@ def start_test():
 
 @app.route('/health', methods=['GET'])
 def health_check():
+    print("Health check successful")
     return jsonify({"status": "healthy"}), 200
 
 if __name__ == "__main__":
