@@ -674,9 +674,9 @@ def send_test(email):
             Techify's DNA is about Solutions & Technologies. We believe that "Every problem has a solution".<br><br>
             To take your first step to be part of our amazing team, you are invited to appear in a test for your candidature.<br><br>
             The test link will work only for one attempt so please use high speed internet and after one attempt link will be disabled.<br><br>
-            Please read the instructions carefully before appearing in the test.<br><br>
+            Please <b>read the instructions carefully</b> before appearing in the test.<br><br>
             <b>To appear in the test please click here: <a href="{candidate_url}">Test Link</a></b><br><br>
-            <b>You will need the following passcode to appear in the test: {passcode}</b><br><br>
+            You will need the following passcode to appear in the test: <b>{passcode}</b><br><br>
             All the best!<br><br>
             Talent Acquisition Team<br>
             Email: hr@techifysolutions.com<br>
