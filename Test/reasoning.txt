@@ -151,7 +151,7 @@
     "Level": "Intermediate",
     "Category": "Reasoning",
     "Options": ["40", "60", "80", "100"],
-    "Answer": "3"
+    "Answer": "2"
   },
   {
     "Question": "While the scientific community widely accepts the theory of relativity, recent experiments have hinted at potential discrepancies. Researchers, eager to ____________, have proposed new experiments that challenge the established principles. These experiments aim to explore extreme conditions where the effects of relativity might be amplified, leading to either validation or revision of the existing scientific framework.",
@@ -214,7 +214,7 @@
     "Level": "Intermediate",
     "Category": "Reasoning",
     "Options": ["XSRZI", "XSZRI", "XRSZI", "XRZSI"],
-    "Answer": "3"
+    "Answer": "2"
   },
   {
     "Question": "In a family of 6 members, P is the father of Q, R is the mother of Q, S is the brother of P, and T is the sister of R. How is S related to T?",
@@ -241,7 +241,7 @@
     "Question": "If '×' means '+', '-' means '×', '+' means '÷', and '÷' means '-', then what is the value of 24 - 8 × 6 + 2?",
     "Level": "Intermediate",
     "Category": "Reasoning",
-    "Options": ["10", "12", "14", "16"],
+    "Options": ["76", "88", "99", "112"],
     "Answer": "3"
   },
   {
@@ -263,7 +263,7 @@
     "Level": "Intermediate",
     "Category": "Reasoning",
     "Options": ["47", "57", "67", "77"],
-    "Answer": "3"
+    "Answer": "1"
   },
   {
     "Question": "Four cards are placed face down on a table. Each card has a number on one side and a letter on the other. The cards show 4, 7, A, and K. Which cards must be turned over to test the rule: \"If a card has an even number on one side, it must have a vowel on the other side\"?",
@@ -333,7 +333,7 @@
     "Level": "Intermediate",
     "Category": "Reasoning",
     "Options": ["6:00 PM", "7:00 PM", "6:30 PM", "7:30 PM"],
-    "Answer": "1"
+    "Answer": "2"
   },
   {
     "Question": "In a code language: 'pit na ja' means 'bring me water' 'na ko ta' means 'drink cold water' 'ta ja ki' means 'bring hot drink' Which word in this language means 'cold'?",

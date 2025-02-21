@@ -791,6 +791,49 @@ def start_test():
         if conn:
             conn.close()
 
+@app.route('/fetch_registration', methods=['GET'])
+def fetch_registration():
+    cursor = None
+    conn = None
+    try:
+        conn = psycopg2.connect(
+            dbname='hrtest',
+            user='hruser',
+            password='T@chify$ol8m0s0!',
+            host='localhost',
+            port='5432'
+        )
+
+        cursor = conn.cursor()
+
+        cursor.execute('SELECT * FROM registration ORDER BY entry_date DESC')
+        rows = cursor.fetchall()
+
+        registration_data = []
+        for row in rows:
+            registration_data.append({
+                "candidate_id": row[0],
+                "email": row[1],
+                "passcode": row[2],
+                "test_attempted": row[3],
+                "entry_date": row[4],
+                "test_attempted_date": row[5]
+            })
+
+        print("Registration data fetched successfully")
+
+        return jsonify(registration_data), 200
+
+    except Exception as e:
+        logger.error(f"Error fetching registration data: {str(e)}")
+        return jsonify({"error": f"Error fetching registration data: {str(e)}"}), 500
+
+    finally:
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
+
 @app.route('/health', methods=['GET'])
 def health_check():
     print("Health check successful")

@@ -305,7 +305,7 @@
     "Level": "Advanced",
     "Category": "Aptitude",
     "Options": ["20 days", "30 days", "24 days", "15 days"],
-    "Answer": "3"
+    "Answer": "2"
   },
   {
     "Question": "The probability of rolling a total of 7 with two dice is:",
@@ -382,7 +382,7 @@
     "Level": "Advanced",
     "Category": "Aptitude",
     "Options": ["16.8 years", "17.4 years", "17.8 years", "18.2 years"],
-    "Answer": "2"
+    "Answer": "3"
   },
   {
     "Question": "In a mixture of milk and water, milk is 80%. If 5 liters of water is added to the mixture, milk becomes 60%. What was the initial quantity of the mixture?",
