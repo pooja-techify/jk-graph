@@ -4,7 +4,7 @@
     "Level": "Basic",
     "Category": "Aptitude",
     "Options": ["46", "48", "49", "51"],
-    "Answer": "3"
+    "Answer": "1"
   },
   {
     "Question": "A rectangular park 60 m long and 40 m wide has concrete crossroads running in the middle of the park and the rest of the park has been used as a lawn. If the area of the lawn is 2109 sq.m, then what is the width of the road?",
@@ -17,7 +17,7 @@
     "Question": "If a clock shows 9:15, what is the angle between the hour and minute hands?",
     "Level": "Basic",
     "Category": "Aptitude",
-    "Options": ["90°", "82.5°", "97.5°", "75°"],
+    "Options": ["112.5°", "97.5°", "172.5°", "75°"],
     "Answer": "3"
   },
   {
@@ -60,7 +60,7 @@
     "Level": "Basic",
     "Category": "Aptitude",
     "Options": ["75°", "90°", "105°", "120°"],
-    "Answer": "3"
+    "Answer": "1"
   },
   {
     "Question": "How many vertices does a cube have?",
@@ -73,7 +73,7 @@
     "Question": "At a conference, 12 members shook hands with each other before & after the meeting. How many handshakes have occurred?",
     "Level": "Intermediate",
     "Category": "Aptitude",
-    "Options": ["100", "122", "132", "145"],
+    "Options": ["66", "72", "132", "144"],
     "Answer": "3"
   },
   {
@@ -143,15 +143,15 @@
     "Question": "In a class of 40 students, 25 play football, and 15 play cricket. If 5 students play both sports, how many students play neither?",
     "Level": "Intermediate",
     "Category": "Aptitude",
-    "Options": ["5", "10", "15", "20"],
-    "Answer": "1"
+    "Options": ["0", "5", "10", "25"],
+    "Answer": "2"
   },
   {
     "Question": "Solve: If 8x - 5 = 27, what is the value of x?",
     "Level": "Intermediate",
     "Category": "Aptitude",
     "Options": ["4", "6", "8", "10"],
-    "Answer": "2"
+    "Answer": "1"
   },
   {
     "Question": "What is the area of a triangle with a base of 10 cm and height of 8 cm?",
@@ -179,7 +179,7 @@
     "Level": "Intermediate",
     "Category": "Aptitude",
     "Options": ["5.8", "6.2", "5.6", "4.4"],
-    "Answer": "2"
+    "Answer": "3"
   },
   {
     "Question": "A person walks 10 km north, then 6 km east. What is the shortest distance to the starting point?",
@@ -262,8 +262,8 @@
     "Question": "In how many ways can words formed from the letters of the word 'SOFTWARE' be arranged in such a way that the vowels always come together?",
     "Level": "Advanced",
     "Category": "Aptitude",
-    "Options": ["720", "5040", "480", "360"],
-    "Answer": "1"
+    "Options": ["2160", "5040", "4320", "7200"],
+    "Answer": "3"
   },
   {
     "Question": "A box contains 8 red, 7 blue, and 6 green balls. 1 ball is picked up randomly from the box. What is the probability that it is neither blue nor green?",
@@ -332,7 +332,7 @@
     "Question": "The probability of picking two red balls from a bag containing 4 red and 6 blue balls is:",
     "Level": "Advanced",
     "Category": "Aptitude",
-    "Options": ["1/2", "1/3", "2/3", "1/5"],
+    "Options": ["1/2", "2/15", "4/15", "1/5"],
     "Answer": "2"
   },
   {
