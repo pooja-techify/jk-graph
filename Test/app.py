@@ -655,13 +655,15 @@ def send_test(email):
                 candidate_id VARCHAR(50) PRIMARY KEY,
                 email VARCHAR(50),
                 passcode VARCHAR(10),
-                test_attempted BOOLEAN DEFAULT FALSE
+                test_attempted BOOLEAN DEFAULT FALSE,
+                entry_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                test_attempted_date TIMESTAMP
             )
         ''')
 
         cursor.execute('''
-            INSERT INTO registration (candidate_id, email, passcode)
-            VALUES (%s, %s, %s)
+            INSERT INTO registration (candidate_id, email, passcode, entry_date)
+            VALUES (%s, %s, %s, CURRENT_TIMESTAMP)
             ON CONFLICT (candidate_id) DO UPDATE SET email = EXCLUDED.email, passcode = EXCLUDED.passcode;
         ''', (candidate_id, email, passcode))
 
@@ -765,7 +767,7 @@ def start_test():
         cursor = conn.cursor()
 
         cursor.execute('''
-            UPDATE registration SET test_attempted = TRUE WHERE candidate_id = %s;
+            UPDATE registration SET test_attempted = TRUE, test_attempted_date = CURRENT_TIMESTAMP WHERE candidate_id = %s;
         ''', (candidate_id,))
         conn.commit()
 
