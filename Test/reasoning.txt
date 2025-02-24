@@ -7,7 +7,7 @@
     "Answer": "2"
   },
   {
-    "Question": "Each problem consists of three statements. Based on the first two statements, the third statement may be true, false, or uncertain.  I. Tanya is older than Eric.  II. Cliff is older than Tanya.  III. Eric is older than Cliff.  If the first two statements are true, the third statement is",
+    "Question": "Each problem consists of three statements. Based on the first two statements, the third statement may be true, false, or uncertain.  <br>I. Tanya is older than Eric.  <br>II. Cliff is older than Tanya.  <br>III. Eric is older than Cliff.  <br>If the first two statements are true, the third statement is",
     "Level": "Basic",
     "Category": "Reasoning",
     "Options": ["True", "False", "Can't say"],
@@ -98,14 +98,14 @@
     "Answer": "2"
   },
   {
-    "Question": "Is the value of x greater than the value of y?  Statement 1: The sum of x and y is 20.  Statement 2: The product of x and y is 96.",
+    "Question": "Is the value of x greater than the value of y? <br>Statement 1: The sum of x and y is 20. <br>Statement 2: The product of x and y is 96.",
     "Level": "Intermediate",
     "Category": "Reasoning",
     "Options": ["Statement 1 alone is sufficient.", "Statement 2 alone is sufficient.", "Both statements together are sufficient.", "Neither statement alone is sufficient."],
     "Answer": "4"
   },
   {
-    "Question": "What is the value of n?  Statement 1: The sum of n and its square is 30.  Statement 2: The product of n and its cube is 210.",
+    "Question": "What is the value of n? <br>Statement 1: The sum of n and its square is 30. <br>Statement 2: The product of n and its cube is 210.",
     "Level": "Intermediate",
     "Category": "Reasoning",
     "Options": ["Statement 1 alone is sufficient.", "Statement 2 alone is sufficient.", "Both statements together are sufficient.", "Neither statement alone is sufficient."],
@@ -119,7 +119,7 @@
     "Answer": "1"
   },
   {
-    "Question": "A man is facing North. He turns 90 degrees clockwise, then 180 degrees counterclockwise, and finally 90 degrees clockwise. In which direction is he now facing?",
+    "Question": "A man is facing North. He turns 90 degrees clockwise, then 180 degrees counter-clockwise, and finally 90 degrees clockwise. In which direction is he now facing?",
     "Level": "Intermediate",
     "Category": "Reasoning",
     "Options": ["East", "West", "North", "South"],
@@ -161,14 +161,14 @@
     "Answer": "4"
   },
   {
-    "Question": "Statement: \"No mobile phones are allowed in the examination hall.\"  Which situation directly contradicts this rule?",
+    "Question": "Statement: \"No mobile phones are allowed in the examination hall.\" <br>Which situation directly contradicts this rule?",
     "Level": "Intermediate",
     "Category": "Reasoning",
     "Options": ["A student keeps their phone in their bag outside the hall", "A student uses a calculator in the hall", "An invigilator carries a phone for emergencies", "A student wears a smartwatch"],
     "Answer": "3"
   },
   {
-    "Question": "Statement 1: All doctors in City X must have a license.  Statement 2: Sarah works in City X.  Statement 3: Sarah has a license.  Can we conclude that Sarah is a doctor?",
+    "Question": "Statement 1: All doctors in City X must have a license. <br>Statement 2: Sarah works in City X. <br>Statement 3: Sarah has a license. <br>Can we conclude that Sarah is a doctor?",
     "Level": "Intermediate",
     "Category": "Reasoning",
     "Options": ["Yes, definitely", "No, definitely not", "Cannot be determined", "Only if Statement 2 is false"],
@@ -189,7 +189,7 @@
     "Answer": "2"
   },
   {
-    "Question": "Statement: Recent studies show increased screen time among teenagers correlates with decreased physical activity.  Which of the following best weakens this correlation?",
+    "Question": "Statement: Recent studies show increased screen time among teenagers correlates with decreased physical activity. <br>Which of the following best weakens this correlation?",
     "Level": "Intermediate",
     "Category": "Reasoning",
     "Options": ["Teenagers who use fitness apps exercise more", "Adults also show increased screen time", "Physical activity has decreased across all age groups", "Some teenagers use screens while exercising"],
@@ -343,14 +343,14 @@
     "Answer": "2"
   },
   {
-    "Question": "Statement 1: All cats have tails.  Statement 2: Some animals without tails are cats.  Statement 3: Some cats are black.  Which statement(s) must be false if the others are true?",
+    "Question": "Statement 1: All cats have tails. <br>Statement 2: Some animals without tails are cats. <br>Statement 3: Some cats are black. <br>Which statement(s) must be false if the others are true?",
     "Level": "Advanced",
     "Category": "Reasoning",
     "Options": ["Only Statement 1", "Only Statement 2", "Both Statements 1 and 2", "All statements can be true simultaneously"],
     "Answer": "3"
   },
   {
-    "Question": "Statement: 'Only hardworking students get good grades.'  Which of the following, if true, would prove this statement false?",
+    "Question": "Statement: 'Only hardworking students get good grades.' <br>Which of the following, if true, would prove this statement false?",
     "Level": "Advanced",
     "Category": "Reasoning",
     "Options": ["Some students who get good grades don't study much", "Some hardworking students don't get good grades", "All students who get good grades are intelligent", "No lazy students get good grades"],

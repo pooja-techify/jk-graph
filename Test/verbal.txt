@@ -28,7 +28,7 @@
     "Answer": "4"
   },
   {
-    "Question": "Arrange the given words in a meaningful sequence.1. Seldom2. Generally3. Never4. Sometimes5. Always",
+    "Question": "Arrange the given words in a meaningful sequence.<br>1. Seldom 2. Generally 3. Never 4. Sometimes 5. Always",
     "Level": "Basic",
     "Category": "Verbal",
     "Options": ["5, 2, 4, 3, 1", "5, 2, 4, 1, 3", "3, 1, 4, 5, 2", "5, 3, 2, 4, 1"],
@@ -42,21 +42,21 @@
     "Answer": "1"
   },
   {
-    "Question": "Sohan ranks fifth in the class. How many students are there in the class?I. His friend ranks 52th which is the last rank in the class.II. Sohan's rank from the last is 48th.",
+    "Question": "Sohan ranks fifth in the class. How many students are there in the class? <br>I. His friend ranks 52th which is the last rank in the class. <br>II. Sohan's rank from the last is 48th.",
     "Level": "Basic",
     "Category": "Verbal",
     "Options": ["Statement I alone is sufficient, but statement II alone is not sufficient", "Statement II alone is sufficient, but statement I alone is not sufficient", "Either I or II is sufficient", "Data in both the statements together are not sufficient", "Both I and II are needed"],
     "Answer": "3"
   },
   {
-    "Question": "Assertion (A): Diamond is used for cutting the glass.Reason (R): The refractive index of diamond is high.",
+    "Question": "Assertion (A): Diamond is used for cutting the glass. <br>Reason (R): The refractive index of diamond is high.",
     "Level": "Basic",
     "Category": "Verbal",
     "Options": ["Both A and R are true, and R is the correct explanation of A.", "Both A and R are true, but R is not the correct explanation of A.", "A is true, but R is false.", "A is false, but R is true.", "Both A and R are false."],
     "Answer": "2"
   },
   {
-    "Question": "Assertion (A): The water kept in the earthen pot cools down in summers.Reason (R): The water evaporates through the pores, which causes cooling.",
+    "Question": "Assertion (A): The water kept in the earthen pot cools down in summers. <br>Reason (R): The water evaporates through the pores, which causes cooling.",
     "Level": "Basic",
     "Category": "Verbal",
     "Options": ["Both A and R are true, and R is the correct explanation of A.", "Both A and R are true, but R is not the correct explanation of A.", "A is true, but R is false.", "A is false, but R is true.", "Both A and R are false."],
@@ -112,7 +112,7 @@
     "Answer": "4"
   },
   {
-    "Question": "The words which are bold in the sentence are wrong. Correct the sentences with appropriate phrases accordingly. He suggested that, we should be bound by a code of conduct, isn't it?",
+    "Question": "The words which are bold in the sentence are wrong. Correct the sentences with appropriate phrases accordingly. He suggested that, we should be bound by a code of conduct, **isn't it**?",
     "Level": "Basic",
     "Category": "Verbal",
     "Options": ["Shouldn't we", "is it", "aren't we", "None of above"],
@@ -126,21 +126,21 @@
     "Answer": "4"
   },
   {
-    "Question": "Which of the phrases given below should replace the phrase printed in bold type to make it grammatically correct? You need not come unless you want to.",
+    "Question": "Which of the phrases given below should replace the phrase printed in bold type to make it grammatically correct? **You need not come unless you want to**.",
     "Level": "Basic",
     "Category": "Verbal",
     "Options": ["You don't need to come unless you want to.", "You come only when you want to.", "You come unless you don't want to.", "You needn't come until you don't want to."],
     "Answer": "1"
   },
   {
-    "Question": "Which of the phrases given below in the sentence should replace the phrase printed in bold type to make it grammatically correct? If the sentence is correct as it is, mark 'e' as the answer.They were all shocked at his failure in the competition.",
+    "Question": "Which of the phrases given below in the sentence should replace the phrase printed in bold type to make it grammatically correct? They **were all shocked at** his failure in the competition.",
     "Level": "Basic",
     "Category": "Verbal",
-    "Options": ["were shocked at all.", "had all shocked at.", "had all shocked by.", "had been all shocked on.", "No correction required."],
-    "Answer": "5"
+    "Options": ["were shocked at all.", "had all shocked by.", "had been all shocked on.", "No correction required."],
+    "Answer": "4"
   },
   {
-    "Question": "A part of the sentence given below is italicized and underlined. Following are the given alternatives to the italicized part which may improve the sentence. Choose the correct alternative. In case no improvement is needed, option d is the answer.Every time, I go in a lift to my sixth-floor apartment, I remember the calm and serenity of my ancestral home in the village.",
+    "Question": "A part of the sentence given below is in bold. Following are the given alternatives to that part which may improve the sentence. Choose the correct alternative. Every time, I **go in a lift** to my sixth-floor apartment, I remember the calm and serenity of my ancestral home in the village.",
     "Level": "Basic",
     "Category": "Verbal",
     "Options": ["move in a lift", "ascend in a lift", "take a lift", "No improvement"],
@@ -154,45 +154,45 @@
     "Answer": "3"
   },
   {
-    "Question": "Fill in the blank in the following sentence by selecting the most appropriate alternative from the given choices.I saw a …… of sheep grazing the field.",
+    "Question": "Fill in the blank in the following sentence by selecting the most appropriate alternative from the given choices. <br>I saw a ______ of sheep grazing the field.",
     "Level": "Basic",
     "Category": "Verbal",
     "Options": ["Herd", "Bulk", "Pack", "Flock"],
     "Answer": "4"
   },
   {
-    "Question": "A part of the sentence given below is italicized and underlined. Following are the given alternatives to the italicized part which may improve the sentence.Choose the correct alternative.I am tired as I am working since 7 O'clock in the morning.",
+    "Question": "A part of the sentence given below is in bold. Following are the given alternatives to that part which may improve the sentence. Choose the correct alternative. <br>I am tired as **I am working** since 7 o'clock in the morning.",
     "Level": "Basic",
     "Category": "Verbal",
     "Options": ["I was working", "I have been working", "I had been working", "I will be working"],
     "Answer": "2"
   },
   {
-    "Question": "Arrange the words given below in a meaningful sequence.1.Presentation 2.Recommendation 3.Arrival 4.Discussion 5.Introduction",
+    "Question": "Arrange the words given below in a meaningful sequence.<br>1. Presentation 2. Recommendation 3. Arrival 4. Discussion 5. Introduction",
     "Level": "Basic",
     "Category": "Verbal",
     "Options": ["5, 3, 4, 1, 2", "3, 5, 4, 2, 1", "3, 5, 1, 4, 2", "5, 3, 1, 2, 4"],
     "Answer": "3"
   },
   {
-    "Question": "Arrange the following sentences in the correct order.A. I Got an expensive watchB. Who is very lovingC. By my grandfatherD. On my 22nd birthday",
+    "Question": "Arrange the following sentences in the correct order.<br>A. I Got an expensive watch<br>B. Who is very loving<br>C. By my grandfather<br>D. On my 22nd birthday",
     "Level": "Basic",
     "Category": "Verbal",
     "Options": ["DACB", "ADCB", "ACBD", "BACD"],
     "Answer": "2"
   },
   {
-    "Question": "Fill in the blank in the following sentence by selecting the most appropriate alternative from the given choices.The greater is the size the more does it cost because the price …… on size.",
+    "Question": "Fill in the blank in the following sentence by selecting the most appropriate alternative from the given choices. The greater is the size the more does it cost because the price ______ on size.",
     "Level": "Basic",
     "Category": "Verbal",
     "Options": ["rests", "counts", "depends", "reckons"],
     "Answer": "3"
   },
   {
-    "Question": "Which of the phrases given below in the sentence should replace the phrase printed in bold type to make it grammatically correct? If the sentence is correct as it is, mark 'e' as the answer.The intruder stood quietly for few moments.",
+    "Question": "Which of the phrases given below in the sentence should replace the phrase printed in bold type to make it grammatically correct? <br>The intruder stood quietly **for few moments**.",
     "Level": "Basic",
     "Category": "Verbal",
-    "Options": ["for few time", "for the few moments", "for moments", "for a few moments", "No correction required"],
+    "Options": ["for few time", "for the few moments", "for moments", "for a few moments"],
     "Answer": "4"
   },
   {
@@ -203,21 +203,21 @@
     "Answer": "1"
   },
   {
-    "Question": "Arrange the words to form a meaningful sentence:A. the entire nightB. the policeC. searching for cluesD. worked through",
+    "Question": "Arrange the words to form a meaningful sentence:<br>A. the entire night<br>B. the police<br>C. searching for clues<br>D. worked through",
     "Level": "Basic",
     "Category": "Verbal",
     "Options": ["BDAC", "DBAC", "BADC", "BDCA"],
     "Answer": "1"
   },
   {
-    "Question": "Which of the phrases given below in the sentence should replace the phrase printed in bold type to make it grammatically correct? If the sentence is correct as it is, mark 'e' as the answer.He is a singer of repute, but his yesterday's performance was quite disappointing.",
+    "Question": "Which of the phrases given below in the sentence should replace the phrase printed in bold type to make it grammatically correct? <br>He is a singer of repute, but his **yesterday's performance** was quite disappointing.",
     "Level": "Intermediate",
     "Category": "Verbal",
-    "Options": ["performances of yesterday were", "yesterday performance was", "yesterday performance were", "performances about yesterday were", "No correction required"],
-    "Answer": "5"
+    "Options": ["performances of yesterday were", "yesterday performance was", "yesterday performance were", "No correction required"],
+    "Answer": "4"
   },
   {
-    "Question": "Which letter in this alphabet is the eighth letter to the right of the letter and which is tenth letter to the left of the last but one letter of the alphabet?",
+    "Question": "Which letter in this alphabet is the eighth letter to the right of the letter which is tenth letter to the left of the last but one letter of the alphabet?",
     "Level": "Intermediate",
     "Category": "Verbal",
     "Options": ["X", "W", "I", "H"],
@@ -238,7 +238,7 @@
     "Answer": "1"
   },
   {
-    "Question": "I. There is a sharp decline in the production of rice this season.II. The government has decided to increase the import of rice.",
+    "Question": "I. There is a sharp decline in the production of rice this season. <br>II. The government has decided to increase the import of rice.",
     "Level": "Intermediate",
     "Category": "Verbal",
     "Options": ["Statement II is the cause, and statement I is its effect", "Statement I is the cause, and statement II is its effect", "Both the statements are effects of independent causes", "Both the statements are independent causes", "Both the statements are effects of some common cause"],
@@ -266,18 +266,18 @@
     "Answer": "1"
   },
   {
-  "Question": "Which of the phrases given below in the sentence should replace the phrase printed in bold type to make it grammatically correct? If the sentence is correct as it is, mark 'e' as the answer.Despite their differences on matters of principles, they all agree on the demand for a hike in the salary?",
+  "Question": "Which of the phrases given below in the sentence should replace the phrase printed in bold type to make it grammatically correct? **Despite their** differences on matters of principles, they all agree on the demand for a hike in the salary?",
   "Level": "Intermediate",
   "Category": "Verbal",
-  "Options": ["Despite there", "Despite of the", "Despite for their", "Despite off their", "No correction required"],
-  "Answer": "5"
+  "Options": ["Despite of the", "Despite for their", "Despite off their", "No correction required"],
+  "Answer": "4"
   },
   {
-  "Question": "It is 6:00 pm, when can Deepak get next bus from Noida to Delhi?I. Buses for Delhi leave after every 30 minutes, until 11 pm.II. 20 minutes ago, a bus has left for Delhi.",
+  "Question": "It is 6:00 pm, when can Deepak get next bus from Noida to Delhi? <br>I. Buses for Delhi leave after every 30 minutes, until 11 pm. <br>II. 20 minutes ago, a bus has left for Delhi.",
   "Level": "Intermediate",
   "Category": "Verbal",
-  "Options": ["Statement I alone is sufficient, but statement II alone is not sufficient", "Statement II alone is sufficient, but statement I alone is not sufficient", "Either I or II is sufficient", "Data in both the statements together are not sufficient", "Both I and II are needed"],
-  "Answer": "5"
+  "Options": ["Statement I alone is sufficient, but statement II alone is not sufficient", "Statement II alone is sufficient, but statement I alone is not sufficient", "Either I or II is sufficient", "Both I and II are needed"],
+  "Answer": "4"
   },
   {
   "Question": "It is a fact that the world urgently needs sufficient distribution of food so that everyone gets enough food and nutrition. Distribution of medicine and medical facilities are also need to be distributed across the world to ensure people in developing countries can get proper medical care.This paragraph supports which of the following statements;",
