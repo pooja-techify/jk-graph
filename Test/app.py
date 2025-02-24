@@ -247,28 +247,6 @@ def send_email(subject, body, to_recipients, cc_recipients, attachment_path=None
         logger.error(f'Error sending email: {e}')
         return jsonify({"error": f"Error sending email: {str(e)}"}), 500
 
-def compress_pdf(input_pdf, output_pdf, quality=50):
-    doc = fitz.open(input_pdf)
-    for page in doc:
-        images = page.get_images(full=True)
-        for img_index, img in enumerate(images):
-            xref = img[0]
-            base_image = doc.extract_image(xref)
-            image_bytes = base_image["image"]
-
-            # Convert to lower quality image
-            img = Image.open(BytesIO(image_bytes))
-            img = img.convert("RGB")
-            img_io = BytesIO()
-            img.save(img_io, format="JPEG", quality=quality)
-
-            # Replace the original image with the compressed version
-            img_bytes = img_io.getvalue()
-            page.replace_image(xref, img_bytes)
-
-    doc.save(output_pdf)
-    doc.close()
-
 @app.route('/submit_test', methods=['POST'])
 def submit_test():
     try:
@@ -294,27 +272,20 @@ def submit_test():
             return jsonify({'error': 'No selected file'}), 400
 
         if file:
+            # Save the uploaded file to a temporary path
             report_path = os.path.join('/tmp', file.filename)
             file.save(report_path)
 
-            # Compress the PDF before further processing
+            # Compress the PDF
             compressed_report_path = os.path.join('/tmp', f"compressed_{file.filename}")
-            compress_pdf(report_path, compressed_report_path, quality=40)
+            compress_pdf(report_path, compressed_report_path)
 
-            writer = PdfWriter(clone_from=compressed_report_path)
-
-            for page in writer.pages:
-                page.compress_content_streams()
-
-            with open(compressed_report_path, "wb") as f:
-                writer.write(f)
-
-            # Use the compressed report path for S3 upload
+            # Upload the compressed PDF to S3
             s3_client = boto3.client('s3')
             s3_bucket = 'onlinetest-stag-documents'
             s3_key = f'reports/{candidate_id}'
             report_s3_url = f'https://{s3_bucket}.s3.us-east-1.amazonaws.com/{s3_key}'
-            
+
             try:
                 s3_client.upload_file(
                     compressed_report_path, s3_bucket, s3_key,
@@ -877,6 +848,27 @@ def fetch_registration():
 def health_check():
     print("Health check successful")
     return jsonify({"status": "healthy"}), 200
+
+def compress_pdf(input_path, output_path):
+    try:
+        # Open the PDF
+        document = fitz.open(input_path)
+        # Create a new PDF writer
+        writer = fitz.open()
+
+        # Iterate through each page
+        for page_number in range(document.page_count):
+            page = document.load_page(page_number)
+            # Add the page to the writer
+            writer.insert_pdf(document, from_page=page_number, to_page=page_number)
+
+        # Save the compressed PDF
+        writer.save(output_path, garbage=4, deflate=True, clean=True)
+        writer.close()
+        document.close()
+    except Exception as e:
+        logger.error(f"Error compressing PDF: {e}")
+        raise
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=5001, debug=True)
