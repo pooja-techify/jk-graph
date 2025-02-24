@@ -15,6 +15,8 @@ import psycopg2
 import pandas as pd
 import base64
 import logging
+import gzip
+import shutil
 
 app = Flask(__name__)
 CORS(app, resources={r"/*": {
@@ -270,6 +272,15 @@ def submit_test():
         if file:
             report_path = os.path.join('/tmp', file.filename)
             file.save(report_path)
+
+            # Compress the file
+            compressed_report_path = report_path + '.gz'
+            with open(report_path, 'rb') as f_in:
+                with gzip.open(compressed_report_path, 'wb') as f_out:
+                    shutil.copyfileobj(f_in, f_out)
+
+            # Update the report path to the compressed file
+            report_path = compressed_report_path
 
             s3_client = boto3.client('s3')
             s3_bucket = 'onlinetest-stag-documents'
