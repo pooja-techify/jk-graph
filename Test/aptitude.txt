@@ -210,14 +210,14 @@
   "Answer": "1" 
   },
   {
-    "Question": "Each triangle has numbers at its corners and a number inside denoting a relation to the corners:<br> 1: Corners 7, 6, 2; Inside number 19.<br>Triangle 2: Corners 1, 8, 4; Inside number 33.<br>Triangle 3: Corners 5, 2, ?; Inside number 23.<br>Find the missing value (?) in the third triangle.",
+    "Question": "Each triangle has numbers at its corners and a number inside denoting a relation to the corners: 1: Corners 7, 6, 2; Inside number 19.Triangle 2: Corners 1, 8, 4; Inside number 33.Triangle 3: Corners 5, 2, ?; Inside number 23.Find the missing value (?) in the third triangle.",
     "Level": "Advanced",
     "Category": "Aptitude",
     "Options": ["8", "9", "6", "13"],
     "Answer": "2"
   },
   {
-    "Question": "Raghu, an agriculturist, managed to grow shaped watermelons inside glass cases of different shapes.<br>The shapes he used were:<br>a. Perfect cube<br>b. Hemi-spherical<br>c. Cuboid and<br>d. Cylindrical along with the normal spherical shaped watermelons.<br>The thickness of the skin was the same for all the shapes. Each of the glass cases was so designed that the total volume and the weight of all the watermelons would be equal irrespective of the shape.<br>A customer wants to buy watermelon for making juice, for which the skin of the watermelon has to be peeled off, and therefore is a waste.<br>Which shape should the customer buy?",
+    "Question": "Raghu, an agriculturist, managed to grow shaped watermelons inside glass cases of different shapes.The shapes he used were:a. Perfect cubeb. Hemi-sphericalc. Cuboid andd. Cylindrical along with the normal spherical shaped watermelons.The thickness of the skin was the same for all the shapes. Each of the glass cases was so designed that the total volume and the weight of all the watermelons would be equal irrespective of the shape.A customer wants to buy watermelon for making juice, for which the skin of the watermelon has to be peeled off, and therefore is a waste.Which shape should the customer buy?",
     "Level": "Advanced",
     "Category": "Aptitude",
     "Options": ["Cube", "Hemi-Sphere", "Cylinder", "Spherical"],
