@@ -1,76 +1,76 @@
 [
   {
-    "Question": "Which word does not belong to others?",
+    "Question": "<b>Which word does not belong to others?</b>",
     "Level": "Basic",
     "Category": "Reasoning",
     "Options": ["Inch", "Kilogram", "Centimeter", "Yard"],
     "Answer": "2"
   },
   {
-    "Question": "Each problem consists of three statements. Based on the first two statements, the third statement may be true, false, or uncertain. <br> I. Tanya is older than Eric. <br> II. Cliff is older than Tanya. <br> III. Eric is older than Cliff. <br> If the first two statements are true, the third statement is",
+    "Question": "<b>Each problem consists of three statements.</b> Based on the first two statements, the third statement may be true, false, or uncertain. <br> I. Tanya is older than Eric. <br> II. Cliff is older than Tanya. <br> III. Eric is older than Cliff. <br> If the first two statements are true, the third statement is",
     "Level": "Basic",
     "Category": "Reasoning",
     "Options": ["True", "False", "Can't say"],
     "Answer": "2"
   },
   {
-    "Question": "Which number comes next: 3, 7, 15, 31, ?",
+    "Question": "<b>Which number comes next: 3, 7, 15, 31, ?</b>",
     "Level": "Basic",
     "Category": "Reasoning",
     "Options": ["63", "47", "51", "59"],
     "Answer": "1"
   },
   {
-    "Question": "If a clock shows 3:15, what is the angle between the hour and minute hands?",
+    "Question": "<b>If a clock shows 3:15, what is the angle between the hour and minute hands?</b>",
     "Level": "Basic",
     "Category": "Reasoning",
     "Options": ["7.5 degrees", "67.5 degrees", "97.5 degrees", "82.5 degrees"],
     "Answer": "1"
   },
   {
-    "Question": "Which word does not belong to the group?",
+    "Question": "<b>Which word does not belong to the group?</b>",
     "Level": "Basic",
     "Category": "Reasoning",
     "Options": ["Cow", "Goat", "Lion", "Horse"],
     "Answer": "3"
   },
   {
-    "Question": "A person walks 7 km north, then 3 km east, and finally 5 km south. Where is the person in relation to the starting point?",
+    "Question": "<b>A person walks 7 km north, then 3 km east, and finally 5 km south. Where is the person in relation to the starting point?</b>",
     "Level": "Basic",
     "Category": "Reasoning",
     "Options": ["Northwest", "Southwest", "Southeast", "Northeast"],
     "Answer": "4"
   },
   {
-    "Question": "If John is taller than Peter and Peter is shorter than Michael, who is the shortest?",
+    "Question": "<b>If John is taller than Peter and Peter is shorter than Michael, who is the shortest?</b>",
     "Level": "Basic",
     "Category": "Reasoning",
     "Options": ["John", "Peter", "Michael", "Cannot be determined"],
     "Answer": "2"
   },
   {
-    "Question": "Choose the odd one out: 5, 10, 20, 40, 75",
+    "Question": "<b>Choose the odd one out: 5, 10, 20, 40, 75</b>",
     "Level": "Basic",
     "Category": "Reasoning",
     "Options": ["5", "20", "75", "40"],
     "Answer": "3"
   },
   {
-    "Question": "Complete the series: 3, 6, 11, 18, 27, ?",
+    "Question": "<b>Complete the series: 3, 6, 11, 18, 27, ?</b>",
     "Level": "Basic",
     "Category": "Reasoning",
     "Options": ["38", "37", "36", "35"],
     "Answer": "1"
   },
   {
-    "Question": "If \"CLOUD\" is written as \"DMPVE\", then how is \"STEAM\" written in the same code?",
+    "Question": "<b>If \"CLOUD\" is written as \"DMPVE\", then how is \"STEAM\" written in the same code?</b>",
     "Level": "Basic",
     "Category": "Reasoning",
     "Options": ["TUFBN", "NBFUT", "NBFTS", "TUFAM"],
     "Answer": "1"
   },
   {
-    "Question": "Which word does not belong to others?",
+    "Question": "<b>Which word does not belong to others?</b>",
     "Level": "Basic",
     "Category": "Reasoning",
     "Options": ["Triangle", "Square", "Rectangle", "Sphere"],
