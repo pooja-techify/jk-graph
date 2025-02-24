@@ -63,13 +63,6 @@
     "Answer": "1"
   },
   {
-    "Question": "There are 8 houses in a line and in each house only one boy lives with the conditions as given below:Jack is not the neighbour Siman.Harry is just next to the left of Larry.There is at least one to the left of Larry.Paul lives in one of the two houses in the middle.Mike lives in between Paul and Larry.If at least one lives to the right of Robert and Harry is not between Taud and Larry, then which one of the following statement is not correct?",
-    "Level": "Basic",
-    "Category": "Verbal",
-    "Options": ["Robert is not at the left end.", "Robert is in between Simon and Taud.", "Taud is in between Paul and Jack.", "There are three persons to the right of Paul."],
-    "Answer": "3"
-  },
-  {
     "Question": "Five girls are sitting on a bench to be photographed. Seema is to the left of Rani and to the right of Bindu. Mary is to the right of Rani. Reeta is between Rani and Mary. Who is in the middle of the photograph?",
     "Level": "Basic",
     "Category": "Verbal",
@@ -112,31 +105,31 @@
     "Answer": "1"
   },
   {
-    "Question": "Read the Following Idioms/Phrases and choose the option which expresses the meaning of the idiom/phrase: To leave someone in the lurch",
+    "Question": "Read the following idioms/phrases and choose the option which expresses the meaning of the idiom/phrase: To leave someone in the lurch",
     "Level": "Basic",
     "Category": "Verbal",
     "Options": ["To come to compromise with someone", "constant source of annoyance to someone", "To put someone at ease", "None of these"],
     "Answer": "4"
   },
   {
-    "Question": "The words which are italicized in the sentence is wrong. Correct the sentences with appropriate phrases accordingly.He suggested that, we should be bound by a code of conduct, isn't it?",
+    "Question": "The words which are bold in the sentence are wrong. Correct the sentences with appropriate phrases accordingly. He suggested that, we should be bound by a code of conduct, isn't it?",
     "Level": "Basic",
     "Category": "Verbal",
     "Options": ["Shouldn't we", "is it", "aren't we", "None of above"],
     "Answer": "2"
   },
   {
-    "Question": "Complete the sentence with proper words:The train arrived __ the station __ Ajmer in the morning.",
+    "Question": "Complete the sentence with proper words: The train arrived __ the station __ Ajmer in the morning.",
     "Level": "Basic",
     "Category": "Verbal",
     "Options": ["in, in", "on, in", "in, at", "at, in"],
     "Answer": "4"
   },
   {
-    "Question": "Which of the phrases given below should replace the phrase printed in bold type to make it grammatically correct? If the sentence is correct as it is, mark 'e' as the answer.You need not come unless you want to.",
+    "Question": "Which of the phrases given below should replace the phrase printed in bold type to make it grammatically correct? You need not come unless you want to.",
     "Level": "Basic",
     "Category": "Verbal",
-    "Options": ["You don't need to come unless you want to.", "You come only when you want to.", "You come unless you don't want to.", "You needn't come until you don't want to.", "No correction required."],
+    "Options": ["You don't need to come unless you want to.", "You come only when you want to.", "You come unless you don't want to.", "You needn't come until you don't want to."],
     "Answer": "1"
   },
   {
