@@ -18,6 +18,7 @@ import logging
 import gzip
 import shutil
 import zipfile
+from pypdf import PdfWriter
 
 app = Flask(__name__)
 CORS(app, resources={r"/*": {
@@ -274,17 +275,18 @@ def submit_test():
             report_path = os.path.join('/tmp', file.filename)
             file.save(report_path)
 
-            # Compress the file into a ZIP archive
-            zip_report_path = report_path + '.zip'
-            with zipfile.ZipFile(zip_report_path, 'w', zipfile.ZIP_DEFLATED) as zipf:
-                zipf.write(report_path, os.path.basename(report_path))
+            writer = PdfWriter(clone_from=report_path)
 
-            # Use the ZIP file path for S3 upload
-            report_path = zip_report_path
+            for page in writer.pages:
+                page.compress_content_streams()
 
+            with open(report_path, "wb") as f:
+                writer.write(f)
+
+            # Use the original report path for S3 upload
             s3_client = boto3.client('s3')
             s3_bucket = 'onlinetest-stag-documents'
-            s3_key = f'reports/{candidate_id}.zip'
+            s3_key = f'reports/{candidate_id}'
             report_s3_url = f'https://{s3_bucket}.s3.us-east-1.amazonaws.com/{s3_key}'
             
             try:
@@ -292,7 +294,7 @@ def submit_test():
                     report_path, s3_bucket, s3_key,
                     ExtraArgs={
                         "ContentDisposition": "inline",
-                        "ContentType": "application/zip",
+                        "ContentType": "application/pdf",
                         "ACL": "public-read"
                     }
                 )
@@ -547,7 +549,7 @@ def delete_user_data():
         s3_client = boto3.client('s3')
         s3_bucket = 'onlinetest-stag-documents'
         for candidate_id in candidate_ids:
-            s3_key = f'reports/{candidate_id}.zip'
+            s3_key = f'reports/{candidate_id}'
             try:
                 s3_client.delete_object(Bucket=s3_bucket, Key=s3_key)
                 print(f"Deleted report for candidate ID: {candidate_id} from S3.")
