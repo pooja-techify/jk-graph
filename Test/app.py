@@ -15,10 +15,10 @@ import psycopg2
 import pandas as pd
 import base64
 import logging
-import gzip
-import shutil
-import zipfile
 from pypdf import PdfWriter
+import fitz  # PyMuPDF
+from PIL import Image
+from io import BytesIO
 
 app = Flask(__name__)
 CORS(app, resources={r"/*": {
@@ -247,6 +247,28 @@ def send_email(subject, body, to_recipients, cc_recipients, attachment_path=None
         logger.error(f'Error sending email: {e}')
         return jsonify({"error": f"Error sending email: {str(e)}"}), 500
 
+def compress_pdf(input_pdf, output_pdf, quality=50):
+    doc = fitz.open(input_pdf)
+    for page in doc:
+        images = page.get_images(full=True)
+        for img_index, img in enumerate(images):
+            xref = img[0]
+            base_image = doc.extract_image(xref)
+            image_bytes = base_image["image"]
+
+            # Convert to lower quality image
+            img = Image.open(BytesIO(image_bytes))
+            img = img.convert("RGB")
+            img_io = BytesIO()
+            img.save(img_io, format="JPEG", quality=quality)
+
+            # Replace the original image with the compressed version
+            img_bytes = img_io.getvalue()
+            doc.update_image(xref, stream=img_bytes)
+
+    doc.save(output_pdf)
+    doc.close()
+
 @app.route('/submit_test', methods=['POST'])
 def submit_test():
     try:
@@ -275,15 +297,19 @@ def submit_test():
             report_path = os.path.join('/tmp', file.filename)
             file.save(report_path)
 
-            writer = PdfWriter(clone_from=report_path)
+            # Compress the PDF before further processing
+            compressed_report_path = os.path.join('/tmp', f"compressed_{file.filename}")
+            compress_pdf(report_path, compressed_report_path, quality=40)
+
+            writer = PdfWriter(clone_from=compressed_report_path)
 
             for page in writer.pages:
                 page.compress_content_streams()
 
-            with open(report_path, "wb") as f:
+            with open(compressed_report_path, "wb") as f:
                 writer.write(f)
 
-            # Use the original report path for S3 upload
+            # Use the compressed report path for S3 upload
             s3_client = boto3.client('s3')
             s3_bucket = 'onlinetest-stag-documents'
             s3_key = f'reports/{candidate_id}'
@@ -291,7 +317,7 @@ def submit_test():
             
             try:
                 s3_client.upload_file(
-                    report_path, s3_bucket, s3_key,
+                    compressed_report_path, s3_bucket, s3_key,
                     ExtraArgs={
                         "ContentDisposition": "inline",
                         "ContentType": "application/pdf",
@@ -333,7 +359,7 @@ def submit_test():
                 Last Name: {last_name}<br>
                 Score: {score}<br><br>
                 """
-                send_email(subject, body, to_emails, cc_emails, attachment_path=report_path)
+                send_email(subject, body, to_emails, cc_emails, attachment_path=compressed_report_path)
             except Exception as e:
                 logger.error(f"Error sending report email: {e}")
                 return jsonify({"error": "Failed to send report email"}), 500
