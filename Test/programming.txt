@@ -294,21 +294,21 @@
     "Answer": "1"
   },
   {
-    "Question": "**What will** be printed on the console if the <br>following code will run?public class Sample {void Sample(){System.out.println(\"Class Sample\");}public static void main(String[] args){new Sample();System.out.println(\"test\");}}",
+    "Question": "**What will** be printed on the console if the <br>following code will run?```public class Sample {void Sample(){System.out.println(\"Class Sample\");}public static void main(String[] args){new Sample();System.out.println(\"test\");```}}",
     "Level": "Coding",
     "Category": "Programming",
     "Options": ["test", "test Class Sample", "Will throw an exception", "None of the options."],
     "Answer": "1"
   },
   {
-    "Question": "**What will be** the output of the following <br>code if the value of two integers a and b is 10 and 15 respectively?int a,b;if (a>b):print(\"Result is : \", a);else:print(\"Result is : \", b);",
+    "Question": "**What will be** the output of the following <br>code if the value of two integers a and b is 10 and 15 respectively?```int a,b;if (a>b):print(\"Result is : \", a);else:print(\"Result is : \", b);```",
     "Level": "Coding",
     "Category": "Programming",
     "Options": ["Result is", "Result is 10", "Result is 15", "Not sure, depends upon the system."],
     "Answer": "3"
   },
   {
-    "Question": "**What will the following** SQL query return?<br>SELECT COUNT(*) FROM employees WHERE salary > ALL (SELECT salary FROM employees WHERE department = 'HR');",
+    "Question": "**What will the following** SQL query return?```SELECT COUNT(*) FROM employees WHERE salary > ALL (SELECT salary FROM employees WHERE department = 'HR');```",
     "Level": "Coding",
     "Category": "Programming",
     "Options": ["Employees with the highest salary in the company", "Employees whose salary is higher than every HR employee's salary", "Employees whose salary is equal to the maximum HR salary", "All employees with salaries higher than the average HR salary"
@@ -316,28 +316,28 @@
     "Answer": "2"
   },
   {
-    "Question": "**In the given program**, how many lines of output <br>will be produced?public class Test{public static void main(String [] args){int [][][] x = new int[3][][];int i, j;x[0] = new int[4][];x[1] = new int[2][];x[2] = new int[5][];for (i = 0; i < x.length; i ){for (j = 0; j < x[i].length; j ){x[i][j] = new int[i + j + 1];System.out.println(\"size = \" + x[i][j].length);}}}}",
+    "Question": "**In the given program**, how many lines of output <br>will be produced?```public class Test{public static void main(String [] args){int [][][] x = new int[3][][];int i, j;x[0] = new int[4][];x[1] = new int[2][];x[2] = new int[5][];for (i = 0; i < x.length; i ){for (j = 0; j < x[i].length; j ){x[i][j] = new int[i + j + 1];System.out.println(\"size = \" + x[i][j].length);}}}}```",
     "Level": "Coding",
     "Category": "Programming",
     "Options": ["7", "9", "11", "13"],
     "Answer": "3"
   },
   {
-    "Question": "**In Java**, what will the following code output?int a = 10;int b = 20;System.out.println(a++ + ++b);",
+    "Question": "**In Java**, what will the following code output?```int a = 10;int b = 20;System.out.println(a++ + ++b);```",
     "Level": "Coding",
     "Category": "Programming",
     "Options": ["30", "31", "32", "33"],
     "Answer": "3"
   },
   {
-    "Question": "**What** will be the output of the following Python code?x = [1, 2, 3]y = xy.append(4)print(x)",
+    "Question": "**What** will be the output of the following Python code?```x = [1, 2, 3]y = xy.append(4)print(x)```",
     "Level": "Coding",
     "Category": "Programming",
     "Options": ["[1, 2, 3]", "[1, 2, 3, 4]", "[1, 2, 3, 4, 4]", "Error"],
     "Answer": "2"
   },
   {
-    "Question": "What will be the output of this Python function call?def func(a, b=[]):<br>    b.append(a)<br>    return b<br>print(func(1))<br>print(func(2))",
+    "Question": "What will be the output of this Python function call?```def func(a, b=[]):    b.append(a)    return bprint(func(1))print(func(2))```",
     "Level": "Coding",
     "Category": "Programming",
     "Options": ["[1] [2]", "[1] [1, 2]", "[1] [2] (two separate lists)", "Error"],
