@@ -280,35 +280,35 @@
     "Answer": "4"
   },
   {
-    "Question": "What will be the output of the program?\npublic class A\n{\nvoid A() /* Line 3 */\n{\nSystem.out.println(\"Class A\");\n}\npublic static void main(String[] args)\n{\nnew A();\n}\n}",
+    "Question": "What will be the output of the program?<br>public class A<br>{<br>void A() /* Line 3 */<br>{<br>System.out.println(\"Class A\");<br>}<br>public static void main(String[] args)<br>{<br>new A();<br>}<br>}",
     "Level": "Coding",
     "Category": "Programming",
     "Options": ["Class A", "Compilation fails.", "The code executes with no output.", "An exception is thrown at line 3."],
     "Answer": "3"
   },
   {
-    "Question": "If the following code gets compiled properly, then what is the output?\npublic class Test {\npublic static void main(String[] args) {\nfor(int i = 0; true; i ) {\nSystem.out.println(\"Hello\");\nbreak;\n}\n}\n}",
+    "Question": "If the following code gets compiled properly, then what is the output?<br>public class Test {<br>public static void main(String[] args) {<br>for(int i = 0; true; i ) {<br>System.out.println(\"Hello\");<br>break;<br>}<br>}<br>}",
     "Level": "Coding",
     "Category": "Programming",
     "Options": ["Hello", "Hello, Hello ,Hello...infinite times", "Prints nothing", "Runtime error"],
     "Answer": "1"
   },
   {
-    "Question": "What will be printed on the console if the following code will run?\npublic class Sample {\nvoid Sample()\n{\nSystem.out.println(\"Class Sample\");\n}\npublic static void main(String[] args)\n{\nnew Sample();\nSystem.out.println(\"test\");\n}\n}",
+    "Question": "What will be printed on the console if the following code will run?<br>public class Sample {<br>void Sample()<br>{<br>System.out.println(\"Class Sample\");<br>}<br>public static void main(String[] args)<br>{<br>new Sample();<br>System.out.println(\"test\");<br>}<br>}",
     "Level": "Coding",
     "Category": "Programming",
     "Options": ["test", "test Class Sample", "Will throw an exception", "None of the options."],
     "Answer": "1"
   },
   {
-    "Question": "What will be the output of the following code if the value of two integers a and b is 10 and 15 respectively?\nint a,b;\nif (a>b):\nprint(\"Result is : \", a);\nelse:\nprint(\"Result is : \", b);",
+    "Question": "What will be the output of the following code if the value of two integers a and b is 10 and 15 respectively?<br>int a,b;<br>if (a>b):<br>print(\"Result is : \", a);<br>else:<br>print(\"Result is : \", b);",
     "Level": "Coding",
     "Category": "Programming",
     "Options": ["Result is", "Result is 10", "Result is 15", "Not sure, depends upon the system."],
     "Answer": "3"
   },
   {
-    "Question": "What will the following SQL query return?\nSELECT COUNT(*) \nFROM employees \nWHERE salary > ALL (SELECT salary FROM employees WHERE department = 'HR');",
+    "Question": "What will the following SQL query return?<br>SELECT COUNT(*) <br>FROM employees <br>WHERE salary > ALL (SELECT salary FROM employees WHERE department = 'HR');",
     "Level": "Coding",
     "Category": "Programming",
     "Options": ["Employees with the highest salary in the company", "Employees whose salary is higher than every HR employee's salary", "Employees whose salary is equal to the maximum HR salary", "All employees with salaries higher than the average HR salary"
@@ -316,28 +316,28 @@
     "Answer": "2"
   },
   {
-    "Question": "In the given program, how many lines of output will be produced?\npublic class Test\n{\npublic static void main(String [] args)\n{\nint [][][] x = new int[3][][];\nint i, j;\nx[0] = new int[4][];\nx[1] = new int[2][];\nx[2] = new int[5][];\nfor (i = 0; i < x.length; i )\n{\nfor (j = 0; j < x[i].length; j )\n{\nx[i][j] = new int[i + j + 1];\nSystem.out.println(\"size = \" + x[i][j].length);\n}\n}\n}\n}",
+    "Question": "In the given program, how many lines of output will be produced?<br>public class Test<br>{<br>public static void main(String [] args)<br>{<br>int [][][] x = new int[3][][];<br>int i, j;<br>x[0] = new int[4][];<br>x[1] = new int[2][];<br>x[2] = new int[5][];<br>for (i = 0; i < x.length; i )<br>{<br>for (j = 0; j < x[i].length; j )<br>{<br>x[i][j] = new int[i + j + 1];<br>System.out.println(\"size = \" + x[i][j].length);<br>}<br>}<br>}<br>}",
     "Level": "Coding",
     "Category": "Programming",
     "Options": ["7", "9", "11", "13"],
     "Answer": "3"
   },
   {
-    "Question": "In Java, what will the following code output?\nint a = 10;\nint b = 20;\nSystem.out.println(a++ + ++b);",
+    "Question": "In Java, what will the following code output?<br>int a = 10;<br>int b = 20;<br>System.out.println(a++ + ++b);",
     "Level": "Coding",
     "Category": "Programming",
     "Options": ["30", "31", "32", "33"],
     "Answer": "3"
   },
   {
-    "Question": "What will be the output of the following Python code?\nx = [1, 2, 3]\ny = x\ny.append(4)\nprint(x)",
+    "Question": "What will be the output of the following Python code?<br>x = [1, 2, 3]<br>y = x<br>y.append(4)<br>print(x)",
     "Level": "Coding",
     "Category": "Programming",
     "Options": ["[1, 2, 3]", "[1, 2, 3, 4]", "[1, 2, 3, 4, 4]", "Error"],
     "Answer": "2"
   },
   {
-    "Question": "What will be the output of this Python function call?\ndef func(a, b=[]):\n    b.append(a)\n    return b\nprint(func(1))\nprint(func(2))",
+    "Question": "What will be the output of this Python function call?<br>def func(a, b=[]):<br>    b.append(a)<br>    return b<br>print(func(1))<br>print(func(2))",
     "Level": "Coding",
     "Category": "Programming",
     "Options": ["[1] [2]", "[1] [1, 2]", "[1] [2] (two separate lists)", "Error"],
