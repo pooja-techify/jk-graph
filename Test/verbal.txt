@@ -48,7 +48,7 @@
     "Answer": "4"
   },
   {
-    "Question": "Arrange the given words in a meaningful sequence.<br>1. Seldom<br>2. Generally<br>3. Never<br>4. Sometimes<br>5. Always",
+    "Question": "Arrange the given words in a meaningful sequence. 1. Seldom 2. Generally 3. Never 4. Sometimes 5. Always",
     "Level": "Basic",
     "Category": "Verbal",
     "Options": [
@@ -72,7 +72,7 @@
     "Answer": "1"
   },
   {
-    "Question": "Sohan ranks fifth in the class. How many students are there in the class?<br>I. His friend ranks 52th which is the last rank in the class.<br>II. Sohan's rank from the last is 48th.",
+    "Question": "Sohan ranks fifth in the class. How many students are there in the class? I. His friend ranks 52th which is the last rank in the class. II. Sohan's rank from the last is 48th.",
     "Level": "Basic",
     "Category": "Verbal",
     "Options": [
@@ -85,7 +85,7 @@
     "Answer": "3"
   },
   {
-    "Question": "Assertion (A): Diamond is used for cutting the glass.<br>Reason (R): The refractive index of diamond is high.",
+    "Question": "Assertion (A): Diamond is used for cutting the glass. Reason (R): The refractive index of diamond is high.",
     "Level": "Basic",
     "Category": "Verbal",
     "Options": [
@@ -98,7 +98,7 @@
     "Answer": "2"
   },
   {
-    "Question": "Assertion (A): The water kept in the earthen pot cools down in summers.<br>Reason (R): The water evaporates through the pores, which causes cooling.",
+    "Question": "Assertion (A): The water kept in the earthen pot cools down in summers. Reason (R): The water evaporates through the pores, which causes cooling.",
     "Level": "Basic",
     "Category": "Verbal",
     "Options": [
@@ -171,7 +171,7 @@
     "Answer": "2"
   },
   {
-    "Question": "Read the question and complete the sentence with proper words<br>Mahesh need not have purchased the bag, means ________",
+    "Question": "Read the question and complete the sentence with proper words Mahesh need not have purchased the bag, means ________",
     "Level": "Basic",
     "Category": "Verbal",
     "Options": [
@@ -195,7 +195,7 @@
     "Answer": "4"
   },
   {
-    "Question": "The words which are bold in the sentence are wrong. Correct the sentences with appropriate phrases accordingly.<br>He suggested that, we should be bound by a code of conduct, <b>isn't it</b>?",
+    "Question": "The words which are bold in the sentence are wrong. Correct the sentences with appropriate phrases accordingly. He suggested that, we should be bound by a code of conduct,  isn't it ?",
     "Level": "Basic",
     "Category": "Verbal",
     "Options": [
@@ -207,7 +207,7 @@
     "Answer": "2"
   },
   {
-    "Question": "Complete the sentence with proper words:<br>The train arrived __ the station __ Ajmer in the morning.",
+    "Question": "Complete the sentence with proper words: The train arrived __ the station __ Ajmer in the morning.",
     "Level": "Basic",
     "Category": "Verbal",
     "Options": [
@@ -219,7 +219,7 @@
     "Answer": "4"
   },
   {
-    "Question": "Which of the phrases given below should replace the phrase printed in bold type to make it grammatically correct? <br> <b>You need not come unless you want to</b>.",
+    "Question": "Which of the phrases given below should replace the phrase printed in bold type to make it grammatically correct?    You need not come unless you want to .",
     "Level": "Basic",
     "Category": "Verbal",
     "Options": [
@@ -231,7 +231,7 @@
     "Answer": "1"
   },
   {
-    "Question": "Which of the phrases given below in the sentence should replace the phrase printed in bold type to make it grammatically correct? <br> They <b>were all shocked at</b> his failure in the competition.",
+    "Question": "Which of the phrases given below in the sentence should replace the phrase printed in bold type to make it grammatically correct?   They  were all shocked at  his failure in the competition.",
     "Level": "Basic",
     "Category": "Verbal",
     "Options": [
@@ -243,7 +243,7 @@
     "Answer": "4"
   },
   {
-    "Question": "A part of the sentence given below is in bold. Following are the given alternatives to that part which may improve the sentence. Choose the correct alternative.<br>Every time, I <b>go in a lift</b> to my sixth-floor apartment, I remember the calm and serenity of my ancestral home in the village.",
+    "Question": "A part of the sentence given below is in bold. Following are the given alternatives to that part which may improve the sentence. Choose the correct alternative. Every time, I  go in a lift  to my sixth-floor apartment, I remember the calm and serenity of my ancestral home in the village.",
     "Level": "Basic",
     "Category": "Verbal",
     "Options": [
@@ -267,7 +267,7 @@
     "Answer": "3"
   },
   {
-    "Question": "Fill in the blank in the following sentence by selecting the most appropriate alternative from the given choices.<br>I saw a ______ of sheep grazing the field.",
+    "Question": "Fill in the blank in the following sentence by selecting the most appropriate alternative from the given choices. I saw a ______ of sheep grazing the field.",
     "Level": "Basic",
     "Category": "Verbal",
     "Options": [
@@ -279,7 +279,7 @@
     "Answer": "4"
   },
   {
-    "Question": "A part of the sentence given below is in bold. Following are the given alternatives to that part which may improve the sentence. Choose the correct alternative.<br>I am tired as <b>I am working</b> since 7 o'clock in the morning.",
+    "Question": "A part of the sentence given below is in bold. Following are the given alternatives to that part which may improve the sentence. Choose the correct alternative. I am tired as  I am working  since 7 o'clock in the morning.",
     "Level": "Basic",
     "Category": "Verbal",
     "Options": [
@@ -291,7 +291,7 @@
     "Answer": "2"
   },
   {
-    "Question": "Arrange the words given below in a meaningful sequence.<br>1.Presentation 2.Recommendation 3.Arrival 4.Discussion 5.Introduction",
+    "Question": "Arrange the words given below in a meaningful sequence. 1.Presentation 2.Recommendation 3.Arrival 4.Discussion 5.Introduction",
     "Level": "Basic",
     "Category": "Verbal",
     "Options": [
@@ -303,7 +303,7 @@
     "Answer": "3"
   },
   {
-    "Question": "Arrange the following sentences in the correct order.<br>A. I Got an expensive watch<br>B. Who is very loving<br>C. By my grandfather<br>D. On my 22nd birthday",
+    "Question": "Arrange the following sentences in the correct order. A. I Got an expensive watch B. Who is very loving C. By my grandfather D. On my 22nd birthday",
     "Level": "Basic",
     "Category": "Verbal",
     "Options": [
@@ -315,7 +315,7 @@
     "Answer": "2"
   },
   {
-    "Question": "Fill in the blank in the following sentence by selecting the most appropriate alternative from the given choices.<br>The greater is the size the more does it cost because the price ______ on size.",
+    "Question": "Fill in the blank in the following sentence by selecting the most appropriate alternative from the given choices. The greater is the size the more does it cost because the price ______ on size.",
     "Level": "Basic",
     "Category": "Verbal",
     "Options": [
@@ -327,7 +327,7 @@
     "Answer": "3"
   },
   {
-    "Question": "Which of the phrases given below in the sentence should replace the phrase printed in bold type to make it grammatically correct? <br>The intruder stood quietly for few moments.",
+    "Question": "Which of the phrases given below in the sentence should replace the phrase printed in bold type to make it grammatically correct?  The intruder stood quietly for few moments.",
     "Level": "Basic",
     "Category": "Verbal",
     "Options": [
@@ -339,7 +339,7 @@
     "Answer": "4"
   },
   {
-    "Question": "There is a sentence of which some parts have been jumbled up. Rearrange these parts which are labelled P, Q, R and S to produce the correct sentence. Choose the proper sequence.<br>When he<br>P: did not know<br>Q: he was nervous and<br>R: heard the hue and cry at midnight<br>S: what to do",
+    "Question": "There is a sentence of which some parts have been jumbled up. Rearrange these parts which are labelled P, Q, R and S to produce the correct sentence. Choose the proper sequence. When he P: did not know Q: he was nervous and R: heard the hue and cry at midnight S: what to do",
     "Level": "Basic",
     "Category": "Verbal",
     "Options": [
@@ -351,7 +351,7 @@
     "Answer": "1"
   },
   {
-    "Question": "Arrange the words to form a meaningful sentence:<br>A. the entire night<br>B. the police<br>C. searching for clues<br>D. worked through",
+    "Question": "Arrange the words to form a meaningful sentence: A. the entire night B. the police C. searching for clues D. worked through",
     "Level": "Basic",
     "Category": "Verbal",
     "Options": [
@@ -363,7 +363,7 @@
     "Answer": "1"
   },
   {
-    "Question": "Which of the phrases given below in the sentence should replace the phrase printed in bold type to make it grammatically correct?<br>He is a singer of repute, but his <b>yesterday's performance</b> was quite disappointing.",
+    "Question": "Which of the phrases given below in the sentence should replace the phrase printed in bold type to make it grammatically correct? He is a singer of repute, but his  yesterday's performance  was quite disappointing.",
     "Level": "Intermediate",
     "Category": "Verbal",
     "Options": [
@@ -411,7 +411,7 @@
     "Answer": "1"
   },
   {
-    "Question": "I. There is a sharp decline in the production of rice this season.<br>II. The government has decided to increase the import of rice.",
+    "Question": "I. There is a sharp decline in the production of rice this season. II. The government has decided to increase the import of rice.",
     "Level": "Intermediate",
     "Category": "Verbal",
     "Options": [
@@ -460,7 +460,7 @@
     "Answer": "1"
   },
   {
-    "Question": "Which of the phrases given below in the sentence should replace the phrase printed in bold type to make it grammatically correct?<br><b>Despite their</b> differences on matters of principles, they all agree on the demand for a hike in the salary?",
+    "Question": "Which of the phrases given below in the sentence should replace the phrase printed in bold type to make it grammatically correct?  Despite their  differences on matters of principles, they all agree on the demand for a hike in the salary?",
     "Level": "Intermediate",
     "Category": "Verbal",
     "Options": [
@@ -472,7 +472,7 @@
     "Answer": "4"
   },
   {
-    "Question": "It is 6:00 pm, when can Deepak get next bus from Noida to Delhi?<br>I. Buses for Delhi leave after every 30 minutes, until 11 pm.<br>II. 20 minutes ago, a bus has left for Delhi.",
+    "Question": "It is 6:00 pm, when can Deepak get next bus from Noida to Delhi? I. Buses for Delhi leave after every 30 minutes, until 11 pm. II. 20 minutes ago, a bus has left for Delhi.",
     "Level": "Intermediate",
     "Category": "Verbal",
     "Options": [
@@ -484,7 +484,7 @@
     "Answer": "4"
   },
   {
-    "Question": "It is a fact that the world urgently needs sufficient distribution of food so that everyone gets enough food and nutrition. Distribution of medicine and medical facilities are also need to be distributed across the world to ensure people in developing countries can get proper medical care.<br>This paragraph supports which of the following statements;",
+    "Question": "It is a fact that the world urgently needs sufficient distribution of food so that everyone gets enough food and nutrition. Distribution of medicine and medical facilities are also need to be distributed across the world to ensure people in developing countries can get proper medical care. This paragraph supports which of the following statements;",
     "Level": "Intermediate",
     "Category": "Verbal",
     "Options": [
@@ -496,7 +496,7 @@
     "Answer": "4"
   },
   {
-    "Question": "Obesity is a serious health issue. It can also lead to various other diseases like diabetes, asthma and high blood pressure. Recent research has even found that obesity may cause some types of cancer. So, major health campaigns should be launched to increases the awareness about this disease and lifestyle changes to help people fight obesity.<br>This paragraph supports which of the following statements;",
+    "Question": "Obesity is a serious health issue. It can also lead to various other diseases like diabetes, asthma and high blood pressure. Recent research has even found that obesity may cause some types of cancer. So, major health campaigns should be launched to increases the awareness about this disease and lifestyle changes to help people fight obesity. This paragraph supports which of the following statements;",
     "Level": "Intermediate",
     "Category": "Verbal",
     "Options": [
@@ -508,7 +508,7 @@
     "Answer": "1"
   },
   {
-    "Question": "Read the question and complete the sentence with proper words<br>Although alarmed by the __________, professor Symes had no reason to doubt the ________ of his student's results, for his student was nothing if not reliable",
+    "Question": "Read the question and complete the sentence with proper words Although alarmed by the __________, professor Symes had no reason to doubt the ________ of his student's results, for his student was nothing if not reliable",
     "Level": "Intermediate",
     "Category": "Verbal",
     "Options": [
@@ -520,7 +520,7 @@
     "Answer": "2"
   },
   {
-    "Question": "Read the Questions and Complete the statement with proper words<br>Archaeology is a poor profession; only ____ sums are available for excavating sites and even more ____ amounts for preserving the excavations.",
+    "Question": "Read the Questions and Complete the statement with proper words Archaeology is a poor profession; only ____ sums are available for excavating sites and even more ____ amounts for preserving the excavations.",
     "Level": "Intermediate",
     "Category": "Verbal",
     "Options": [
