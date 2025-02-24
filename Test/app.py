@@ -264,7 +264,7 @@ def compress_pdf(input_pdf, output_pdf, quality=50):
 
             # Replace the original image with the compressed version
             img_bytes = img_io.getvalue()
-            doc.update_image(xref, stream=img_bytes)
+            page.replace_image(xref, img_bytes)
 
     doc.save(output_pdf)
     doc.close()
