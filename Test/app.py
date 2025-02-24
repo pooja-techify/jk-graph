@@ -277,7 +277,7 @@ def submit_test():
             file.save(report_path)
 
             # Compress the PDF
-            compressed_report_path = os.path.join('/tmp', f"compressed_{file.filename}")
+            compressed_report_path = os.path.join('/tmp', f"{file.filename}")
             compress_pdf(report_path, compressed_report_path)
 
             # Upload the compressed PDF to S3
