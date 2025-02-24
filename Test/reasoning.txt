@@ -7,7 +7,7 @@
     "Answer": "2"
   },
   {
-    "Question": "Each problem consists of three statements. Based on the first two statements, the third statement may be true, false, or uncertain. I. Tanya is older than Eric. II. Cliff is older than Tanya. III. Eric is older than Cliff. If the first two statements are true, the third statement is",
+    "Question": "Each problem consists of three statements. Based on the first two statements, the third statement may be true, false, or uncertain. \n I. Tanya is older than Eric. \n II. Cliff is older than Tanya. \n III. Eric is older than Cliff. \n If the first two statements are true, the third statement is",
     "Level": "Basic",
     "Category": "Reasoning",
     "Options": ["True", "False", "Can't say"],
@@ -25,7 +25,7 @@
     "Level": "Basic",
     "Category": "Reasoning",
     "Options": ["7.5 degrees", "67.5 degrees", "97.5 degrees", "82.5 degrees"],
-    "Answer": "2"
+    "Answer": "1"
   },
   {
     "Question": "Which word does not belong to the group?",
@@ -35,7 +35,7 @@
     "Answer": "3"
   },
   {
-    "Question": "A person walks 5 km north, then 5 km east, and finally 5 km south. Where is the person in relation to the starting point?",
+    "Question": "A person walks 7 km north, then 3 km east, and finally 5 km south. Where is the person in relation to the starting point?",
     "Level": "Basic",
     "Category": "Reasoning",
     "Options": ["Northwest", "Southwest", "Southeast", "Northeast"],
@@ -73,71 +73,8 @@
     "Question": "Which word does not belong to others?",
     "Level": "Basic",
     "Category": "Reasoning",
-    "Options": ["Inch", "Kilogram", "Centimeter", "Yard"],
-    "Answer": "2"
-  },
-  {
-    "Question": "Each problem consists of three statements. Based on the first two statements, the third statement may be true, false, or uncertain. I. Tanya is older than Eric. II. Cliff is older than Tanya. III. Eric is older than Cliff. If the first two statements are true, the third statement is",
-    "Level": "Basic",
-    "Category": "Reasoning",
-    "Options": ["True", "False", "Can't say"],
-    "Answer": "2"
-  },
-  {
-    "Question": "Which number comes next: 3, 7, 15, 31, ?",
-    "Level": "Basic",
-    "Category": "Reasoning",
-    "Options": ["63", "47", "51", "59"],
-    "Answer": "1"
-  },
-  {
-    "Question": "If a clock shows 3:15, what is the angle between the hour and minute hands?",
-    "Level": "Basic",
-    "Category": "Reasoning",
-    "Options": ["7.5 degrees", "67.5 degrees", "97.5 degrees", "82.5 degrees"],
-    "Answer": "2"
-  },
-  {
-    "Question": "Which word does not belong to the group?",
-    "Level": "Basic",
-    "Category": "Reasoning",
-    "Options": ["Cow", "Goat", "Lion", "Horse"],
-    "Answer": "3"
-  },
-  {
-    "Question": "A person walks 5 km north, then 5 km east, and finally 5 km south. Where is the person in relation to the starting point?",
-    "Level": "Basic",
-    "Category": "Reasoning",
-    "Options": ["Northwest", "Southwest", "Southeast", "Northeast"],
+    "Options": ["Triangle", "Square", "Rectangle", "Sphere"],
     "Answer": "4"
-  },
-  {
-    "Question": "If John is taller than Peter and Peter is shorter than Michael, who is the shortest?",
-    "Level": "Basic",
-    "Category": "Reasoning",
-    "Options": ["John", "Peter", "Michael", "Cannot be determined"],
-    "Answer": "2"
-  },
-  {
-    "Question": "Choose the odd one out: 5, 10, 20, 40, 75",
-    "Level": "Basic",
-    "Category": "Reasoning",
-    "Options": ["5", "20", "75", "40"],
-    "Answer": "3"
-  },
-  {
-    "Question": "Complete the series: 3, 6, 11, 18, 27, ?",
-    "Level": "Basic",
-    "Category": "Reasoning",
-    "Options": ["38", "37", "36", "35"],
-    "Answer": "1"
-  },
-  {
-    "Question": "If \"CLOUD\" is written as \"DMPVE\", then how is \"STEAM\" written in the same code?",
-    "Level": "Basic",
-    "Category": "Reasoning",
-    "Options": ["TUFBN", "NBFUT", "NBFTS", "TUFAM"],
-    "Answer": "1"
   },
   {
     "Question": "A company claims its new energy drink improves alertness by 20% based on a study involving 100 participants. However, the study was conducted over a single day and didn't control for other factors like sleep deprivation or caffeine intake. What is the main weakness of this claim?",
@@ -161,18 +98,18 @@
     "Answer": "2"
   },
   {
-    "Question": "Is the value of x greater than the value of y? Statement 1: The sum of x and y is 20. Statement 2: The product of x and y is 96.",
+    "Question": "Is the value of x greater than the value of y? \n Statement 1: The sum of x and y is 20. \n Statement 2: The product of x and y is 96.",
     "Level": "Intermediate",
     "Category": "Reasoning",
     "Options": ["Statement 1 alone is sufficient.", "Statement 2 alone is sufficient.", "Both statements together are sufficient.", "Neither statement alone is sufficient."],
     "Answer": "4"
   },
   {
-    "Question": "What is the value of the positive integer n? Statement 1: The sum of n and its square is 30. Statement 2: The product of n and its cube is 210.",
+    "Question": "What is the value of n? \n Statement 1: The sum of n and its square is 30. \n Statement 2: The product of n and its cube is 210.",
     "Level": "Intermediate",
     "Category": "Reasoning",
     "Options": ["Statement 1 alone is sufficient.", "Statement 2 alone is sufficient.", "Both statements together are sufficient.", "Neither statement alone is sufficient."],
-    "Answer": "2"
+    "Answer": "1"
   },
   {
     "Question": "AE is to FJ as MT is to",
@@ -186,7 +123,7 @@
     "Level": "Intermediate",
     "Category": "Reasoning",
     "Options": ["East", "West", "North", "South"],
-    "Answer": "2"
+    "Answer": "3"
   },
   {
     "Question": "In a race of 5 participants, John finishes before Lisa but after Sarah. Lisa finishes before Emma but after Rachel. Who finishes last?",
@@ -200,7 +137,7 @@
     "Level": "Intermediate",
     "Category": "Reasoning",
     "Options": ["36", "40", "38", "42"],
-    "Answer": "3"
+    "Answer": "2"
   },
   {
     "Question": "If 9th March 2022 was a Wednesday, what day of the week will 9th March 2023 be?",
@@ -210,7 +147,7 @@
     "Answer": "1"
   },
   {
-    "Question": "In a certain code language, if TABLE is written as GZOVI, how is CHAIR written?",
+    "Question": "In a certain code language, if TABLE is written as GZYOV, how is CHAIR written?",
     "Level": "Intermediate",
     "Category": "Reasoning",
     "Options": ["XSRZI", "XSZRI", "XRSZI", "XRZSI"],
@@ -224,25 +161,25 @@
     "Answer": "4"
   },
   {
-    "Question": "Statement: \"No mobile phones are allowed in the examination hall.\" Which situation directly contradicts this rule?",
+    "Question": "Statement: \"No mobile phones are allowed in the examination hall.\" \n Which situation directly contradicts this rule?",
     "Level": "Intermediate",
     "Category": "Reasoning",
     "Options": ["A student keeps their phone in their bag outside the hall", "A student uses a calculator in the hall", "An invigilator carries a phone for emergencies", "A student wears a smartwatch"],
     "Answer": "3"
   },
   {
-    "Question": "Statement 1: All doctors in City X must have a license. Statement 2: Sarah works in City X. Statement 3: Sarah has a license. Can we conclude that Sarah is a doctor?",
+    "Question": "Statement 1: All doctors in City X must have a license. \n Statement 2: Sarah works in City X. \n Statement 3: Sarah has a license. \n Can we conclude that Sarah is a doctor?",
     "Level": "Intermediate",
     "Category": "Reasoning",
     "Options": ["Yes, definitely", "No, definitely not", "Cannot be determined", "Only if Statement 2 is false"],
     "Answer": "3"
   },
   {
-    "Question": "If '×' means '+', '-' means '×', '+' means '÷', and '÷' means '-', then what is the value of 24 - 8 × 6 + 2?",
+    "Question": "If '×' means '+', '-' means '÷', '+' means '-', and '÷' means '×', then what is the value of 16 x 8 - 4 + 2?",
     "Level": "Intermediate",
     "Category": "Reasoning",
-    "Options": ["76", "88", "99", "112"],
-    "Answer": "3"
+    "Options": ["14", "16", "18", "20"],
+    "Answer": "2"
   },
   {
     "Question": "Five friends sit in a row. A sits next to B but not next to C. D sits next to E who sits on the extreme end. C does not sit next to D. Who sits in the middle?",
@@ -252,7 +189,7 @@
     "Answer": "2"
   },
   {
-    "Question": "Statement: Recent studies show increased screen time among teenagers correlates with decreased physical activity. Which of the following best weakens this correlation?",
+    "Question": "Statement: Recent studies show increased screen time among teenagers correlates with decreased physical activity. \n Which of the following best weakens this correlation?",
     "Level": "Intermediate",
     "Category": "Reasoning",
     "Options": ["Teenagers who use fitness apps exercise more", "Adults also show increased screen time", "Physical activity has decreased across all age groups", "Some teenagers use screens while exercising"],
@@ -266,14 +203,14 @@
     "Answer": "1"
   },
   {
-    "Question": "Four cards are placed face down on a table. Each card has a number on one side and a letter on the other. The cards show 4, 7, A, and K. Which cards must be turned over to test the rule: \"If a card has an even number on one side, it must have a vowel on the other side\"?",
+    "Question": "Four cards are placed face down on a table. Each card has a number on one side and a letter on the other. The cards show 4, 7, A, and K. \n Which cards must be turned over to test the rule: \"If a card has an even number on one side, it must have a vowel on the other side\"?",
     "Level": "Intermediate",
     "Category": "Reasoning",
     "Options": ["4 and 7", "4 and A", "4 and K", "7 and A"],
     "Answer": "3"
   },
   {
-    "Question": "Statement 1: x² - y² = 15 Statement 2: x + y = 5 What is the value of x - y?",
+    "Question": "Statement 1: x² - y² = 15 \n Statement 2: x + y = 5 \n What is the value of x - y?",
     "Level": "Intermediate",
     "Category": "Reasoning",
     "Options": ["3", "4", "5", "Cannot be determined"],
@@ -308,7 +245,7 @@
     "Answer": "2"
   },
   {
-    "Question": "If 36 × 48 = 42 48 × 64 = 56 64 × 82 = 72 Then 82 × 98 = ?",
+    "Question": "If 36 × 48 = 42, 48 × 64 = 56, 64 × 82 = 72. Then 82 × 98 = ?",
     "Level": "Intermediate",
     "Category": "Reasoning",
     "Options": ["88", "90", "86", "84"],
@@ -325,8 +262,8 @@
     "Question": "If today is Monday and yesterday was the 3rd of the month, what day of the week will it be on the 24th of the same month?",
     "Level": "Intermediate",
     "Category": "Reasoning",
-    "Options": ["Monday", "Tuesday", "Wednesday", "Thursday"],
-    "Answer": "3"
+    "Options": ["Sunday", "Monday", "Tuesday", "Wednesday"],
+    "Answer": "1"
   },
   {
     "Question": "A clock loses 5 minutes every hour. If it is set correctly at 8:00 AM, what time will it show when the actual time is 8:00 PM?",
@@ -336,7 +273,7 @@
     "Answer": "2"
   },
   {
-    "Question": "In a code language: 'pit na ja' means 'bring me water' 'na ko ta' means 'drink cold water' 'ta ja ki' means 'bring hot drink' Which word in this language means 'cold'?",
+    "Question": "In a code language: 'pit na ja' means 'bring me water' 'na ko ta' means 'drink cold water' 'ta ja ki' means 'bring hot drink' \nWhich word in this language means 'cold'?",
     "Level": "Intermediate",
     "Category": "Reasoning",
     "Options": ["ko", "ta", "ja", "na"],
@@ -367,7 +304,7 @@
     "Question": "In the past, consumers would rarely walk into an ice cream store and order low-fat ice cream. But that isn't the case today. An increasing health consciousness combined with a much bigger selection of tasty low-fat foods in all categories has made low-fat ice cream a very profitable item for ice cream store owners. This paragraph best supports which statement?",
     "Level": "Advanced",
     "Category": "Reasoning",
-    "Options": ["Low-fat ice cream produces more revenue than other low-fat foods.", "Ice cream store owners would be better off carrying only low-fat ice cream.", "Ice cream store owners no longer think that low-fat ice cream is an unpopular item.", "Low-fat ice cream is more popular than other kinds of ice cream.", "Consumers are fickle and it is impossible to please them."],
+    "Options": ["Low-fat ice cream produces more revenue than other low-fat foods.", "Ice cream store owners would be better off carrying only low-fat ice cream.", "Ice cream store owners no longer think that low-fat ice cream is an unpopular item.", "Low-fat ice cream is more popular than other kinds of ice cream."],
     "Answer": "1"
   },
   {
@@ -396,41 +333,34 @@
     "Level": "Advanced",
     "Category": "Reasoning",
     "Options": ["$350,000", "$400,000", "$450,000", "$500,000"],
-    "Answer": "3"
+    "Answer": "2"
   },
   {
     "Question": "If A + B means A is the mother of B; A - B means A is the brother B; A % B means A is the father of B and A x B means A is the sister of B, which of the following shows that P is the maternal uncle of Q?",
     "Level": "Advanced",
     "Category": "Reasoning",
     "Options": ["Q - N + M x P", "P + S x N – Q", "P - M + N x Q", "Q - S % P"],
-    "Answer": "3"
-  },
-  {
-    "Question": "A cube is painted red on all faces. It is then cut into 27 smaller equal cubes. How many small cubes have exactly two faces painted red?",
-    "Level": "Advanced",
-    "Category": "Reasoning",
-    "Options": ["8", "12", "24", "4"],
     "Answer": "2"
   },
   {
-    "Question": "Statement 1: All cats have tails Statement 2: Some animals without tails are cats Statement 3: Some cats are black Which statement(s) must be false if the others are true?",
+    "Question": "Statement 1: All cats have tails. \n Statement 2: Some animals without tails are cats. \n Statement 3: Some cats are black. \n Which statement(s) must be false if the others are true?",
     "Level": "Advanced",
     "Category": "Reasoning",
     "Options": ["Only Statement 1", "Only Statement 2", "Both Statements 1 and 2", "All statements can be true simultaneously"],
     "Answer": "3"
   },
   {
-    "Question": "Statement: 'Only hardworking students get good grades.' Which of the following, if true, would prove this statement false?",
+    "Question": "Statement: 'Only hardworking students get good grades.' \n Which of the following, if true, would prove this statement false?",
     "Level": "Advanced",
     "Category": "Reasoning",
     "Options": ["Some students who get good grades don't study much", "Some hardworking students don't get good grades", "All students who get good grades are intelligent", "No lazy students get good grades"],
     "Answer": "1"
   },
   {
-    "Question": "In a certain code: @ means greater than # means equal to $ means less than % means greater than or equal to & means less than or equal to If A @ B, B # C, and C $ D, which of the following must be true?",
+    "Question": "In a certain code: @ means greater than, # means equal to, $ means less than, % means greater than or equal to, & means less than or equal to. \n If A @ B, B # C, and C $ D, which of the following must be true?",
     "Level": "Advanced",
     "Category": "Reasoning",
     "Options": ["A % D", "A $ D", "A @ D", "Cannot be determined"],
-    "Answer": "1"
+    "Answer": "4"
   }
 ]
