@@ -196,7 +196,7 @@
     "Answer": "4"
   },
   {
-    "Question": "There is a sentence of which some parts have been jumbled up. Rearrange these parts which are labelled P, Q, R and S to produce the correct sentence. Choose the proper sequence.When heP: did not knowQ: he was nervous andR: heard the hue and cry at midnightS: what to do",
+    "Question": "There is a sentence of which some parts have been jumbled up. Rearrange these parts which are labelled P, Q, R and S to produce the correct sentence. Choose the proper sequence.<br>When he<br>P: did not know<br>Q: he was nervous and<br>R: heard the hue and cry at midnight<br>S: what to do",
     "Level": "Basic",
     "Category": "Verbal",
     "Options": ["RQPS", "QSPR", "SQPR", "PQRS"],
