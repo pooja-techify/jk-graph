@@ -350,11 +350,11 @@
     "Answer": "2"
   },
   {
-    "Question": "A square sheet of paper is folded in half to form a rectangle. The perimeter of this rectangle is 50 cm. What is the area of the original square?",
+    "Question": "A square sheet of paper is folded in half to form a rectangle. The perimeter of this rectangle is 48 cm. What is the area of the original square?",
     "Level": "Advanced",
     "Category": "Aptitude",
     "Options": ["225 cm²", "256 cm²", "289 cm²", "324 cm²"],
-    "Answer": "3"
+    "Answer": "2"
   },
   {
     "Question": "A bag contains coins worth Rs. 592 comprising one-rupee, 50-paise, and 25-paise coins in the ratio 3:4:5. Find the number of 25-paise coins.",
