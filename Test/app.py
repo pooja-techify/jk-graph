@@ -636,9 +636,11 @@ def send_verification():
             return jsonify({"error": "No JSON data provided"}), 400
         
         emails = data.get("emails")
+        names = data.get("names")
+        phone_numbers = data.get("phone_numbers")
         
-        for email in emails:
-            send_test(email)
+        for email, name, phone_number in zip(emails, names, phone_numbers):
+            send_test(name, email, phone_number)
 
         print("Verification email/s sent successfully")
 
@@ -648,7 +650,7 @@ def send_verification():
         logger.error(f"Failed to send verification: {str(e)}")
         return jsonify({"error": f"Failed to send verification: {str(e)}"}), 500
 
-def send_test(email):
+def send_test(name, email, phone_number):
     candidate_id = f"{random.randint(0, 999)}{int(datetime.now().timestamp() * 1000)}"
     candidate_url = f"https://stag-onlinetest.techifysolutions.com/?candidate_id={candidate_id}"
     passcode = str(random.randint(100000, 999999))
@@ -671,6 +673,8 @@ def send_test(email):
             CREATE TABLE IF NOT EXISTS registration (
                 candidate_id VARCHAR(50) PRIMARY KEY,
                 email VARCHAR(50),
+                name VARCHAR(50),
+                phone_number VARCHAR(15),
                 passcode VARCHAR(10),
                 test_attempted BOOLEAN DEFAULT FALSE,
                 entry_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -679,10 +683,10 @@ def send_test(email):
         ''')
 
         cursor.execute('''
-            INSERT INTO registration (candidate_id, email, passcode, entry_date)
-            VALUES (%s, %s, %s, CURRENT_TIMESTAMP)
+            INSERT INTO registration (candidate_id, email, name, phone_number, passcode, entry_date)
+            VALUES (%s, %s, %s, %s, %s, CURRENT_TIMESTAMP)
             ON CONFLICT (candidate_id) DO UPDATE SET email = EXCLUDED.email, passcode = EXCLUDED.passcode;
-        ''', (candidate_id, email, passcode))
+        ''', (candidate_id, email, name, phone_number, passcode))
 
         conn.commit()
 
@@ -824,10 +828,12 @@ def fetch_registration():
             registration_data.append({
                 "candidate_id": row[0],
                 "email": row[1],
-                "passcode": row[2],
-                "test_attempted": row[3],
-                "entry_date": row[4],
-                "test_attempted_date": row[5]
+                "name": row[2],
+                "phone_number": row[3],
+                "passcode": row[4],
+                "test_attempted": row[5],
+                "entry_date": row[6],
+                "test_attempted_date": row[7]
             })
 
         print("Registration data fetched successfully")
@@ -838,6 +844,105 @@ def fetch_registration():
         logger.error(f"Error fetching registration data: {str(e)}")
         return jsonify({"error": f"Error fetching registration data: {str(e)}"}), 500
 
+    finally:
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
+
+@app.route('/delete_registration_data', methods=['DELETE'])
+def delete_registration_data():
+    cursor = None
+    conn = None
+    try:
+        data = request.json
+        candidate_ids = data.get("candidate_ids")
+
+        if not candidate_ids or not isinstance(candidate_ids, list):
+            return jsonify({"error": "A list of Candidate IDs is required"}), 400
+
+        conn = psycopg2.connect(
+            dbname='hrtest',
+            user='hruser',
+            password='T@chify$ol8m0s0!',
+            host='localhost',
+            port='5432'
+        )
+
+        cursor = conn.cursor()
+
+        sql_query = '''
+        DELETE FROM registration
+        WHERE candidate_id = ANY(%s);
+        '''
+
+        cursor.execute(sql_query, (candidate_ids,))
+
+        conn.commit()
+        print(f"Registration data for {len(candidate_ids)} candidates deleted successfully.")
+        
+        return jsonify({"message": f"Registration data for {len(candidate_ids)} candidates deleted successfully"}), 200
+
+    except Exception as e:
+        logger.error(f"Error deleting registration data: {e}")
+        return jsonify({"error": str(e)}), 500
+    finally:
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
+
+@app.route('/export_registration_data', methods=['POST'])
+def export_registration_data():
+    cursor = None
+    conn = None
+    try:
+        data = request.json
+        candidate_ids = data.get("candidate_ids")
+
+        if not candidate_ids or not isinstance(candidate_ids, list):
+            return jsonify({"error": "A list of Candidate IDs is required"}), 400
+
+        conn = psycopg2.connect(
+            dbname='hrtest',
+            user='hruser',
+            password='T@chify$ol8m0s0!',
+            host='localhost',
+            port='5432'
+        )
+
+        cursor = conn.cursor()
+
+        sql_query = '''
+        SELECT candidate_id, email, name, phone_number, test_attempted, entry_date
+        FROM registration
+        WHERE candidate_id = ANY(%s);
+        '''
+
+        cursor.execute(sql_query, (candidate_ids,))
+        rows = cursor.fetchall()
+
+        columns = [
+            "candidate_id", "email", "name", "phone_number",
+            "test_attempted", "entry_date"
+        ]
+        data_to_export = [dict(zip(columns, row)) for row in rows]
+
+        for entry in data_to_export:
+            if isinstance(entry['entry_date'], datetime):
+                entry['entry_date'] = entry['entry_date'].replace(tzinfo=None)
+
+        df = pd.DataFrame(data_to_export)
+        excel_file_path = '/tmp/registration_data.xlsx'
+        df.to_excel(excel_file_path, index=False)
+
+        print("Registration data exported successfully")
+
+        return send_file(excel_file_path, as_attachment=True)
+
+    except Exception as e:
+        logger.error(f"Error exporting registration data: {e}")
+        return jsonify({"error": f"Error exporting registration data: {str(e)}"}), 500
     finally:
         if cursor:
             cursor.close()
