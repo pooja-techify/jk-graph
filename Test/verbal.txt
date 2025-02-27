@@ -28,7 +28,7 @@
     "Answer": "4"
   },
   {
-    "Question": "Arrange the given words in a meaningful sequence.<br>1. Seldom 2. Generally 3. Never 4. Sometimes 5. Always",
+    "Question": "Arrange the given words in a meaningful sequence. <br>1. Seldom. <br>2. Generally. <br>3. Never. <br>4. Sometimes. <br>5. Always.",
     "Level": "Basic",
     "Category": "Verbal",
     "Options": ["5, 2, 4, 3, 1", "5, 2, 4, 1, 3", "3, 1, 4, 5, 2", "5, 3, 2, 4, 1"],
@@ -98,49 +98,49 @@
     "Answer": "2"
   },
   {
-    "Question": "Read the question and complete the sentence with proper wordsMahesh need not have purchased the bag, means ________",
+    "Question": "Read the question and complete the sentence with proper words:<br>Mahesh need not have purchased the bag, means ________",
     "Level": "Basic",
     "Category": "Verbal",
     "Options": ["it was not necessary for Mahesh to purchase the bag but he has purchased it", "it was necessary for Mahesh to purchase the bag and he has not purchased it", "it was not necessary for Mahesh to purchase the bag and he has not purchased it", "it was necessary for Mahesh to purchase the bag but he has not purchased it"],
     "Answer": "1"
   },
   {
-    "Question": "Read the following idioms/phrases and choose the option which expresses the meaning of the idiom/phrase: To leave someone in the lurch",
+    "Question": "Read the following idioms/phrases and choose the option which expresses the meaning of the idiom/phrase: <br>To leave someone in the lurch",
     "Level": "Basic",
     "Category": "Verbal",
     "Options": ["To come to compromise with someone", "constant source of annoyance to someone", "To put someone at ease", "None of these"],
     "Answer": "4"
   },
   {
-    "Question": "The words which are bold in the sentence are wrong. Correct the sentences with appropriate phrases accordingly. He suggested that, we should be bound by a code of conduct, **isn't it**?",
+    "Question": "The words which are bold in the sentence are wrong. Correct the sentences with appropriate phrases accordingly. <br>He suggested that, we should be bound by a code of conduct, **isn't it**?",
     "Level": "Basic",
     "Category": "Verbal",
     "Options": ["Shouldn't we", "is it", "aren't we", "None of above"],
     "Answer": "2"
   },
   {
-    "Question": "Complete the sentence with proper words: The train arrived __ the station __ Ajmer in the morning.",
+    "Question": "Complete the sentence with proper words: <br>The train arrived __ the station __ Ajmer in the morning.",
     "Level": "Basic",
     "Category": "Verbal",
     "Options": ["in, in", "on, in", "in, at", "at, in"],
     "Answer": "4"
   },
   {
-    "Question": "Which of the phrases given below should replace the phrase printed in bold type to make it grammatically correct? **You need not come unless you want to**.",
+    "Question": "Which of the phrases given below should replace the phrase printed in bold type to make it grammatically correct? . <br>**You need not come unless you want to**.",
     "Level": "Basic",
     "Category": "Verbal",
     "Options": ["You don't need to come unless you want to.", "You come only when you want to.", "You come unless you don't want to.", "You needn't come until you don't want to."],
     "Answer": "1"
   },
   {
-    "Question": "Which of the phrases given below in the sentence should replace the phrase printed in bold type to make it grammatically correct? They **were all shocked at** his failure in the competition.",
+    "Question": "Which of the phrases given below in the sentence should replace the phrase printed in bold type to make it grammatically correct? . <br>They **were all shocked at** his failure in the competition.",
     "Level": "Basic",
     "Category": "Verbal",
     "Options": ["were shocked at all.", "had all shocked by.", "had been all shocked on.", "No correction required."],
     "Answer": "4"
   },
   {
-    "Question": "A part of the sentence given below is in bold. Following are the given alternatives to that part which may improve the sentence. Choose the correct alternative. Every time, I **go in a lift** to my sixth-floor apartment, I remember the calm and serenity of my ancestral home in the village.",
+    "Question": "A part of the sentence given below is in bold. Following are the given alternatives to that part which may improve the sentence. Choose the correct alternative. . <br>Every time, I **go in a lift** to my sixth-floor apartment, I remember the calm and serenity of my ancestral home in the village.",
     "Level": "Basic",
     "Category": "Verbal",
     "Options": ["move in a lift", "ascend in a lift", "take a lift", "No improvement"],
@@ -168,21 +168,21 @@
     "Answer": "2"
   },
   {
-    "Question": "Arrange the words given below in a meaningful sequence.<br>1. Presentation 2. Recommendation 3. Arrival 4. Discussion 5. Introduction",
+    "Question": "Arrange the words given below in a meaningful sequence. <br>1. Presentation <br>2. Recommendation <br>3. Arrival <br>4. Discussion <br>5. Introduction",
     "Level": "Basic",
     "Category": "Verbal",
     "Options": ["5, 3, 4, 1, 2", "3, 5, 4, 2, 1", "3, 5, 1, 4, 2", "5, 3, 1, 2, 4"],
     "Answer": "3"
   },
   {
-    "Question": "Arrange the following sentences in the correct order.<br>A. I Got an expensive watch<br>B. Who is very loving<br>C. By my grandfather<br>D. On my 22nd birthday",
+    "Question": "Arrange the following sentences in the correct order. <br>A. I Got an expensive watch <br>B. Who is very loving <br>C. By my grandfather <br>D. On my 22nd birthday",
     "Level": "Basic",
     "Category": "Verbal",
     "Options": ["DACB", "ADCB", "ACBD", "BACD"],
     "Answer": "2"
   },
   {
-    "Question": "Fill in the blank in the following sentence by selecting the most appropriate alternative from the given choices. The greater is the size the more does it cost because the price ______ on size.",
+    "Question": "Fill in the blank in the following sentence by selecting the most appropriate alternative from the given choices. <br>The greater is the size the more does it cost because the price ______ on size.",
     "Level": "Basic",
     "Category": "Verbal",
     "Options": ["rests", "counts", "depends", "reckons"],
@@ -196,14 +196,14 @@
     "Answer": "4"
   },
   {
-    "Question": "There is a sentence of which some parts have been jumbled up. Rearrange these parts which are labelled P, Q, R and S to produce the correct sentence. Choose the proper sequence.<br>When he<br>P: did not know<br>Q: he was nervous and<br>R: heard the hue and cry at midnight<br>S: what to do",
+    "Question": "There is a sentence of which some parts have been jumbled up. Rearrange these parts which are labelled P, Q, R and S to produce the correct sentence. Choose the proper sequence. <br>When he <br>P: did not know <br>Q: he was nervous and <br>R: heard the hue and cry at midnight <br>S: what to do",
     "Level": "Basic",
     "Category": "Verbal",
     "Options": ["RQPS", "QSPR", "SQPR", "PQRS"],
     "Answer": "1"
   },
   {
-    "Question": "Arrange the words to form a meaningful sentence:<br>A. the entire night<br>B. the police<br>C. searching for clues<br>D. worked through",
+    "Question": "Arrange the words to form a meaningful sentence: <br>A. the entire night <br>B. the police <br>C. searching for clues <br>D. worked through",
     "Level": "Basic",
     "Category": "Verbal",
     "Options": ["BDAC", "DBAC", "BADC", "BDCA"],
@@ -245,7 +245,7 @@
     "Answer": "2"
   },
   {
-    "Question": "Pointing to a photograph, a man said, 'I have no brother, and that man's father is my father's son.' Whose photograph was it?",
+    "Question": "Pointing to a photograph, a man said, 'I have no brother, and that man's father is my father's son.' <br>Whose photograph was it?",
     "Level": "Intermediate",
     "Category": "Verbal",
     "Options": ["His son", "His own", "His father", "His nephew"],
@@ -266,7 +266,7 @@
     "Answer": "1"
   },
   {
-  "Question": "Which of the phrases given below in the sentence should replace the phrase printed in bold type to make it grammatically correct? **Despite their** differences on matters of principles, they all agree on the demand for a hike in the salary?",
+  "Question": "Which of the phrases given below in the sentence should replace the phrase printed in bold type to make it grammatically correct? <br>**Despite their** differences on matters of principles, they all agree on the demand for a hike in the salary?",
   "Level": "Intermediate",
   "Category": "Verbal",
   "Options": ["Despite of the", "Despite for their", "Despite off their", "No correction required"],
@@ -294,14 +294,14 @@
   "Answer": "1"
   },
   {
-  "Question": "Read the question and complete the sentence with proper wordsAlthough alarmed by the __________, professor Symes had no reason to doubt the ________ of his student's results, for his student was nothing if not reliable",
+  "Question": "Read the question and complete the sentence with proper words. <br>Although alarmed by the __________, professor Symes had no reason to doubt the ________ of his student's results, for his student was nothing if not reliable",
   "Level": "Intermediate",
   "Category": "Verbal",
   "Options": ["Errors-Truth", "Implications-veracity", "Conclusions-Folly", "Deductions-impudence"],
   "Answer": "2"
   },
   {
-  "Question": "Read the Questions and Complete the statement with proper wordsArchaeology is a poor profession; only ____ sums are available for excavating sites and even more ____ amounts for preserving the excavations.",
+  "Question": "Read the question and complete the statement with proper words: <br>Archaeology is a poor profession; only ____ sums are available for excavating sites and even more ____ amounts for preserving the excavations.",
   "Level": "Intermediate",
   "Category": "Verbal",
   "Options": ["paltry-meager", "miniscule-substantial", "average-augmented", "judicious-penurious"],
@@ -322,7 +322,7 @@
   "Answer": "2"
   },
   {
-  "Question": "Pointing to an image Madhu tells Sohan, \"I am the only daughter of this lady, and her son is your maternal uncle.\" How is the Madhu related to Sohan's father?",
+  "Question": "Pointing to an image Madhu tells Sohan, 'I am the only daughter of this lady, and her son is your maternal uncle.' <br>How is the Madhu related to Sohan's father?",
   "Level": "Intermediate",
   "Category": "Verbal",
   "Options": ["Sister-in-law", "Wife", "Sister", "None of the above."],

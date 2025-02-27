@@ -186,7 +186,7 @@
     "Level": "Intermediate",
     "Category": "Aptitude",
     "Options": ["12 km", "14 km", "16 km", "18 km"],
-    "Answer": "2"
+    "Answer": "1"
   },
   {
     "Question": "The sum of three consecutive integers is 72. What is the smallest integer?",
@@ -277,7 +277,7 @@
     "Level": "Advanced",
     "Category": "Aptitude",
     "Options": ["18 hrs", "12 hrs", "15 hrs", "10 hrs"],
-    "Answer": "3"
+    "Answer": "1"
   },
   {
     "Question": "If the compound interest on Rs. 10,000 in 2 years at 10% per annum is Rs. 2,100, what is the principal amount for the second year?",

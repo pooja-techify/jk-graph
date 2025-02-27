@@ -7,7 +7,7 @@
     "Answer": "2"
   },
   {
-    "Question": "Each problem consists of three statements. Based on the first two statements, the third statement may be true, false, or uncertain.  <br>I. Tanya is older than Eric.  <br>II. Cliff is older than Tanya.  <br>III. Eric is older than Cliff.  <br>If the first two statements are true, the third statement is",
+    "Question": "Each problem consists of three statements. Based on the first two statements, the third statement may be true, false, or uncertain.  <br>  I. Tanya is older than Eric.  <br>  II. Cliff is older than Tanya.  <br>  III. Eric is older than Cliff.  <br>If the first two statements are true, the third statement is",
     "Level": "Basic",
     "Category": "Reasoning",
     "Options": ["True", "False", "Can't say"],
@@ -161,7 +161,7 @@
     "Answer": "4"
   },
   {
-    "Question": "Statement: \"No mobile phones are allowed in the examination hall.\" <br>Which situation directly contradicts this rule?",
+    "Question": "Statement: No mobile phones are allowed in the examination hall. <br>Which situation directly contradicts this rule?",
     "Level": "Intermediate",
     "Category": "Reasoning",
     "Options": ["A student keeps their phone in their bag outside the hall", "A student uses a calculator in the hall", "An invigilator carries a phone for emergencies", "A student wears a smartwatch"],
@@ -210,7 +210,7 @@
     "Answer": "3"
   },
   {
-    "Question": "Statement 1: x² - y² = 15  Statement 2: x + y = 5  What is the value of x - y?",
+    "Question": "Statement 1: x² - y² = 15  <br>Statement 2: x + y = 5  <br>What is the value of x - y?",
     "Level": "Intermediate",
     "Category": "Reasoning",
     "Options": ["3", "4", "5", "Cannot be determined"],
@@ -224,7 +224,7 @@
     "Answer": "1"
   },
   {
-    "Question": "In a group of 5 friends: - A is taller than B - C is shorter than D - E is taller than A - B is taller than C Who is the shortest?",
+    "Question": "In a group of 5 friends: <br>- A is taller than B <br>- C is shorter than D <br>- E is taller than A <br>- B is taller than C <br>Who is the shortest?",
     "Level": "Intermediate",
     "Category": "Reasoning",
     "Options": ["A", "B", "C", "Cannot be determined"],
@@ -238,7 +238,7 @@
     "Answer": "1"
   },
   {
-    "Question": "In a certain code language: 'pik tik rik' means 'fast red car' 'rik mik lik' means 'car is beautiful' 'lik pik sim' means 'beautiful fast horse' What does 'rik' mean in that language?",
+    "Question": "In a certain code language: <br>'pik tik rik' means 'fast red car' <br>'rik mik lik' means 'car is beautiful' <br>'lik pik sim' means 'beautiful fast horse' <br>What does 'rik' mean in that language?",
     "Level": "Intermediate",
     "Category": "Reasoning",
     "Options": ["fast", "car", "beautiful", "red"],
@@ -273,7 +273,7 @@
     "Answer": "2"
   },
   {
-    "Question": "In a code language: 'pit na ja' means 'bring me water' 'na ko ta' means 'drink cold water' 'ta ja ki' means 'bring hot drink' Which word in this language means 'cold'?",
+    "Question": "In a code language: <br>'pit na ja' means 'bring me water' <br>'na ko ta' means 'drink cold water' <br>'ta ja ki' means 'bring hot drink' <br>Which word in this language means 'cold'?",
     "Level": "Intermediate",
     "Category": "Reasoning",
     "Options": ["ko", "ta", "ja", "na"],
@@ -308,7 +308,7 @@
     "Answer": "1"
   },
   {
-    "Question": "Introducing a boy, a girl said, 'He is the son of the daughter of the father of my uncle.' How is the boy related to the girl?",
+    "Question": "Introducing a boy, a girl said, 'He is the son of the daughter of the father of my uncle.' <br>How is the boy related to the girl?",
     "Level": "Advanced",
     "Category": "Reasoning",
     "Options": ["Brother", "Nephew", "Uncle", "Grandfather"],
@@ -329,7 +329,7 @@
     "Answer": "4"
   },
   {
-    "Question": "A company distributed its profits among three departments - Sales, Marketing, and Research & Development (R&D). The total profit for the year was $1,000,000. The profit distribution was as follows: Sales received 40% of the total profit. Marketing received $150,000 more than R&D. R&D received 25% of the total profit. What was the profit received by the Marketing department?",
+    "Question": "A company distributed its profits among three departments - Sales, Marketing, and Research & Development (R&D). The total profit for the year was $1,000,000. <br>The profit distribution was as follows: <br>  Sales received 40% of the total profit. <br>  Marketing received $150,000 more than R&D. <br>  R&D received 25% of the total profit. <br>What was the profit received by the Marketing department?",
     "Level": "Advanced",
     "Category": "Reasoning",
     "Options": ["$350,000", "$400,000", "$450,000", "$500,000"],
@@ -350,7 +350,7 @@
     "Answer": "3"
   },
   {
-    "Question": "Statement: 'Only hardworking students get good grades.' <br>Which of the following, if true, would prove this statement false?",
+    "Question": "Statement: Only hardworking students get good grades. <br>Which of the following, if true, would prove this statement false?",
     "Level": "Advanced",
     "Category": "Reasoning",
     "Options": ["Some students who get good grades don't study much", "Some hardworking students don't get good grades", "All students who get good grades are intelligent", "No lazy students get good grades"],
