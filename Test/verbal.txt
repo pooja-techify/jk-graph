@@ -245,7 +245,7 @@
     "Answer": "2"
   },
   {
-    "Question": "Pointing to a photograph, a man said, 'I have no brother, and that man's father is my father's son.' <br>Whose photograph was it?",
+    "Question": "Pointing to a photograph, a man said, 'I have no brother, and that man's father is my father's son.' Whose photograph was it?",
     "Level": "Intermediate",
     "Category": "Verbal",
     "Options": ["His son", "His own", "His father", "His nephew"],
@@ -322,7 +322,7 @@
   "Answer": "2"
   },
   {
-  "Question": "Pointing to an image Madhu tells Sohan, 'I am the only daughter of this lady, and her son is your maternal uncle.' <br>How is the Madhu related to Sohan's father?",
+  "Question": "Pointing to an image Madhu tells Sohan, 'I am the only daughter of this lady, and her son is your maternal uncle.' How is the Madhu related to Sohan's father?",
   "Level": "Intermediate",
   "Category": "Verbal",
   "Options": ["Sister-in-law", "Wife", "Sister", "None of the above."],
