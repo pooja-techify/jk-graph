@@ -19,6 +19,7 @@ from pypdf import PdfWriter
 import fitz  # PyMuPDF
 from PIL import Image
 from io import BytesIO
+from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
 CORS(app, resources={r"/*": {
@@ -210,7 +211,22 @@ def get_reasoning_questions():
         logger.error(f"Error while getting reasoning questions: {e}")
         return jsonify({"error while getting reasoning questions": str(e)}), 500
     
+@app.route('/get_sjt_questions', methods=['GET'])
+def get_sjt_questions():
+    try:
+        with open('sjt_questions.json', 'r') as f:
+            data = json.load(f)
 
+        json_data = json.dumps(data)
+
+        encoded_data = base64.b64encode(json_data.encode('utf-8')).decode('utf-8')
+        
+        return jsonify({"encoded": encoded_data})
+    
+    except Exception as e:
+        logger.error(f"Error while getting SJT questions: {e}")
+        return jsonify({"error while getting SJT questions": str(e)}), 500          
+            
 def send_email(subject, body, to_recipients, cc_recipients, attachment_path=None):
     try:
         msg = MIMEMultipart()
@@ -974,6 +990,44 @@ def compress_pdf(input_path, output_path):
     except Exception as e:
         logger.error(f"Error compressing PDF: {e}")
         raise
+
+@app.route('/upload_excel', methods=['POST'])
+def upload_excel():
+    try:
+        if 'file' not in request.files:
+            return jsonify({"error": "No file part"}), 400
+
+        file = request.files['file']
+
+        if file.filename == '':
+            return jsonify({"error": "No selected file"}), 400
+
+        if file:
+            filename = secure_filename(file.filename)
+            file_path = os.path.join('/tmp', filename)
+            file.save(file_path)
+
+            # Read the Excel file
+            df = pd.read_excel(file_path)
+
+            # Check if required columns are present
+            if not {'Name', 'Email', 'Phone_Number'}.issubset(df.columns):
+                return jsonify({"error": "Excel file must contain 'Name', 'Email', and 'Phone_Number' columns"}), 400
+
+            # Iterate over each row and call send_test
+            for _, row in df.iterrows():
+                name = row['Name']
+                email = row['Email']
+                phone_number = row['Phone_Number']
+                send_test(name, email, phone_number)
+
+            print("Verification emails sent successfully from Excel upload")
+
+            return jsonify({"message": "Verification emails sent successfully"}), 200
+
+    except Exception as e:
+        logger.error(f"Error processing Excel file: {str(e)}")
+        return jsonify({"error": f"Error processing Excel file: {str(e)}"}), 500
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=5001, debug=True)
