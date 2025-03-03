@@ -217,7 +217,9 @@ def get_sjt_questions():
         with open('sjt_questions.json', 'r') as f:
             data = json.load(f)
 
-        json_data = json.dumps(data)
+        questions_and_options = [{"question": item["question"], "options": item["options"]} for item in data]
+
+        json_data = json.dumps(questions_and_options)
 
         encoded_data = base64.b64encode(json_data.encode('utf-8')).decode('utf-8')
         
@@ -1273,20 +1275,24 @@ def start_sjt_test():
         if conn:
             conn.close()
 
-# @app.route('/submit_sjt_test', methods=['POST'])
-# def submit_sjt_test():
-#     try:
-#         candidate_id = request.form.get('candidate_id')
-#         first_name = request.form.get('first_name')
-#         last_name = request.form.get('last_name')
-#         email = request.form.get('email')
-#         phone_number = request.form.get('phone_number')
-#         location = request.form.get('location')
-#         time_taken = request.form.get('time_taken')
-#         result_file = request.files.get('result_file')
+@app.route('/submit_sjt_test', methods=['POST'])
+def submit_sjt_test():
+    try:
+        data = request.json
+        if not data:
+            return jsonify({"error": "No JSON data provided"}), 400
+        
+        candidate_id = data.get('candidate_id')
+        first_name = data.get('first_name')
+        last_name = data.get('last_name')
+        email = data.get('email')
+        phone_number = data.get('phone_number')
+        location = data.get('location')
+        time_taken = data.get('time_taken')
+        result_file = data.get('result_file')
 
-#         if file.filename == '':
-#             return jsonify({'error': 'No selected file'}), 400
+        if not result_file:
+            return jsonify({"error": "No result_file data provided"}), 400
 
 #         if file:
 #             # Save the uploaded file to a temporary path
@@ -1370,11 +1376,11 @@ def start_sjt_test():
 
 #             return jsonify({"message": "SJT Test submitted successfully"}), 200
 
-#     except Exception as e:
-#         logger.error(f"Error in submit_sjt_test: {e}")
-#         return jsonify({"error": str(e)}), 500
+    except Exception as e:
+        logger.error(f"Error in submit_sjt_test: {e}")
+        return jsonify({"error": str(e)}), 500
 
-#     return jsonify({"error": "Unexpected error occurred"}), 500
+    return jsonify({"error": "Unexpected error occurred"}), 500
 
 @app.route('/submit_sjt_feedback', methods=['POST'])
 def submit_sjt_feedback():
