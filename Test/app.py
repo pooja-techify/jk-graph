@@ -20,6 +20,8 @@ import fitz  # PyMuPDF
 from PIL import Image
 from io import BytesIO
 from werkzeug.utils import secure_filename
+from reportlab.lib.pagesizes import letter
+from reportlab.pdfgen import canvas
 
 app = Flask(__name__)
 CORS(app, resources={r"/*": {
@@ -1293,88 +1295,89 @@ def submit_sjt_test():
 
         if not result_file:
             return jsonify({"error": "No result_file data provided"}), 400
-
-#         if file:
-#             # Save the uploaded file to a temporary path
-#             report_path = os.path.join('/tmp', file.filename)
-#             file.save(report_path)
-
-#             # Compress the PDF
-#             compressed_report_path = os.path.join('/tmp', f"{file.filename}")
-#             compress_pdf(report_path, compressed_report_path)
-
-#             # Upload the compressed PDF to S3
-#             s3_client = boto3.client('s3')
-#             s3_bucket = 'onlinetest-stag-documents'
-#             s3_key = f'sjt_reports/{candidate_id}'
-#             report_s3_url = f'https://{s3_bucket}.s3.us-east-1.amazonaws.com/{s3_key}'
-
-#             try:
-#                 s3_client.upload_file(
-#                     compressed_report_path, s3_bucket, s3_key,
-#                     ExtraArgs={
-#                         "ContentDisposition": "inline",
-#                         "ContentType": "application/pdf",
-#                         "ACL": "public-read"
-#                     }
-#                 )
-
-#                 s3_client.put_object_acl(Bucket=s3_bucket, Key=s3_key, ACL='public-read')
-#             except Exception as e:
-#                 logger.error(f"Error uploading SJT report to S3: {e}")
-#                 return jsonify({"error": "Failed to upload SJT report to S3"}), 500
-#             print("SJT Report uploaded to S3 successfully")
-            
-#             try:
-#                 latitude, longitude = location.split(",")
-#                 location = get_address_from_coordinates_nominatim(latitude, longitude)
-#             except Exception as e:
-#                 logger.error(f"Error getting address from coordinates: {e}")
-#                 return jsonify({"error": "Failed to get address from coordinates"}), 500
-#             print("Address fetched successfully")
-
-#             try:
-#                 store_sjt_data(candidate_id, first_name, last_name, email, phone_number, location, score, time_taken, report_s3_url)
-#             except Exception as e:
-#                 logger.error(f"Error storing SJT user data: {e}")
-#                 return jsonify({"error": "Failed to store SJT user data"}), 500
-#             print("SJT User data stored successfully")
-
-#             try:
-#                 to_emails = ['firefans121@gmail.com']
-#                 cc_emails = ['pooja.shah@techifysolutions.com']
-#                 # hr@techifysolutions.com
-#                 # , 'jobs@techifysolutions.com', 'zankhan.kukadiya@techifysolutions.com'
-#                 subject = f'Test Report {first_name} {last_name}'
-#                 body = f"""
-#                 Please find the attached psychometric test report.<br><br>
-#                 Candidate ID: {candidate_id}<br>
-#                 First Name: {first_name}<br>
-#                 Last Name: {last_name}<br>
-#                 Score: {score}<br><br>
-#                 """
-#                 send_email(subject, body, to_emails, cc_emails, attachment_path=compressed_report_path)
-#             except Exception as e:
-#                 logger.error(f"Error sending SJT report email: {e}")
-#                 return jsonify({"error": "Failed to send SJT report email"}), 500
-#             print("SJT Report sent successfully")
         
-#             try:
-#                 to_email = email
-#                 subject = "Test Submitted Successfully"
-#                 body = f"""
-#                 Your psychometric test has been submitted successfully. Someone from our side will get back to you soon. Thank you for your time and effort.<br><br>
-#                 Talent Acquisition Team<br>
-#                 Email: hr@techifysolutions.com<br>
-#                 Mobile: +917862063131<br><br>
-#                 """
-#                 send_email(subject, body, [to_email], [])
-#             except Exception as e:
-#                 logger.error(f"Error sending SJT submission confirmation mail: {e}")
-#                 return jsonify({"error": "Failed to send SJT submission confirmation mail"}), 500
-#             print("SJT Submission confirmation mail sent successfully")
+        file = generate_report(result_file)
 
-#             return jsonify({"message": "SJT Test submitted successfully"}), 200
+        if file:
+            # Save the uploaded file to a temporary path
+            report_path = os.path.join('/tmp', file.filename)
+            file.save(report_path)
+
+            # Compress the PDF
+            compressed_report_path = os.path.join('/tmp', f"{file.filename}")
+            compress_pdf(report_path, compressed_report_path)
+
+            # Upload the compressed PDF to S3
+            s3_client = boto3.client('s3')
+            s3_bucket = 'onlinetest-stag-documents'
+            s3_key = f'sjt_reports/{candidate_id}'
+            report_s3_url = f'https://{s3_bucket}.s3.us-east-1.amazonaws.com/{s3_key}'
+
+            try:
+                s3_client.upload_file(
+                    compressed_report_path, s3_bucket, s3_key,
+                    ExtraArgs={
+                        "ContentDisposition": "inline",
+                        "ContentType": "application/pdf",
+                        "ACL": "public-read"
+                    }
+                )
+
+                s3_client.put_object_acl(Bucket=s3_bucket, Key=s3_key, ACL='public-read')
+            except Exception as e:
+                logger.error(f"Error uploading SJT report to S3: {e}")
+                return jsonify({"error": "Failed to upload SJT report to S3"}), 500
+            print("SJT Report uploaded to S3 successfully")
+            
+            try:
+                latitude, longitude = location.split(",")
+                location = get_address_from_coordinates_nominatim(latitude, longitude)
+            except Exception as e:
+                logger.error(f"Error getting address from coordinates: {e}")
+                return jsonify({"error": "Failed to get address from coordinates"}), 500
+            print("Address fetched successfully")
+
+            try:
+                store_sjt_data(candidate_id, first_name, last_name, email, phone_number, location, time_taken, report_s3_url)
+            except Exception as e:
+                logger.error(f"Error storing SJT user data: {e}")
+                return jsonify({"error": "Failed to store SJT user data"}), 500
+            print("SJT User data stored successfully")
+
+            try:
+                to_emails = ['firefans121@gmail.com']
+                cc_emails = ['pooja.shah@techifysolutions.com']
+                # hr@techifysolutions.com
+                # , 'jobs@techifysolutions.com', 'zankhan.kukadiya@techifysolutions.com'
+                subject = f'Test Report {first_name} {last_name}'
+                body = f"""
+                Please find the attached psychometric test report.<br><br>
+                Candidate ID: {candidate_id}<br>
+                First Name: {first_name}<br>
+                Last Name: {last_name}<br>
+                """
+                send_email(subject, body, to_emails, cc_emails, attachment_path=compressed_report_path)
+            except Exception as e:
+                logger.error(f"Error sending SJT report email: {e}")
+                return jsonify({"error": "Failed to send SJT report email"}), 500
+            print("SJT Report sent successfully")
+        
+            try:
+                to_email = email
+                subject = "Test Submitted Successfully"
+                body = f"""
+                Your psychometric test has been submitted successfully. Someone from our side will get back to you soon. Thank you for your time and effort.<br><br>
+                Talent Acquisition Team<br>
+                Email: hr@techifysolutions.com<br>
+                Mobile: +917862063131<br><br>
+                """
+                send_email(subject, body, [to_email], [])
+            except Exception as e:
+                logger.error(f"Error sending SJT submission confirmation mail: {e}")
+                return jsonify({"error": "Failed to send SJT submission confirmation mail"}), 500
+            print("SJT Submission confirmation mail sent successfully")
+
+            return jsonify({"message": "SJT Test submitted successfully"}), 200
 
     except Exception as e:
         logger.error(f"Error in submit_sjt_test: {e}")
@@ -1426,6 +1429,28 @@ def submit_sjt_feedback():
             cursor.close()
         if conn:
             conn.close()
+
+def generate_report(result_file):
+    try:
+        data = json.loads(result_file)
+
+        pdf_path = os.path.join('/tmp', 'result_report.pdf')
+        c = canvas.Canvas(pdf_path, pagesize=letter)
+
+        text = c.beginText(100, letter[1] - 50)  # Start text 50 units from the top
+        text.setFont("Helvetica", 12)  # Set font to Helvetica, size 12
+
+        for key, value in data.items():
+            text.textLine(f"{key}: {value}")
+
+        c.drawText(text)
+        c.save()
+
+        return pdf_path
+    
+    except Exception as e:
+        logger.error(f"Error generating report: {e}")
+        return jsonify({"error": f"Error generating report: {str(e)}"}), 500
 
 def store_sjt_data(candidate_id, first_name, last_name, email, phone_number, location, score, time_taken, report_s3_url):
     cursor = None
