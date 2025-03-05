@@ -1352,17 +1352,8 @@ def submit_sjt_test():
         if not result_file:
             return jsonify({"error": "No result_file data provided"}), 400
         
-        file = generate_report(result_file)
-
-        if isinstance(file, tuple):
-            return jsonify({"error": "Error generating report"}), 500  # Handle the error case
-
-        report_path = os.path.join('/tmp', f"{candidate_id}.pdf")
-
-        with open(report_path, 'wb') as f:
-            f.write(file.read())
-            compressed_report_path = os.path.join('/tmp', f"{candidate_id}.pdf")
-            compress_pdf(report_path, compressed_report_path)
+        else:
+            compressed_report_path = generate_report(result_file)
 
             # Upload the compressed PDF to S3
             s3_client = boto3.client('s3')
@@ -1490,19 +1481,22 @@ def generate_report(result_file):
     try:
         data = json.loads(result_file)
 
-        pdf_path = os.path.join('/tmp', 'result_report.pdf')
+        # Create a PDF from the JSON data
+        pdf_path = '/tmp/report.pdf'
         c = canvas.Canvas(pdf_path, pagesize=letter)
-
-        text = c.beginText(100, letter[1] - 50)  # Start text 50 units from the top
-        text.setFont("Helvetica", 12)  # Set font to Helvetica, size 12
-
-        for key, value in data.items():
-            text.textLine(f"{key}: {value}")
-
-        c.drawText(text)
+        width, height = letter
+        
+        # Add content to the PDF
+        for index, item in enumerate(data):
+            c.drawString(100, height - 100 - (index * 20), f"Item {index + 1}: {item}")
+        
         c.save()
 
-        return open(pdf_path, 'rb')  # Return a file-like object
+        # Compress the PDF
+        compressed_report_path = '/tmp/compressed_report.pdf'
+        compress_pdf(pdf_path, compressed_report_path)
+
+        return compressed_report_path  # Return the path of the compressed PDF
 
     except Exception as e:
         logger.error(f"Error generating report: {e}")
