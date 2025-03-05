@@ -1354,10 +1354,13 @@ def submit_sjt_test():
         
         file = generate_report(result_file)
 
-        if file:
-            report_path = os.path.join('/tmp', f"{candidate_id}.pdf")
-            file.save(report_path)
+        if isinstance(file, tuple):
+            return jsonify({"error": "Error generating report"}), 500  # Handle the error case
 
+        report_path = os.path.join('/tmp', f"{candidate_id}.pdf")
+        
+        with open(report_path, 'wb') as f:
+            f.write(file.read())
             # Compress the PDF
             compressed_report_path = os.path.join('/tmp', f"{candidate_id}.pdf")
             compress_pdf(report_path, compressed_report_path)
@@ -1776,6 +1779,150 @@ def compress_pdf(input_path, output_path):
     except Exception as e:
         logger.error(f"Error compressing PDF: {e}")
         raise
+
+@app.route('/fetch_sjt_registration', methods=['GET'])
+def fetch_sjt_registration():
+    cursor = None
+    conn = None
+    try:
+        conn = psycopg2.connect(
+            dbname='hrtest',
+            user='hruser',
+            password='T@chify$ol8m0s0!',
+            host='localhost',
+            port='5432'
+        )
+
+        cursor = conn.cursor()
+
+        cursor.execute('SELECT * FROM sjt_registration ORDER BY entry_date DESC')
+        rows = cursor.fetchall()
+
+        sjt_registration_data = []
+        for row in rows:
+            sjt_registration_data.append({
+                "candidate_id": row[0],
+                "email": row[1],
+                "name": row[2],
+                "phone_number": row[3],
+                "passcode": row[4],
+                "test_attempted": row[5],
+                "entry_date": row[6],
+                "test_attempted_date": row[7]
+            })
+
+        print("SJT Registration data fetched successfully")
+
+        return jsonify(sjt_registration_data), 200
+
+    except Exception as e:
+        logger.error(f"Error fetching SJT registration data: {str(e)}")
+        return jsonify({"error": f"Error fetching SJT registration data: {str(e)}"}), 500
+
+    finally:
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
+
+@app.route('/delete_sjt_registration_data', methods=['DELETE'])
+def delete_sjt_registration_data():
+    cursor = None
+    conn = None
+    try:
+        data = request.json
+        candidate_ids = data.get("candidate_ids")
+
+        if not candidate_ids or not isinstance(candidate_ids, list):
+            return jsonify({"error": "A list of Candidate IDs is required"}), 400
+
+        conn = psycopg2.connect(
+            dbname='hrtest',
+            user='hruser',
+            password='T@chify$ol8m0s0!',
+            host='localhost',
+            port='5432'
+        )
+
+        cursor = conn.cursor()
+
+        sql_query = '''
+        DELETE FROM sjt_registration
+        WHERE candidate_id = ANY(%s);
+        '''
+
+        cursor.execute(sql_query, (candidate_ids,))
+
+        conn.commit()
+        print(f"SJT registration data for {len(candidate_ids)} candidates deleted successfully.")
+        
+        return jsonify({"message": f"SJT registration data for {len(candidate_ids)} candidates deleted successfully"}), 200
+
+    except Exception as e:
+        logger.error(f"Error deleting SJT registration data: {e}")
+        return jsonify({"error": str(e)}), 500
+    finally:
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
+
+@app.route('/export_sjt_registration_data', methods=['POST'])
+def export_sjt_registration_data():
+    cursor = None
+    conn = None
+    try:
+        data = request.json
+        candidate_ids = data.get("candidate_ids")
+
+        if not candidate_ids or not isinstance(candidate_ids, list):
+            return jsonify({"error": "A list of Candidate IDs is required"}), 400
+
+        conn = psycopg2.connect(
+            dbname='hrtest',
+            user='hruser',
+            password='T@chify$ol8m0s0!',
+            host='localhost',
+            port='5432'
+        )
+
+        cursor = conn.cursor()
+
+        sql_query = '''
+        SELECT candidate_id, email, name, phone_number, test_attempted, entry_date
+        FROM sjt_registration
+        WHERE candidate_id = ANY(%s);
+        '''
+
+        cursor.execute(sql_query, (candidate_ids,))
+        rows = cursor.fetchall()
+
+        columns = [
+            "candidate_id", "email", "name", "phone_number",
+            "test_attempted", "entry_date"
+        ]
+        data_to_export = [dict(zip(columns, row)) for row in rows]
+
+        for entry in data_to_export:
+            if isinstance(entry['entry_date'], datetime):
+                entry['entry_date'] = entry['entry_date'].replace(tzinfo=None)
+
+        df = pd.DataFrame(data_to_export)
+        excel_file_path = '/tmp/sjt_registration_data.xlsx'
+        df.to_excel(excel_file_path, index=False)
+
+        print("SJT registration data exported successfully")
+
+        return send_file(excel_file_path, as_attachment=True)
+
+    except Exception as e:
+        logger.error(f"Error exporting SJT registration data: {e}")
+        return jsonify({"error": f"Error exporting SJT registration data: {str(e)}"}), 500
+    finally:
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
 
 @app.route('/health', methods=['GET'])
 def health_check():
