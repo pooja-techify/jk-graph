@@ -1355,6 +1355,8 @@ def submit_sjt_test():
         else:
             compressed_report_path = generate_report(result_file)
 
+            print(f"Compressed report path: {compressed_report_path}, Type: {type(compressed_report_path)}")
+
             if not compressed_report_path.endswith('.pdf'):
                 return jsonify({"error": "Uploaded file is not a PDF"}), 400
             
@@ -1503,6 +1505,12 @@ def generate_report(result_file):
         # Compress the PDF
         compressed_report_path = '/tmp/compressed_report.pdf'
         compress_pdf(pdf_path, compressed_report_path)
+
+        print(compressed_report_path)
+
+        if isinstance(compressed_report_path, tuple):
+            print("Tuple")
+            compressed_report_path = compressed_report_path[0]
 
         return compressed_report_path  # Return the path of the compressed PDF
 
