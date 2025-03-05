@@ -1358,10 +1358,9 @@ def submit_sjt_test():
             return jsonify({"error": "Error generating report"}), 500  # Handle the error case
 
         report_path = os.path.join('/tmp', f"{candidate_id}.pdf")
-        
+
         with open(report_path, 'wb') as f:
             f.write(file.read())
-            # Compress the PDF
             compressed_report_path = os.path.join('/tmp', f"{candidate_id}.pdf")
             compress_pdf(report_path, compressed_report_path)
 
