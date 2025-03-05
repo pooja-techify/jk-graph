@@ -291,7 +291,7 @@ def send_verification():
 
 def send_test(name, email, phone_number):
     candidate_id = f"{random.randint(0, 999)}{int(datetime.now().timestamp() * 1000)}"
-    candidate_url = f"https://stag-onlinetest.techifysolutions.com/?candidate_id={candidate_id}"
+    candidate_url = f"https://stag-onlinetest.techifysolutions.com//#?candidate_id={candidate_id}"
     passcode = str(random.randint(100000, 999999))
     
     cursor = None
@@ -330,7 +330,7 @@ def send_test(name, email, phone_number):
         conn.commit()
 
         body = f"""
-            Dear Candidate,<br><br>
+            Dear {name},<br><br>
             Greetings!!<br><br>
             Techify's DNA is about Solutions & Technologies. We believe that "Every problem has a solution".<br><br>
             To take your first step to be part of our amazing team, you are invited to appear in a test for your candidature.<br><br>
@@ -400,6 +400,62 @@ def verify_passcode():
         logger.error(f"Error verifying passcode: {str(e)}")
         return jsonify({"error": f"Error verifying passcode: {str(e)}"}), 500
     
+    finally:
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
+
+@app.route('/get_mail', methods=['POST'])
+def get_mail():
+    data = request.json
+    candidate_id = data.get("candidate_id")
+    is_sjt = data.get("is_sjt") #Boolean true or false
+
+    if not candidate_id:
+        return jsonify({"error": "Candidate ID is required"}), 400
+
+    cursor = None
+    conn = None
+    try:
+        conn = psycopg2.connect(
+            dbname='hrtest',
+            user='hruser',
+            password='T@chify$ol8m0s0!',
+            host='localhost',
+            port='5432'
+        )
+
+        cursor = conn.cursor()
+
+        if is_sjt:
+            cursor.execute('''
+                SELECT email FROM sjt_registration WHERE candidate_id = %s;
+            ''', (candidate_id,))
+            result = cursor.fetchone()
+
+            if result:
+                email = result[0]
+                return jsonify({"email": email}), 200
+            else:
+                return jsonify({"error": "Candidate ID not found"}), 404
+
+        else:
+            cursor.execute('''
+                SELECT email FROM registration WHERE candidate_id = %s;
+            ''', (candidate_id,))
+            result = cursor.fetchone()
+
+            if result:
+                email = result[0]
+                return jsonify({"email": email}), 200
+            else:
+                return jsonify({"error": "Candidate ID not found"}), 404
+
+    except Exception as e:
+        logger.error(f"Error fetching email: {str(e)}")
+        return jsonify({"error": f"Error fetching email: {str(e)}"}), 500
+
     finally:
         if cursor:
             cursor.close()
@@ -1070,7 +1126,7 @@ def send_sjt_new_test(name, email, phone_number):
         conn.commit()
 
         body = f"""
-            Dear Candidate,<br><br>
+            Dear {name},<br><br>
             Greetings!!<br><br>
             Techify's DNA is about Solutions & Technologies. We believe that "Every problem has a solution".<br><br>
             We are pleased with your candidature and want to invite you to appear in a psychometric test for a detailed review.<br><br>
@@ -1124,7 +1180,7 @@ def send_sjt_verification():
 
 def send_sjt_test(name, email, phone_number, candidate_id):
     # candidate_id = f"{random.randint(0, 999)}{int(datetime.now().timestamp() * 1000)}"
-    candidate_url = f"https://stag-onlinetest.techifysolutions.com/?candidate_id={candidate_id}/sjt"
+    candidate_url = f"https://stag-onlinetest.techifysolutions.com/#/?candidate_id={candidate_id}/sjt"
     passcode = str(random.randint(100000, 999999))
     
     cursor = None
@@ -1277,178 +1333,71 @@ def start_sjt_test():
         if conn:
             conn.close()
 
-# @app.route('/submit_sjt_test', methods=['POST'])
-# def submit_sjt_test():
-#     try:
-#         data = request.json
-#         if not data:
-#             return jsonify({"error": "No JSON data provided"}), 400
-        
-#         candidate_id = data.get('candidate_id')
-#         first_name = data.get('first_name')
-#         last_name = data.get('last_name')
-#         email = data.get('email')
-#         phone_number = data.get('phone_number')
-#         location = data.get('location')
-#         time_taken = data.get('time_taken')
-#         result_file = data.get('result_file')
-
-#         if not result_file:
-#             return jsonify({"error": "No result_file data provided"}), 400
-        
-#         file = generate_report(result_file)
-
-#         if file:
-#             # Save the uploaded file to a temporary path
-#             report_path = os.path.join('/tmp', file.filename)
-#             file.save(report_path)
-
-#             # Compress the PDF
-#             compressed_report_path = os.path.join('/tmp', f"{file.filename}")
-#             compress_pdf(report_path, compressed_report_path)
-
-#             # Upload the compressed PDF to S3
-#             s3_client = boto3.client('s3')
-#             s3_bucket = 'onlinetest-stag-documents'
-#             s3_key = f'sjt_reports/{candidate_id}'
-#             report_s3_url = f'https://{s3_bucket}.s3.us-east-1.amazonaws.com/{s3_key}'
-
-#             try:
-#                 s3_client.upload_file(
-#                     compressed_report_path, s3_bucket, s3_key,
-#                     ExtraArgs={
-#                         "ContentDisposition": "inline",
-#                         "ContentType": "application/pdf",
-#                         "ACL": "public-read"
-#                     }
-#                 )
-
-#                 s3_client.put_object_acl(Bucket=s3_bucket, Key=s3_key, ACL='public-read')
-#             except Exception as e:
-#                 logger.error(f"Error uploading SJT report to S3: {e}")
-#                 return jsonify({"error": "Failed to upload SJT report to S3"}), 500
-#             print("SJT Report uploaded to S3 successfully")
-            
-#             try:
-#                 latitude, longitude = location.split(",")
-#                 location = get_address_from_coordinates_nominatim(latitude, longitude)
-#             except Exception as e:
-#                 logger.error(f"Error getting address from coordinates: {e}")
-#                 return jsonify({"error": "Failed to get address from coordinates"}), 500
-#             print("Address fetched successfully")
-
-#             try:
-#                 store_sjt_data(candidate_id, first_name, last_name, email, phone_number, location, time_taken, report_s3_url)
-#             except Exception as e:
-#                 logger.error(f"Error storing SJT user data: {e}")
-#                 return jsonify({"error": "Failed to store SJT user data"}), 500
-#             print("SJT User data stored successfully")
-
-#             try:
-#                 to_emails = ['firefans121@gmail.com']
-#                 cc_emails = ['pooja.shah@techifysolutions.com']
-#                 # hr@techifysolutions.com
-#                 # , 'jobs@techifysolutions.com', 'zankhan.kukadiya@techifysolutions.com'
-#                 subject = f'Test Report {first_name} {last_name}'
-#                 body = f"""
-#                 Please find the attached psychometric test report.<br><br>
-#                 Candidate ID: {candidate_id}<br>
-#                 First Name: {first_name}<br>
-#                 Last Name: {last_name}<br>
-#                 """
-#                 send_email(subject, body, to_emails, cc_emails, attachment_path=compressed_report_path)
-#             except Exception as e:
-#                 logger.error(f"Error sending SJT report email: {e}")
-#                 return jsonify({"error": "Failed to send SJT report email"}), 500
-#             print("SJT Report sent successfully")
-        
-#             try:
-#                 to_email = email
-#                 subject = "Test Submitted Successfully"
-#                 body = f"""
-#                 Your psychometric test has been submitted successfully. Someone from our side will get back to you soon. Thank you for your time and effort.<br><br>
-#                 Talent Acquisition Team<br>
-#                 Email: hr@techifysolutions.com<br>
-#                 Mobile: +917862063131<br><br>
-#                 """
-#                 send_email(subject, body, [to_email], [])
-#             except Exception as e:
-#                 logger.error(f"Error sending SJT submission confirmation mail: {e}")
-#                 return jsonify({"error": "Failed to send SJT submission confirmation mail"}), 500
-#             print("SJT Submission confirmation mail sent successfully")
-
-#             return jsonify({"message": "SJT Test submitted successfully"}), 200
-
-#     except Exception as e:
-#         logger.error(f"Error in submit_sjt_test: {e}")
-#         return jsonify({"error": str(e)}), 500
-
-#     return jsonify({"error": "Unexpected error occurred"}), 500
-
 @app.route('/submit_sjt_test', methods=['POST'])
 def submit_sjt_test():
     try:
-        # if 'report' not in request.files:
-        #     return jsonify({'error': 'No report file part'}), 400
+        data = request.json
+        if not data:
+            return jsonify({"error": "No JSON data provided"}), 400
+        
+        candidate_id = data.get('candidate_id')
+        first_name = data.get('first_name')
+        last_name = data.get('last_name')
+        email = data.get('email')
+        phone_number = data.get('phone_number')
+        location = data.get('location')
+        time_taken = data.get('time_taken')
+        result_file = data.get('result_file')
 
-        # file = request.files['report']
-        candidate_id = request.form.get('candidate_id')
-        first_name = request.form.get('first_name')
-        last_name = request.form.get('last_name')
-        email = request.form.get('email')
-        phone_number = request.form.get('phone_number')
-        location = request.form.get('location')
-        score = request.form.get('score')
-        time_taken = request.form.get('time_taken')
+        if not result_file:
+            return jsonify({"error": "No result_file data provided"}), 400
+        
+        file = generate_report(result_file)
 
-        # if file.filename == '':
-        #     return jsonify({'error': 'No selected file'}), 400
+        if file:
+            report_path = os.path.join('/tmp', file.filename)
+            file.save(report_path)
 
-        # if file:
-        #     # Save the uploaded file to a temporary path
-        #     report_path = os.path.join('/tmp', file.filename)
-        #     file.save(report_path)
+            # Compress the PDF
+            compressed_report_path = os.path.join('/tmp', f"{file.filename}")
+            compress_pdf(report_path, compressed_report_path)
 
-        #     # Compress the PDF
-        #     compressed_report_path = os.path.join('/tmp', f"{file.filename}")
-        #     compress_pdf(report_path, compressed_report_path)
+            # Upload the compressed PDF to S3
+            s3_client = boto3.client('s3')
+            s3_bucket = 'onlinetest-stag-documents'
+            s3_key = f'sjt_reports/{candidate_id}'
+            report_s3_url = f'https://{s3_bucket}.s3.us-east-1.amazonaws.com/{s3_key}'
 
-            # # Upload the compressed PDF to S3
-            # s3_client = boto3.client('s3')
-            # s3_bucket = 'onlinetest-stag-documents'
-            # s3_key = f'sjt_reports/{candidate_id}'
-            # report_s3_url = f'https://{s3_bucket}.s3.us-east-1.amazonaws.com/{s3_key}'
+            try:
+                s3_client.upload_file(
+                    compressed_report_path, s3_bucket, s3_key,
+                    ExtraArgs={
+                        "ContentDisposition": "inline",
+                        "ContentType": "application/pdf",
+                        "ACL": "public-read"
+                    }
+                )
 
-            # try:
-            #     s3_client.upload_file(
-            #         compressed_report_path, s3_bucket, s3_key,
-            #         ExtraArgs={
-            #             "ContentDisposition": "inline",
-            #             "ContentType": "application/pdf",
-            #             "ACL": "public-read"
-            #         }
-            #     )
-
-            #     s3_client.put_object_acl(Bucket=s3_bucket, Key=s3_key, ACL='public-read')
-            # except Exception as e:
-            #     logger.error(f"Error uploading SJT report to S3: {e}")
-            #     return jsonify({"error": "Failed to upload SJT report to S3"}), 500
-            # print("SJT Report uploaded to S3 successfully")
+                s3_client.put_object_acl(Bucket=s3_bucket, Key=s3_key, ACL='public-read')
+            except Exception as e:
+                logger.error(f"Error uploading SJT report to S3: {e}")
+                return jsonify({"error": "Failed to upload SJT report to S3"}), 500
+            print("SJT Report uploaded to S3 successfully")
             
-            # try:
-            #     latitude, longitude = location.split(",")
-            #     location = get_address_from_coordinates_nominatim(latitude, longitude)
-            # except Exception as e:
-            #     logger.error(f"Error getting address from coordinates: {e}")
-            #     return jsonify({"error": "Failed to get address from coordinates"}), 500
-            # print("Address fetched successfully")
+            try:
+                latitude, longitude = location.split(",")
+                location = get_address_from_coordinates_nominatim(latitude, longitude)
+            except Exception as e:
+                logger.error(f"Error getting address from coordinates: {e}")
+                return jsonify({"error": "Failed to get address from coordinates"}), 500
+            print("Address fetched successfully")
 
-            # try:
-            #     store_sjt_data(candidate_id, first_name, last_name, email, phone_number, location, score, time_taken, report_s3_url)
-            # except Exception as e:
-            #     logger.error(f"Error storing SJT user data: {e}")
-            #     return jsonify({"error": "Failed to store SJT user data"}), 500
-            # print("SJT User data stored successfully")
+            try:
+                store_sjt_data(candidate_id, first_name, last_name, email, phone_number, location, time_taken, report_s3_url)
+            except Exception as e:
+                logger.error(f"Error storing SJT user data: {e}")
+                return jsonify({"error": "Failed to store SJT user data"}), 500
+            print("SJT User data stored successfully")
 
         try:
                 to_emails = ['firefans121@gmail.com']
@@ -1461,7 +1410,6 @@ def submit_sjt_test():
                 Candidate ID: {candidate_id}<br>
                 First Name: {first_name}<br>
                 Last Name: {last_name}<br>
-                # Score: {score}<br><br>
                 """
                 send_email(subject, body, to_emails, cc_emails)
                 # , attachment_path=compressed_report_path
@@ -1490,8 +1438,6 @@ def submit_sjt_test():
     except Exception as e:
         logger.error(f"Error in submit_sjt_test: {e}")
         return jsonify({"error": str(e)}), 500
-
-    return jsonify({"error": "Unexpected error occurred"}), 500
 
 @app.route('/submit_sjt_feedback', methods=['POST'])
 def submit_sjt_feedback():
@@ -1560,7 +1506,7 @@ def generate_report(result_file):
         logger.error(f"Error generating report: {e}")
         return jsonify({"error": f"Error generating report: {str(e)}"}), 500
 
-def store_sjt_data(candidate_id, first_name, last_name, email, phone_number, location, score, time_taken, report_s3_url):
+def store_sjt_data(candidate_id, first_name, last_name, email, phone_number, location, time_taken, report_s3_url):
     cursor = None
     conn = None
     try:
@@ -1582,7 +1528,6 @@ def store_sjt_data(candidate_id, first_name, last_name, email, phone_number, loc
                 email VARCHAR(50),
                 phone_number VARCHAR(15),
                 location VARCHAR(50),
-                score FLOAT,
                 time_taken VARCHAR(50),
                 feedback TEXT DEFAULT '',
                 report_s3_url TEXT,
@@ -1593,9 +1538,9 @@ def store_sjt_data(candidate_id, first_name, last_name, email, phone_number, loc
         submission_date = datetime.now().replace(microsecond=0)
 
         cursor.execute('''
-            INSERT INTO sjt_test_reports (candidate_id, first_name, last_name, email, phone_number, location, score, time_taken, report_s3_url, submission_date)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-            ''', (candidate_id, first_name, last_name, email, phone_number, location, score, time_taken, report_s3_url, submission_date))
+            INSERT INTO sjt_test_reports (candidate_id, first_name, last_name, email, phone_number, location, time_taken, report_s3_url, submission_date)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+            ''', (candidate_id, first_name, last_name, email, phone_number, location, time_taken, report_s3_url, submission_date))
         
         conn.commit()
 
