@@ -1277,74 +1277,180 @@ def start_sjt_test():
         if conn:
             conn.close()
 
+# @app.route('/submit_sjt_test', methods=['POST'])
+# def submit_sjt_test():
+#     try:
+#         data = request.json
+#         if not data:
+#             return jsonify({"error": "No JSON data provided"}), 400
+        
+#         candidate_id = data.get('candidate_id')
+#         first_name = data.get('first_name')
+#         last_name = data.get('last_name')
+#         email = data.get('email')
+#         phone_number = data.get('phone_number')
+#         location = data.get('location')
+#         time_taken = data.get('time_taken')
+#         result_file = data.get('result_file')
+
+#         if not result_file:
+#             return jsonify({"error": "No result_file data provided"}), 400
+        
+#         file = generate_report(result_file)
+
+#         if file:
+#             # Save the uploaded file to a temporary path
+#             report_path = os.path.join('/tmp', file.filename)
+#             file.save(report_path)
+
+#             # Compress the PDF
+#             compressed_report_path = os.path.join('/tmp', f"{file.filename}")
+#             compress_pdf(report_path, compressed_report_path)
+
+#             # Upload the compressed PDF to S3
+#             s3_client = boto3.client('s3')
+#             s3_bucket = 'onlinetest-stag-documents'
+#             s3_key = f'sjt_reports/{candidate_id}'
+#             report_s3_url = f'https://{s3_bucket}.s3.us-east-1.amazonaws.com/{s3_key}'
+
+#             try:
+#                 s3_client.upload_file(
+#                     compressed_report_path, s3_bucket, s3_key,
+#                     ExtraArgs={
+#                         "ContentDisposition": "inline",
+#                         "ContentType": "application/pdf",
+#                         "ACL": "public-read"
+#                     }
+#                 )
+
+#                 s3_client.put_object_acl(Bucket=s3_bucket, Key=s3_key, ACL='public-read')
+#             except Exception as e:
+#                 logger.error(f"Error uploading SJT report to S3: {e}")
+#                 return jsonify({"error": "Failed to upload SJT report to S3"}), 500
+#             print("SJT Report uploaded to S3 successfully")
+            
+#             try:
+#                 latitude, longitude = location.split(",")
+#                 location = get_address_from_coordinates_nominatim(latitude, longitude)
+#             except Exception as e:
+#                 logger.error(f"Error getting address from coordinates: {e}")
+#                 return jsonify({"error": "Failed to get address from coordinates"}), 500
+#             print("Address fetched successfully")
+
+#             try:
+#                 store_sjt_data(candidate_id, first_name, last_name, email, phone_number, location, time_taken, report_s3_url)
+#             except Exception as e:
+#                 logger.error(f"Error storing SJT user data: {e}")
+#                 return jsonify({"error": "Failed to store SJT user data"}), 500
+#             print("SJT User data stored successfully")
+
+#             try:
+#                 to_emails = ['firefans121@gmail.com']
+#                 cc_emails = ['pooja.shah@techifysolutions.com']
+#                 # hr@techifysolutions.com
+#                 # , 'jobs@techifysolutions.com', 'zankhan.kukadiya@techifysolutions.com'
+#                 subject = f'Test Report {first_name} {last_name}'
+#                 body = f"""
+#                 Please find the attached psychometric test report.<br><br>
+#                 Candidate ID: {candidate_id}<br>
+#                 First Name: {first_name}<br>
+#                 Last Name: {last_name}<br>
+#                 """
+#                 send_email(subject, body, to_emails, cc_emails, attachment_path=compressed_report_path)
+#             except Exception as e:
+#                 logger.error(f"Error sending SJT report email: {e}")
+#                 return jsonify({"error": "Failed to send SJT report email"}), 500
+#             print("SJT Report sent successfully")
+        
+#             try:
+#                 to_email = email
+#                 subject = "Test Submitted Successfully"
+#                 body = f"""
+#                 Your psychometric test has been submitted successfully. Someone from our side will get back to you soon. Thank you for your time and effort.<br><br>
+#                 Talent Acquisition Team<br>
+#                 Email: hr@techifysolutions.com<br>
+#                 Mobile: +917862063131<br><br>
+#                 """
+#                 send_email(subject, body, [to_email], [])
+#             except Exception as e:
+#                 logger.error(f"Error sending SJT submission confirmation mail: {e}")
+#                 return jsonify({"error": "Failed to send SJT submission confirmation mail"}), 500
+#             print("SJT Submission confirmation mail sent successfully")
+
+#             return jsonify({"message": "SJT Test submitted successfully"}), 200
+
+#     except Exception as e:
+#         logger.error(f"Error in submit_sjt_test: {e}")
+#         return jsonify({"error": str(e)}), 500
+
+#     return jsonify({"error": "Unexpected error occurred"}), 500
+
 @app.route('/submit_sjt_test', methods=['POST'])
 def submit_sjt_test():
     try:
-        data = request.json
-        if not data:
-            return jsonify({"error": "No JSON data provided"}), 400
-        
-        candidate_id = data.get('candidate_id')
-        first_name = data.get('first_name')
-        last_name = data.get('last_name')
-        email = data.get('email')
-        phone_number = data.get('phone_number')
-        location = data.get('location')
-        time_taken = data.get('time_taken')
-        result_file = data.get('result_file')
+        # if 'report' not in request.files:
+        #     return jsonify({'error': 'No report file part'}), 400
 
-        if not result_file:
-            return jsonify({"error": "No result_file data provided"}), 400
-        
-        file = generate_report(result_file)
+        # file = request.files['report']
+        candidate_id = request.form.get('candidate_id')
+        first_name = request.form.get('first_name')
+        last_name = request.form.get('last_name')
+        email = request.form.get('email')
+        phone_number = request.form.get('phone_number')
+        location = request.form.get('location')
+        score = request.form.get('score')
+        time_taken = request.form.get('time_taken')
 
-        if file:
-            # Save the uploaded file to a temporary path
-            report_path = os.path.join('/tmp', file.filename)
-            file.save(report_path)
+        # if file.filename == '':
+        #     return jsonify({'error': 'No selected file'}), 400
 
-            # Compress the PDF
-            compressed_report_path = os.path.join('/tmp', f"{file.filename}")
-            compress_pdf(report_path, compressed_report_path)
+        # if file:
+        #     # Save the uploaded file to a temporary path
+        #     report_path = os.path.join('/tmp', file.filename)
+        #     file.save(report_path)
 
-            # Upload the compressed PDF to S3
-            s3_client = boto3.client('s3')
-            s3_bucket = 'onlinetest-stag-documents'
-            s3_key = f'sjt_reports/{candidate_id}'
-            report_s3_url = f'https://{s3_bucket}.s3.us-east-1.amazonaws.com/{s3_key}'
+        #     # Compress the PDF
+        #     compressed_report_path = os.path.join('/tmp', f"{file.filename}")
+        #     compress_pdf(report_path, compressed_report_path)
 
-            try:
-                s3_client.upload_file(
-                    compressed_report_path, s3_bucket, s3_key,
-                    ExtraArgs={
-                        "ContentDisposition": "inline",
-                        "ContentType": "application/pdf",
-                        "ACL": "public-read"
-                    }
-                )
+            # # Upload the compressed PDF to S3
+            # s3_client = boto3.client('s3')
+            # s3_bucket = 'onlinetest-stag-documents'
+            # s3_key = f'sjt_reports/{candidate_id}'
+            # report_s3_url = f'https://{s3_bucket}.s3.us-east-1.amazonaws.com/{s3_key}'
 
-                s3_client.put_object_acl(Bucket=s3_bucket, Key=s3_key, ACL='public-read')
-            except Exception as e:
-                logger.error(f"Error uploading SJT report to S3: {e}")
-                return jsonify({"error": "Failed to upload SJT report to S3"}), 500
-            print("SJT Report uploaded to S3 successfully")
+            # try:
+            #     s3_client.upload_file(
+            #         compressed_report_path, s3_bucket, s3_key,
+            #         ExtraArgs={
+            #             "ContentDisposition": "inline",
+            #             "ContentType": "application/pdf",
+            #             "ACL": "public-read"
+            #         }
+            #     )
+
+            #     s3_client.put_object_acl(Bucket=s3_bucket, Key=s3_key, ACL='public-read')
+            # except Exception as e:
+            #     logger.error(f"Error uploading SJT report to S3: {e}")
+            #     return jsonify({"error": "Failed to upload SJT report to S3"}), 500
+            # print("SJT Report uploaded to S3 successfully")
             
-            try:
-                latitude, longitude = location.split(",")
-                location = get_address_from_coordinates_nominatim(latitude, longitude)
-            except Exception as e:
-                logger.error(f"Error getting address from coordinates: {e}")
-                return jsonify({"error": "Failed to get address from coordinates"}), 500
-            print("Address fetched successfully")
+            # try:
+            #     latitude, longitude = location.split(",")
+            #     location = get_address_from_coordinates_nominatim(latitude, longitude)
+            # except Exception as e:
+            #     logger.error(f"Error getting address from coordinates: {e}")
+            #     return jsonify({"error": "Failed to get address from coordinates"}), 500
+            # print("Address fetched successfully")
 
-            try:
-                store_sjt_data(candidate_id, first_name, last_name, email, phone_number, location, time_taken, report_s3_url)
-            except Exception as e:
-                logger.error(f"Error storing SJT user data: {e}")
-                return jsonify({"error": "Failed to store SJT user data"}), 500
-            print("SJT User data stored successfully")
+            # try:
+            #     store_sjt_data(candidate_id, first_name, last_name, email, phone_number, location, score, time_taken, report_s3_url)
+            # except Exception as e:
+            #     logger.error(f"Error storing SJT user data: {e}")
+            #     return jsonify({"error": "Failed to store SJT user data"}), 500
+            # print("SJT User data stored successfully")
 
-            try:
+        try:
                 to_emails = ['firefans121@gmail.com']
                 cc_emails = ['pooja.shah@techifysolutions.com']
                 # hr@techifysolutions.com
@@ -1355,14 +1461,16 @@ def submit_sjt_test():
                 Candidate ID: {candidate_id}<br>
                 First Name: {first_name}<br>
                 Last Name: {last_name}<br>
+                # Score: {score}<br><br>
                 """
-                send_email(subject, body, to_emails, cc_emails, attachment_path=compressed_report_path)
-            except Exception as e:
+                send_email(subject, body, to_emails, cc_emails)
+                # , attachment_path=compressed_report_path
+        except Exception as e:
                 logger.error(f"Error sending SJT report email: {e}")
                 return jsonify({"error": "Failed to send SJT report email"}), 500
-            print("SJT Report sent successfully")
+        print("SJT Report sent successfully")
         
-            try:
+        try:
                 to_email = email
                 subject = "Test Submitted Successfully"
                 body = f"""
@@ -1372,12 +1480,12 @@ def submit_sjt_test():
                 Mobile: +917862063131<br><br>
                 """
                 send_email(subject, body, [to_email], [])
-            except Exception as e:
+        except Exception as e:
                 logger.error(f"Error sending SJT submission confirmation mail: {e}")
                 return jsonify({"error": "Failed to send SJT submission confirmation mail"}), 500
-            print("SJT Submission confirmation mail sent successfully")
+        print("SJT Submission confirmation mail sent successfully")
 
-            return jsonify({"message": "SJT Test submitted successfully"}), 200
+        return jsonify({"message": "SJT Test submitted successfully"}), 200
 
     except Exception as e:
         logger.error(f"Error in submit_sjt_test: {e}")
