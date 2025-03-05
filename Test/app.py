@@ -1355,6 +1355,14 @@ def submit_sjt_test():
         else:
             compressed_report_path = generate_report(result_file)
 
+            if not compressed_report_path.endswith('.pdf'):
+                return jsonify({"error": "Uploaded file is not a PDF"}), 400
+            
+            pdf_document = fitz.open(compressed_report_path)
+            for page in pdf_document:
+                print(page.get_text())
+            pdf_document.close()
+
             # Upload the compressed PDF to S3
             s3_client = boto3.client('s3')
             s3_bucket = 'onlinetest-stag-documents'
