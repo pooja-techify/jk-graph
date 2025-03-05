@@ -291,7 +291,7 @@ def send_verification():
 
 def send_test(name, email, phone_number):
     candidate_id = f"{random.randint(0, 999)}{int(datetime.now().timestamp() * 1000)}"
-    candidate_url = f"https://stag-onlinetest.techifysolutions.com//#?candidate_id={candidate_id}"
+    candidate_url = f"https://stag-onlinetest.techifysolutions.com/#/?candidate_id={candidate_id}"
     passcode = str(random.randint(100000, 999999))
     
     cursor = None
@@ -1087,7 +1087,7 @@ def send_sjt_new_verification():
 
 def send_sjt_new_test(name, email, phone_number):
     candidate_id = f"{random.randint(0, 999)}{int(datetime.now().timestamp() * 1000)}"
-    candidate_url = f"https://stag-onlinetest.techifysolutions.com/?candidate_id={candidate_id}/sjt"
+    candidate_url = f"https://stag-onlinetest.techifysolutions.com/#/?candidate_id={candidate_id}/sjt"
     passcode = str(random.randint(100000, 999999))
     
     cursor = None
@@ -1355,11 +1355,11 @@ def submit_sjt_test():
         file = generate_report(result_file)
 
         if file:
-            report_path = os.path.join('/tmp', file.filename)
+            report_path = os.path.join('/tmp', f"{candidate_id}.pdf")
             file.save(report_path)
 
             # Compress the PDF
-            compressed_report_path = os.path.join('/tmp', f"{file.filename}")
+            compressed_report_path = os.path.join('/tmp', f"{candidate_id}.pdf")
             compress_pdf(report_path, compressed_report_path)
 
             # Upload the compressed PDF to S3
