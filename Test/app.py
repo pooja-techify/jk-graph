@@ -1500,8 +1500,8 @@ def generate_report(result_file):
         c.drawText(text)
         c.save()
 
-        return pdf_path
-    
+        return open(pdf_path, 'rb')  # Return a file-like object
+
     except Exception as e:
         logger.error(f"Error generating report: {e}")
         return jsonify({"error": f"Error generating report: {str(e)}"}), 500
