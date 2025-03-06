@@ -1625,11 +1625,10 @@ def fetch_sjt_data():
                 "email": row[3],
                 "phone_number": row[4],
                 "location": row[5],
-                "score": row[6],
-                "time_taken": row[7],
-                "feedback": row[8],
-                "report_s3_url": row[9],
-                "submission_date": row[10]
+                "time_taken": row[6],
+                "feedback": row[7],
+                "report_s3_url": row[8],
+                "submission_date": row[9]
             })
 
         print("SJT User data fetched successfully")
