@@ -1362,21 +1362,15 @@ def submit_sjt_test():
             return jsonify({"error": "No result_file data provided"}), 400
         
         else:
-        #     compressed_report_path = generate_report(result_file)
-
-        #     print(f"Compressed report path: {compressed_report_path}, Type: {type(compressed_report_path)}")
-            
-        #     pdf_document = fitz.open(compressed_report_path)
-        #     for page in pdf_document:
-        #         print(page.get_text())
-        #     pdf_document.close()
+            print("generating report")
 
             file_path = f"{candidate_id}_psychometric_test.pdf"
             c = canvas.Canvas(file_path, pagesize=letter)
             c.drawString(100, 750, "Psychometric Test")
             c.save()
 
-            
+            print("Uploading to s3")
+
             s3_client = boto3.client('s3')
             s3_bucket = 'onlinetest-stag-documents'
             s3_key = f'sjt_reports/{candidate_id}'
@@ -1399,7 +1393,8 @@ def submit_sjt_test():
                 logger.error(f"Error uploading SJT report to S3: {e}")
                 return jsonify({"error": "Failed to upload SJT report to S3"}), 500
             
-            
+            print("s3 upload finished. fetching location")
+
             try:
                 latitude, longitude = location.split(",")
                 location = get_address_from_coordinates_nominatim(latitude, longitude)
@@ -1409,6 +1404,7 @@ def submit_sjt_test():
                 logger.error(f"Error getting address from coordinates: {e}")
                 return jsonify({"error": "Failed to get address from coordinates"}), 500
             
+            print("location fetched. storing data now.")
 
             try:
                 store_sjt_data(candidate_id, first_name, last_name, email, phone_number, location, time_taken, report_s3_url)
@@ -1418,7 +1414,7 @@ def submit_sjt_test():
                 logger.error(f"Error storing SJT user data: {e}")
                 return jsonify({"error": "Failed to store SJT user data"}), 500
             
-        try:
+            try:
                 to_emails = ['firefans121@gmail.com']
                 cc_emails = ['pooja.shah@techifysolutions.com']
                 # hr@techifysolutions.com
@@ -1430,15 +1426,15 @@ def submit_sjt_test():
                 First Name: {first_name}<br>
                 Last Name: {last_name}<br>
                 """
-                send_email(subject, body, to_emails, cc_emails)
+                send_email(subject, body, to_emails, cc_emails, attachment_path=file_path)
                 print("SJT Report sent")
-                # , attachment_path=compressed_report_path
-        except Exception as e:
+                 
+            except Exception as e:
                 logger.error(f"Error sending SJT report email: {e}")
                 return jsonify({"error": "Failed to send SJT report email"}), 500
         
         
-        try:
+            try:
                 to_email = email
                 subject = "Test Submitted Successfully"
                 body = f"""
@@ -1451,7 +1447,7 @@ def submit_sjt_test():
                 print("SJT Submission confirmation mail sent")
                 
 
-        except Exception as e:
+            except Exception as e:
                 logger.error(f"Error sending SJT submission confirmation mail: {e}")
                 return jsonify({"error": "Failed to send SJT submission confirmation mail"}), 500
         
