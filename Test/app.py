@@ -63,18 +63,22 @@ def get_address_from_coordinates_nominatim(latitude, longitude):
                 return 'State/District not found'
             return 'Address not found'
         else:
+            print(f"Error receiving response while getting address from coordinates with status code {response.status_code}")
             logger.error(f"Error receiving response while getting address from coordinates with status code {response.status_code}")
             return None
     except requests.RequestException as e:
+        print(f"Request error while getting address from coordinates: {e}")
         logger.error(f"Request error while getting address from coordinates: {e}")
         return jsonify({"error": f"Request error: {str(e)}"}), 500
     except Exception as e:
+        print(f"Error getting address from coordinates: {e}")
         logger.error(f"Error getting address from coordinates: {e}")
         return jsonify({"error": f"General error: {str(e)}"}), 500
 
 def select_questions(input_file, level, num_questions, output_file, append=False):
     try:
         if not os.path.exists(input_file):
+            print(f"File not found: {input_file}")
             raise FileNotFoundError(f"Input file does not exist: {input_file}")
 
         json_output = os.path.join(output_file)
@@ -85,6 +89,7 @@ def select_questions(input_file, level, num_questions, output_file, append=False
         level_questions = [q for q in questions if q['Level'] == level]
         
         if not level_questions:
+            print(f"Warning: No questions found for level: {level}")
             raise ValueError(f"No questions found for level: {level}")
         
         existing_questions = []
@@ -98,10 +103,12 @@ def select_questions(input_file, level, num_questions, output_file, append=False
         available_questions = [q for q in level_questions if q not in existing_questions]
         
         if not available_questions:
+            print(f"Warning: All questions for level {level} have already been selected")
             logger.error(f"Warning: All questions for level {level} have already been selected")
             return
             
         if num_questions > len(available_questions):
+            print(f"Warning: Only {len(available_questions)} new questions available for level {level}")
             logger.error(f"Warning: Only {len(available_questions)} new questions available for level {level}")
             selected = available_questions
         else:
@@ -116,14 +123,17 @@ def select_questions(input_file, level, num_questions, output_file, append=False
         # print(f"Total questions in output files: {len(final_questions)}")
         
     except FileNotFoundError as e:
+        print(f"File not found: {e}")
         logger.error(f"File not found: {e}")
         return jsonify({"error while selecting questions": str(e)}), 400
     
     except json.JSONDecodeError:
+        print("Invalid JSON format in input file")
         logger.error("Invalid JSON format in input file")
         return jsonify({"error while selecting questions": "Invalid JSON format in input file"}), 400
     
     except Exception as e:
+        print(f"Error while selecting questions: {e}")
         logger.error(f"Error while selecting questions: {e}")
         return jsonify({"error while selecting questions": str(e)}), 500
     
@@ -146,6 +156,7 @@ def generate_questions():
         return jsonify({"message": "Questions generated successfully"}), 200
     
     except Exception as e:
+        print(f"Error while generating questions: {e}")
         logger.error(f"Error while generating questions: {e}")
         return jsonify({"error while generating questions": str(e)}), 500
 
@@ -162,6 +173,7 @@ def get_aptitude_questions():
         return jsonify({"encoded": encoded_data})
     
     except Exception as e:
+        print(f"Error while getting aptitude questions: {e}")
         logger.error(f"Error while getting aptitude questions: {e}")
         return jsonify({"error while getting aptitude questions": str(e)}), 500
 
@@ -178,6 +190,7 @@ def get_verbal_questions():
         return jsonify({"encoded": encoded_data})
     
     except Exception as e:
+        print(f"Error while getting verbal questions: {e}")
         logger.error(f"Error while getting verbal questions: {e}")
         return jsonify({"error while getting verbal questions": str(e)}), 500
     
@@ -194,6 +207,7 @@ def get_programming_questions():
         return jsonify({"encoded": encoded_data})
     
     except Exception as e:
+        print(f"Error while getting programming questions: {e}")
         logger.error(f"Error while getting programming questions: {e}")
         return jsonify({"error while getting programming questions": str(e)}), 500
     
@@ -210,6 +224,7 @@ def get_reasoning_questions():
         return jsonify({"encoded": encoded_data})
     
     except Exception as e:
+        print(f"Error while getting reasoning questions: {e}")
         logger.error(f"Error while getting reasoning questions: {e}")
         return jsonify({"error while getting reasoning questions": str(e)}), 500
     
@@ -228,6 +243,7 @@ def get_sjt_questions():
         return jsonify({"encoded": encoded_data})
     
     except Exception as e:
+        print(f"Error while getting SJT questions: {e}")
         logger.error(f"Error while getting SJT questions: {e}")
         return jsonify({"error while getting SJT questions": str(e)}), 500          
             
@@ -261,9 +277,11 @@ def send_email(subject, body, to_recipients, cc_recipients, attachment_path=None
         return True
     
     except smtplib.SMTPException as e:
+        print(f'SMTP error: {e}')
         logger.error(f'SMTP error: {e}')
         return jsonify({"error": f"SMTP error: {str(e)}"}), 500
     except Exception as e:
+        print(f'Error sending email: {e}')
         logger.error(f'Error sending email: {e}')
         return jsonify({"error": f"Error sending email: {str(e)}"}), 500
     
@@ -286,6 +304,7 @@ def send_verification():
         return jsonify({"message": "Verification email/s sent successfully"}), 200
         
     except Exception as e:
+        print(f"Failed to send verification: {str(e)}")
         logger.error(f"Failed to send verification: {str(e)}")
         return jsonify({"error": f"Failed to send verification: {str(e)}"}), 500
 
@@ -350,6 +369,7 @@ def send_test(name, email, phone_number):
         print("Verification email sent successfully")
     
     except Exception as e:
+        print(f"Error in send_test: {str(e)}")
         logger.error(f"Error in send_test: {str(e)}")
         return jsonify({"error": f"Error in send_test: {str(e)}"}), 500
     
@@ -397,6 +417,7 @@ def verify_passcode():
             return jsonify({"error": "Candidate ID not found"}), 404
 
     except Exception as e:
+        print(f"Error verifying passcode: {str(e)}")
         logger.error(f"Error verifying passcode: {str(e)}")
         return jsonify({"error": f"Error verifying passcode: {str(e)}"}), 500
     
@@ -453,6 +474,7 @@ def get_mail():
                 return jsonify({"error": "Candidate ID not found"}), 404
 
     except Exception as e:
+        print(f"Error fetching email: {str(e)}")
         logger.error(f"Error fetching email: {str(e)}")
         return jsonify({"error": f"Error fetching email: {str(e)}"}), 500
 
@@ -492,6 +514,7 @@ def start_test():
         return jsonify({"message": "Test started successfully"}), 200
 
     except Exception as e:
+        print(f"Error starting test: {str(e)}")
         logger.error(f"Error starting test: {str(e)}")
         return jsonify({"error": f"Error starting test: {str(e)}"}), 500
     finally:
@@ -553,6 +576,7 @@ def submit_test():
                 print("Report uploaded to S3 successfully")
 
             except Exception as e:
+                print(f"Error uploading report to S3: {e}")
                 logger.error(f"Error uploading report to S3: {e}")
                 return jsonify({"error": "Failed to upload report to S3"}), 500
             
@@ -563,6 +587,7 @@ def submit_test():
                 print("Address fetched successfully")
 
             except Exception as e:
+                print(f"Error getting address from coordinates: {e}")
                 logger.error(f"Error getting address from coordinates: {e}")
                 return jsonify({"error": "Failed to get address from coordinates"}), 500
             
@@ -572,6 +597,7 @@ def submit_test():
                 print("User data stored successfully")
                 
             except Exception as e:
+                print(f"Error storing user data: {e}")
                 logger.error(f"Error storing user data: {e}")
                 return jsonify({"error": "Failed to store user data"}), 500
            
@@ -593,6 +619,7 @@ def submit_test():
                 print("Report sent successfully")
             
             except Exception as e:
+                print(f"Error sending report email: {e}")
                 logger.error(f"Error sending report email: {e}")
                 return jsonify({"error": "Failed to send report email"}), 500
             
@@ -610,12 +637,14 @@ def submit_test():
                 print("Submission confirmation mail sent successfully")
 
             except Exception as e:
+                print(f"Error sending submission confirmation mail: {e}")
                 logger.error(f"Error sending submission confirmation mail: {e}")
                 return jsonify({"error": "Failed to send submission confirmation mail"}), 500
             
             return jsonify({"message": "Test submitted successfully"}), 200
 
     except Exception as e:
+        print(f"Error in submit_test: {e}")
         logger.error(f"Error in submit_test: {e}")
         return jsonify({"error": str(e)}), 500
 
@@ -657,6 +686,7 @@ def submit_feedback():
         return jsonify({"message": "Feedback updated successfully"}), 200
 
     except Exception as e:
+        print(f"Error updating feedback: {e}")
         logger.error(f"Error updating feedback: {e}")
         return jsonify({"error": str(e)}), 500
     
@@ -713,10 +743,12 @@ def store_user_data(candidate_id, first_name, last_name, email, phone_number, lo
         print("User data stored successfully")
         
     except psycopg2.DatabaseError as e:
+        print(f"Database error: {e}")
         logger.error(f"Database error: {e}")
         return jsonify({"error": f"Database error: {str(e)}"}), 500
 
     except Exception as e:
+        print(f"Error storing user data: {e}")
         logger.error(f"Error storing user data: {e}")
         return jsonify({"error": f"Error storing user data: {str(e)}"}), 500
 
@@ -770,6 +802,7 @@ def fetch_user_data():
         return jsonify(user_data), 200
 
     except Exception as e:
+        print(f"Error fetching user data: {str(e)}")
         logger.error(f"Error fetching user data: {str(e)}")
         return jsonify({"error": f"Error fetching user data: {str(e)}"}), 500
 
@@ -813,6 +846,7 @@ def delete_user_data():
                 s3_client.delete_object(Bucket=s3_bucket, Key=s3_key)
                 print(f"Deleted report for candidate ID: {candidate_id} from S3.")
             except Exception as e:
+                print(f"Error deleting report for candidate ID {candidate_id} from S3: {e}")
                 logger.error(f"Error deleting report for candidate ID {candidate_id} from S3: {e}")
                 return jsonify({"error": f"Error deleting report for candidate ID {candidate_id} from S3: {e}"}), 500
 
@@ -824,6 +858,7 @@ def delete_user_data():
         return jsonify({"message": f"User data for {len(candidate_ids)} candidates deleted successfully"}), 200
 
     except Exception as e:
+        print(f"Error deleting user data: {e}")
         logger.error(f"Error deleting user data: {e}")
         return jsonify({"error": str(e)}), 500
     finally:
@@ -882,7 +917,8 @@ def export_candidate_data():
         return send_file(excel_file_path, as_attachment=True)
 
     except Exception as e:
-        logger.error(f"Error exporting candidate data: {e}")
+        print(f"Error exporting candidate data: {e}")
+        logger.error(f"Error exporting candidate data: {str(e)}")
         return jsonify({"error": f"Error exporting candidate data: {str(e)}"}), 500
     finally:
         if cursor:
@@ -926,6 +962,7 @@ def fetch_registration():
         return jsonify(registration_data), 200
 
     except Exception as e:
+        print(f"Error fetching registration data: {str(e)}")
         logger.error(f"Error fetching registration data: {str(e)}")
         return jsonify({"error": f"Error fetching registration data: {str(e)}"}), 500
 
@@ -969,6 +1006,7 @@ def delete_registration_data():
         return jsonify({"message": f"Registration data for {len(candidate_ids)} candidates deleted successfully"}), 200
 
     except Exception as e:
+        print(f"Error deleting registration data: {e}")
         logger.error(f"Error deleting registration data: {e}")
         return jsonify({"error": str(e)}), 500
     finally:
@@ -1026,7 +1064,8 @@ def export_registration_data():
         return send_file(excel_file_path, as_attachment=True)
 
     except Exception as e:
-        logger.error(f"Error exporting registration data: {e}")
+        print(f"Error exporting registration data: {e}")
+        logger.error(f"Error exporting registration data: {str(e)}")
         return jsonify({"error": f"Error exporting registration data: {str(e)}"}), 500
     finally:
         if cursor:
@@ -1069,6 +1108,7 @@ def upload_excel():
             return jsonify({"message": "Verification emails sent successfully"}), 200
 
     except Exception as e:
+        print(f"Error processing Excel file: {str(e)}")
         logger.error(f"Error processing Excel file: {str(e)}")
         return jsonify({"error": f"Error processing Excel file: {str(e)}"}), 500
 
@@ -1091,6 +1131,7 @@ def send_sjt_new_verification():
         return jsonify({"message": "SJT Verification email/s sent successfully"}), 200
         
     except Exception as e:
+        print(f"Failed to send SJT Verification: {str(e)}")
         logger.error(f"Failed to send SJT Verification: {str(e)}")
         return jsonify({"error": f"Failed to send SJT Verification: {str(e)}"}), 500
 
@@ -1155,6 +1196,7 @@ def send_sjt_new_test(name, email, phone_number):
         print("SJT Verification email sent successfully")
     
     except Exception as e:
+        print(f"Error in send_sjt_new_test: {str(e)}")
         logger.error(f"Error in send_sjt_new_test: {str(e)}")
         return jsonify({"error": f"Error in send_sjt_new_test: {str(e)}"}), 500
     
@@ -1184,6 +1226,7 @@ def send_sjt_verification():
         return jsonify({"message": "SJT Verification email/s sent successfully"}), 200
         
     except Exception as e:
+        print(f"Failed to send SJT Verification: {str(e)}")
         logger.error(f"Failed to send SJT Verification: {str(e)}")
         return jsonify({"error": f"Failed to send SJT Verification: {str(e)}"}), 500
 
@@ -1248,6 +1291,7 @@ def send_sjt_test(name, email, phone_number, candidate_id):
         print("SJT Verification email sent successfully")
     
     except Exception as e:
+        print(f"Error in send_sjt_new_test: {str(e)}")
         logger.error(f"Error in send_sjt_new_test: {str(e)}")
         return jsonify({"error": f"Error in send_sjt_new_test: {str(e)}"}), 500
     
@@ -1295,6 +1339,7 @@ def verify_sjt_passcode():
             return jsonify({"error": "SJT Candidate ID not found"}), 404
 
     except Exception as e:
+        print(f"Error verifying SJT passcode: {str(e)}")
         logger.error(f"Error verifying SJT passcode: {str(e)}")
         return jsonify({"error": f"Error verifying SJT passcode: {str(e)}"}), 500
     
@@ -1334,6 +1379,7 @@ def start_sjt_test():
         return jsonify({"message": "SJT Test started successfully"}), 200
 
     except Exception as e:
+        print(f"Error starting SJT Test: {str(e)}")
         logger.error(f"Error starting SJT Test: {str(e)}")
         return jsonify({"error": f"Error starting SJT Test: {str(e)}"}), 500
     finally:
@@ -1390,6 +1436,7 @@ def submit_sjt_test():
                 print("SJT Report uploaded.")
 
             except Exception as e:
+                print(f"Error uploading SJT report to S3: {e}")
                 logger.error(f"Error uploading SJT report to S3: {e}")
                 return jsonify({"error": "Failed to upload SJT report to S3"}), 500
             
@@ -1401,6 +1448,7 @@ def submit_sjt_test():
                 print("Lat/Long fetched successfully")
 
             except Exception as e:
+                print(f"Error getting address from coordinates: {e}")
                 logger.error(f"Error getting address from coordinates: {e}")
                 return jsonify({"error": "Failed to get address from coordinates"}), 500
             
@@ -1411,6 +1459,7 @@ def submit_sjt_test():
                 print("SJT data stored successfully")
 
             except Exception as e:
+                print(f"Error storing SJT user data: {e}")
                 logger.error(f"Error storing SJT user data: {e}")
                 return jsonify({"error": "Failed to store SJT user data"}), 500
             
@@ -1430,6 +1479,7 @@ def submit_sjt_test():
                 print("SJT Report sent")
                  
             except Exception as e:
+                print(f"Error sending SJT report email: {e}")
                 logger.error(f"Error sending SJT report email: {e}")
                 return jsonify({"error": "Failed to send SJT report email"}), 500
         
@@ -1448,12 +1498,14 @@ def submit_sjt_test():
                 
 
             except Exception as e:
+                print(f"Error sending SJT submission confirmation mail: {e}")
                 logger.error(f"Error sending SJT submission confirmation mail: {e}")
                 return jsonify({"error": "Failed to send SJT submission confirmation mail"}), 500
         
         return jsonify({"message": "SJT Test submitted successfully"}), 200
 
     except Exception as e:
+        print(f"Error in submit_sjt_test: {e}")
         logger.error(f"Error in submit_sjt_test: {e}")
         return jsonify({"error": str(e)}), 500
 
@@ -1493,6 +1545,7 @@ def submit_sjt_feedback():
         return jsonify({"message": "SJT Feedback updated successfully"}), 200
 
     except Exception as e:
+        print(f"Error updating SJT Feedback: {e}")
         logger.error(f"Error updating SJT Feedback: {e}")
         return jsonify({"error": str(e)}), 500
     
@@ -1530,6 +1583,7 @@ def generate_report(result_file):
         return compressed_report_path  # Return the path of the compressed PDF
 
     except Exception as e:
+        print(f"Error generating report: {e}")
         logger.error(f"Error generating report: {e}")
         return jsonify({"error": f"Error generating report: {str(e)}"}), 500
 
@@ -1537,7 +1591,6 @@ def store_sjt_data(candidate_id, first_name, last_name, email, phone_number, loc
     cursor = None
     conn = None
     try:
-        print("1")
         conn = psycopg2.connect(
             dbname='hrtest',
             user='hruser',
@@ -1547,8 +1600,6 @@ def store_sjt_data(candidate_id, first_name, last_name, email, phone_number, loc
         )
 
         cursor = conn.cursor()
-
-        print("2")
 
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS sjt_test_reports (
@@ -1564,19 +1615,13 @@ def store_sjt_data(candidate_id, first_name, last_name, email, phone_number, loc
                 submission_date TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP
             )
             ''')
-        
-        print("3")
 
         submission_date = datetime.now().replace(microsecond=0)
-
-        print("4")
 
         cursor.execute('''
             INSERT INTO sjt_test_reports (candidate_id, first_name, last_name, email, phone_number, location, time_taken, report_s3_url, submission_date)
             VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
             ''', (candidate_id, first_name, last_name, email, phone_number, location, time_taken, report_s3_url, submission_date))
-        
-        print("5")
         
         conn.commit()
 
@@ -1636,6 +1681,7 @@ def fetch_sjt_data():
         return jsonify(user_data), 200
 
     except Exception as e:
+        print(f"Error fetching SJT data: {str(e)}")
         logger.error(f"Error fetching SJT data: {str(e)}")
         return jsonify({"error": f"Error fetching SJT data: {str(e)}"}), 500
 
@@ -1680,6 +1726,7 @@ def delete_sjt_data():
                 print(f"Deleted SJT report for candidate ID: {candidate_id} from S3.")
 
             except Exception as e:
+                print(f"Error deleting SJT report for candidate ID {candidate_id} from S3: {e}")
                 logger.error(f"Error deleting SJT report for candidate ID {candidate_id} from S3: {e}")
                 return jsonify({"error": f"Error deleting SJT report for candidate ID {candidate_id} from S3: {e}"}), 500
 
@@ -1691,6 +1738,7 @@ def delete_sjt_data():
         return jsonify({"message": f"SJT data for {len(candidate_ids)} candidates deleted successfully"}), 200
 
     except Exception as e:
+        print(f"Error deleting SJT data: {e}")
         logger.error(f"Error deleting SJT data: {e}")
         return jsonify({"error": str(e)}), 500
     
@@ -1749,7 +1797,8 @@ def export_sjt_data():
         return send_file(excel_file_path, as_attachment=True)
 
     except Exception as e:
-        logger.error(f"Error exporting SJT data: {e}")
+        print(f"Error exporting SJT data: {e}")
+        logger.error(f"Error exporting SJT data: {str(e)}")
         return jsonify({"error": f"Error exporting SJT data: {str(e)}"}), 500
     
     finally:
@@ -1793,6 +1842,7 @@ def upload_sjt_excel():
             return jsonify({"message": "Verification emails sent successfully"}), 200
 
     except Exception as e:
+        print(f"Error processing Excel file: {str(e)}")
         logger.error(f"Error processing Excel file: {str(e)}")
         return jsonify({"error": f"Error processing Excel file: {str(e)}"}), 500
     
@@ -1815,6 +1865,7 @@ def compress_pdf(input_path, output_path):
         document.close()
 
     except Exception as e:
+        print(f"Error compressing PDF: {e}")
         logger.error(f"Error compressing PDF: {e}")
         raise
 
@@ -1854,6 +1905,7 @@ def fetch_sjt_registration():
         return jsonify(sjt_registration_data), 200
 
     except Exception as e:
+        print(f"Error fetching SJT registration data: {str(e)}")
         logger.error(f"Error fetching SJT registration data: {str(e)}")
         return jsonify({"error": f"Error fetching SJT registration data: {str(e)}"}), 500
 
@@ -1897,6 +1949,7 @@ def delete_sjt_registration_data():
         return jsonify({"message": f"SJT registration data for {len(candidate_ids)} candidates deleted successfully"}), 200
 
     except Exception as e:
+        print(f"Error deleting SJT registration data: {e}")
         logger.error(f"Error deleting SJT registration data: {e}")
         return jsonify({"error": str(e)}), 500
     
@@ -1955,7 +2008,8 @@ def export_sjt_registration_data():
         return send_file(excel_file_path, as_attachment=True)
 
     except Exception as e:
-        logger.error(f"Error exporting SJT registration data: {e}")
+        print(f"Error exporting SJT registration data: {e}")
+        logger.error(f"Error exporting SJT registration data: {str(e)}")
         return jsonify({"error": f"Error exporting SJT registration data: {str(e)}"}), 500
     
     finally:
