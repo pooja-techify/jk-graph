@@ -1353,19 +1353,21 @@ def submit_sjt_test():
             return jsonify({"error": "No result_file data provided"}), 400
         
         else:
-            compressed_report_path = generate_report(result_file)
+        #     compressed_report_path = generate_report(result_file)
 
-            print(f"Compressed report path: {compressed_report_path}, Type: {type(compressed_report_path)}")
-
-            if not compressed_report_path.endswith('.pdf'):
-                return jsonify({"error": "Uploaded file is not a PDF"}), 400
+        #     print(f"Compressed report path: {compressed_report_path}, Type: {type(compressed_report_path)}")
             
-            pdf_document = fitz.open(compressed_report_path)
-            for page in pdf_document:
-                print(page.get_text())
-            pdf_document.close()
+        #     pdf_document = fitz.open(compressed_report_path)
+        #     for page in pdf_document:
+        #         print(page.get_text())
+        #     pdf_document.close()
 
-            # Upload the compressed PDF to S3
+            file_path = f"{candidate_id}_psychometric_test.pdf"
+            c = canvas.Canvas(file_path, pagesize=letter)
+            c.drawString(100, 750, "Psychometric Test")
+            c.save()
+
+            
             s3_client = boto3.client('s3')
             s3_bucket = 'onlinetest-stag-documents'
             s3_key = f'sjt_reports/{candidate_id}'
@@ -1373,7 +1375,7 @@ def submit_sjt_test():
 
             try:
                 s3_client.upload_file(
-                    compressed_report_path, s3_bucket, s3_key,
+                    file_path, s3_bucket, s3_key,
                     ExtraArgs={
                         "ContentDisposition": "inline",
                         "ContentType": "application/pdf",
