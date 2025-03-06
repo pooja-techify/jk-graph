@@ -1537,6 +1537,7 @@ def store_sjt_data(candidate_id, first_name, last_name, email, phone_number, loc
     cursor = None
     conn = None
     try:
+        print("1")
         conn = psycopg2.connect(
             dbname='hrtest',
             user='hruser',
@@ -1546,6 +1547,8 @@ def store_sjt_data(candidate_id, first_name, last_name, email, phone_number, loc
         )
 
         cursor = conn.cursor()
+
+        print("2")
 
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS sjt_test_reports (
@@ -1561,23 +1564,31 @@ def store_sjt_data(candidate_id, first_name, last_name, email, phone_number, loc
                 submission_date TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP,
             )
             ''')
+        
+        print("3")
 
         submission_date = datetime.now().replace(microsecond=0)
+
+        print("4")
 
         cursor.execute('''
             INSERT INTO sjt_test_reports (candidate_id, first_name, last_name, email, phone_number, location, time_taken, report_s3_url, submission_date)
             VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
             ''', (candidate_id, first_name, last_name, email, phone_number, location, time_taken, report_s3_url, submission_date))
         
+        print("5")
+        
         conn.commit()
 
         print("SJT User data stored successfully")
         
     except psycopg2.DatabaseError as e:
+        print(f"SJT Database error: {e}")
         logger.error(f"SJT Database error: {e}")
         return jsonify({"error": f"SJT Database error: {str(e)}"}), 500
 
     except Exception as e:
+        print(f"SJT Error storing user data: {e}")
         logger.error(f"SJT Error storing user data: {e}")
         return jsonify({"error": f"SJT Error storing user data: {str(e)}"}), 500
 
