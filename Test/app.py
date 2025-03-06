@@ -1779,7 +1779,7 @@ def export_sjt_data():
 
         columns = [
             "candidate_id", "first_name", "last_name", "email", "phone_number",
-            "location", "score", "time_taken", "feedback", 
+            "location", "time_taken", "feedback", 
             "report_s3_url", "submission_date"
         ]
         data_to_export = [dict(zip(columns, row)) for row in rows]
