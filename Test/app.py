@@ -550,25 +550,31 @@ def submit_test():
                 )
 
                 s3_client.put_object_acl(Bucket=s3_bucket, Key=s3_key, ACL='public-read')
+                print("Report uploaded to S3 successfully")
+
             except Exception as e:
                 logger.error(f"Error uploading report to S3: {e}")
                 return jsonify({"error": "Failed to upload report to S3"}), 500
-            print("Report uploaded to S3 successfully")
+            
             
             try:
                 latitude, longitude = location.split(",")
                 location = get_address_from_coordinates_nominatim(latitude, longitude)
+                print("Address fetched successfully")
+
             except Exception as e:
                 logger.error(f"Error getting address from coordinates: {e}")
                 return jsonify({"error": "Failed to get address from coordinates"}), 500
-            print("Address fetched successfully")
+            
 
             try:
                 store_user_data(candidate_id, first_name, last_name, email, phone_number, location, score, aptitude_score, verbal_score, programming_score, logical_score, time_taken, report_s3_url, submit_reason)
+                print("User data stored successfully")
+                
             except Exception as e:
                 logger.error(f"Error storing user data: {e}")
                 return jsonify({"error": "Failed to store user data"}), 500
-            print("User data stored successfully")
+           
 
             try:
                 to_emails = ['firefans121@gmail.com']
@@ -584,10 +590,12 @@ def submit_test():
                 Score: {score}<br><br>
                 """
                 send_email(subject, body, to_emails, cc_emails, attachment_path=compressed_report_path)
+                print("Report sent successfully")
+            
             except Exception as e:
                 logger.error(f"Error sending report email: {e}")
                 return jsonify({"error": "Failed to send report email"}), 500
-            print("Report sent successfully")
+            
         
             try:
                 to_email = email
@@ -599,11 +607,12 @@ def submit_test():
                 Mobile: +917862063131<br><br>
                 """
                 send_email(subject, body, [to_email], [])
+                print("Submission confirmation mail sent successfully")
+
             except Exception as e:
                 logger.error(f"Error sending submission confirmation mail: {e}")
                 return jsonify({"error": "Failed to send submission confirmation mail"}), 500
-            print("Submission confirmation mail sent successfully")
-
+            
             return jsonify({"message": "Test submitted successfully"}), 200
 
     except Exception as e:
@@ -1384,26 +1393,31 @@ def submit_sjt_test():
                 )
 
                 s3_client.put_object_acl(Bucket=s3_bucket, Key=s3_key, ACL='public-read')
+                print("SJT Report uploaded.")
+
             except Exception as e:
                 logger.error(f"Error uploading SJT report to S3: {e}")
                 return jsonify({"error": "Failed to upload SJT report to S3"}), 500
-            print("SJT Report uploaded to S3 successfully")
+            
             
             try:
                 latitude, longitude = location.split(",")
                 location = get_address_from_coordinates_nominatim(latitude, longitude)
+                print("Lat/Long fetched successfully")
+
             except Exception as e:
                 logger.error(f"Error getting address from coordinates: {e}")
                 return jsonify({"error": "Failed to get address from coordinates"}), 500
-            print("Address fetched successfully")
+            
 
             try:
                 store_sjt_data(candidate_id, first_name, last_name, email, phone_number, location, time_taken, report_s3_url)
+                print("SJT data stored successfully")
+
             except Exception as e:
                 logger.error(f"Error storing SJT user data: {e}")
                 return jsonify({"error": "Failed to store SJT user data"}), 500
-            print("SJT User data stored successfully")
-
+            
         try:
                 to_emails = ['firefans121@gmail.com']
                 cc_emails = ['pooja.shah@techifysolutions.com']
@@ -1417,11 +1431,12 @@ def submit_sjt_test():
                 Last Name: {last_name}<br>
                 """
                 send_email(subject, body, to_emails, cc_emails)
+                print("SJT Report sent")
                 # , attachment_path=compressed_report_path
         except Exception as e:
                 logger.error(f"Error sending SJT report email: {e}")
                 return jsonify({"error": "Failed to send SJT report email"}), 500
-        print("SJT Report sent successfully")
+        
         
         try:
                 to_email = email
@@ -1433,11 +1448,13 @@ def submit_sjt_test():
                 Mobile: +917862063131<br><br>
                 """
                 send_email(subject, body, [to_email], [])
+                print("SJT Submission confirmation mail sent")
+                
+
         except Exception as e:
                 logger.error(f"Error sending SJT submission confirmation mail: {e}")
                 return jsonify({"error": "Failed to send SJT submission confirmation mail"}), 500
-        print("SJT Submission confirmation mail sent successfully")
-
+        
         return jsonify({"message": "SJT Test submitted successfully"}), 200
 
     except Exception as e:
@@ -1655,6 +1672,7 @@ def delete_sjt_data():
             try:
                 s3_client.delete_object(Bucket=s3_bucket, Key=s3_key)
                 print(f"Deleted SJT report for candidate ID: {candidate_id} from S3.")
+
             except Exception as e:
                 logger.error(f"Error deleting SJT report for candidate ID {candidate_id} from S3: {e}")
                 return jsonify({"error": f"Error deleting SJT report for candidate ID {candidate_id} from S3: {e}"}), 500
@@ -1669,6 +1687,7 @@ def delete_sjt_data():
     except Exception as e:
         logger.error(f"Error deleting SJT data: {e}")
         return jsonify({"error": str(e)}), 500
+    
     finally:
         if cursor:
             cursor.close()
@@ -1726,6 +1745,7 @@ def export_sjt_data():
     except Exception as e:
         logger.error(f"Error exporting SJT data: {e}")
         return jsonify({"error": f"Error exporting SJT data: {str(e)}"}), 500
+    
     finally:
         if cursor:
             cursor.close()
@@ -1787,6 +1807,7 @@ def compress_pdf(input_path, output_path):
         writer.save(output_path, garbage=4, deflate=True, clean=True)
         writer.close()
         document.close()
+
     except Exception as e:
         logger.error(f"Error compressing PDF: {e}")
         raise
@@ -1872,6 +1893,7 @@ def delete_sjt_registration_data():
     except Exception as e:
         logger.error(f"Error deleting SJT registration data: {e}")
         return jsonify({"error": str(e)}), 500
+    
     finally:
         if cursor:
             cursor.close()
@@ -1929,6 +1951,7 @@ def export_sjt_registration_data():
     except Exception as e:
         logger.error(f"Error exporting SJT registration data: {e}")
         return jsonify({"error": f"Error exporting SJT registration data: {str(e)}"}), 500
+    
     finally:
         if cursor:
             cursor.close()
