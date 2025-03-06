@@ -1561,7 +1561,7 @@ def store_sjt_data(candidate_id, first_name, last_name, email, phone_number, loc
                 time_taken VARCHAR(50),
                 feedback TEXT DEFAULT '',
                 report_s3_url TEXT,
-                submission_date TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                submission_date TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP
             )
             ''')
         
