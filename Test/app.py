@@ -1410,9 +1410,100 @@ def submit_sjt_test():
         else:
             print("generating report")
 
+            with open('sjt_questions.json') as f:
+                sjt_questions = json.load(f)
+
+            with open('traits.json') as f:
+                traits_data = json.load(f)
+
+            trait_scores = {trait['trait']: {'score': 0, 'category': trait['category']} for trait in traits_data['traits']}
+
+            category_scores = {trait['category']: 0 for trait in traits_data['traits']}
+
+            def calculate_score(result_file):
+                total_score = 0
+                for question_id, user_response in result_file.items():
+
+                    user_options = user_response.split('|')
+                    user_options_json = {option.strip(): value for option, value in zip(user_options, [5, 3, 1, -1])}
+                    # print(user_options_json)
+
+                    question_data = sjt_questions[int(question_id)]
+                    # print(question_data)
+                    
+                    score = 0
+
+                    for option in user_options:
+                        correct_score = question_data['score'].get(option.strip(), 0)
+                        given_score = user_options_json.get(option.strip(), 0)
+                        score += (5 - abs(correct_score - given_score))  # Score = ∑(5−| X given − X correct |)
+
+                    total_score += score
+                    
+                    for trait in question_data.get('traits', []):
+                        trait_scores[trait]['score'] += score  # Update the score for the trait
+                        # Update the category score based on the trait's category
+                        category_scores[trait_scores[trait]['category']] += score  # Add score to the corresponding category
+
+                return total_score/20, trait_scores, category_scores
+            
+            score, trait_scores, category_scores = calculate_score(result_file)
+
+            category_scores['Agreeableness'] /= 12
+            category_scores['Conscientiousness'] /= 20
+            category_scores['Extraversion'] /= 17
+            category_scores['Neuroticism'] /= 7
+            category_scores['Openness'] /= 16
+
+            text = """<b>Psychometric Test</b>"""
+
             file_path = f"{candidate_id}_psychometric_test.pdf"
+
             c = canvas.Canvas(file_path, pagesize=letter)
-            c.drawString(100, 750, "Psychometric Test")
+            c.drawString(100, 750, text)
+
+            # Add candidate information table
+            c.drawString(100, 730, "Candidate ID: {}".format(candidate_id))
+            c.drawString(100, 715, "Name: {}".format(first_name))
+            c.drawString(100, 700, "Email: {}".format(email))
+            c.drawString(100, 685, "Phone Number: {}".format(phone_number))
+            c.drawString(100, 670, "Score: {}".format(score))
+            
+            # Add a line break
+            c.showPage()
+
+            # Add category scores table
+            c.drawString(100, 750, "<b>Category Scores</b>")
+            y_position = 735
+            for category, score in category_scores.items():
+                c.drawString(100, y_position, "{}: {}".format(category, score))
+                y_position -= 15
+            
+            # Add a line break
+            c.showPage()
+
+            # Add trait scores table
+            c.drawString(100, 750, "<b>Trait Scores</b>")
+            y_position = 735
+            for trait, details in trait_scores.items():
+                c.drawString(100, y_position, "{}: {}".format(trait, details['score']))
+                y_position -= 15
+            
+            # Add a line break
+            c.showPage()
+
+            # Add question details
+            for question_id, user_response in result_file.items():
+                question_data = sjt_questions[int(question_id)]
+                user_options = user_response.split('|')
+                user_options_json = {option.strip(): value for option, value in zip(user_options, [5, 3, 1, -1])}
+                
+                c.drawString(100, 750, "Question: {}".format(question_data['question']))
+                c.drawString(100, 735, "Selected Options: {}".format(", ".join(user_options)))
+                c.drawString(100, 720, "Score: {}".format(question_data['score']))
+                c.drawString(100, 705, "Traits: {}".format(", ".join(question_data.get('traits', []))))
+                c.showPage()
+            # Save the PDF
             c.save()
 
             print("Uploading to s3")
@@ -1455,7 +1546,7 @@ def submit_sjt_test():
             print("location fetched. storing data now.")
 
             try:
-                store_sjt_data(candidate_id, first_name, last_name, email, phone_number, location, time_taken, report_s3_url)
+                store_sjt_data(candidate_id, first_name, last_name, email, phone_number, location, score, time_taken, report_s3_url)
                 print("SJT data stored successfully")
 
             except Exception as e:
@@ -1555,39 +1646,7 @@ def submit_sjt_feedback():
         if conn:
             conn.close()
 
-def generate_report(result_file):
-    try:
-        data = json.loads(result_file)
-
-        # Create a PDF from the JSON data
-        pdf_path = '/tmp/report.pdf'
-        c = canvas.Canvas(pdf_path, pagesize=letter)
-        width, height = letter
-        
-        # Add content to the PDF
-        for index, item in enumerate(data):
-            c.drawString(100, height - 100 - (index * 20), f"Item {index + 1}: {item}")
-        
-        c.save()
-
-        # Compress the PDF
-        compressed_report_path = '/tmp/compressed_report.pdf'
-        compress_pdf(pdf_path, compressed_report_path)
-
-        print(compressed_report_path)
-
-        if isinstance(compressed_report_path, tuple):
-            print("Tuple")
-            compressed_report_path = compressed_report_path[0]
-
-        return compressed_report_path  # Return the path of the compressed PDF
-
-    except Exception as e:
-        print(f"Error generating report: {e}")
-        logger.error(f"Error generating report: {e}")
-        return jsonify({"error": f"Error generating report: {str(e)}"}), 500
-
-def store_sjt_data(candidate_id, first_name, last_name, email, phone_number, location, time_taken, report_s3_url):
+def store_sjt_data(candidate_id, first_name, last_name, email, phone_number, location, score, time_taken, report_s3_url):
     cursor = None
     conn = None
     try:
@@ -1609,6 +1668,7 @@ def store_sjt_data(candidate_id, first_name, last_name, email, phone_number, loc
                 email VARCHAR(50),
                 phone_number VARCHAR(15),
                 location VARCHAR(50),
+                score varchar(10),
                 time_taken VARCHAR(50),
                 feedback TEXT DEFAULT '',
                 report_s3_url TEXT,
@@ -1619,9 +1679,9 @@ def store_sjt_data(candidate_id, first_name, last_name, email, phone_number, loc
         submission_date = datetime.now().replace(microsecond=0)
 
         cursor.execute('''
-            INSERT INTO sjt_test_reports (candidate_id, first_name, last_name, email, phone_number, location, time_taken, report_s3_url, submission_date)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
-            ''', (candidate_id, first_name, last_name, email, phone_number, location, time_taken, report_s3_url, submission_date))
+            INSERT INTO sjt_test_reports (candidate_id, first_name, last_name, email, phone_number, location, score, time_taken, report_s3_url, submission_date)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            ''', (candidate_id, first_name, last_name, email, phone_number, location, score, time_taken, report_s3_url, submission_date))
         
         conn.commit()
 
@@ -1670,10 +1730,11 @@ def fetch_sjt_data():
                 "email": row[3],
                 "phone_number": row[4],
                 "location": row[5],
-                "time_taken": row[6],
-                "feedback": row[7],
-                "report_s3_url": row[8],
-                "submission_date": row[9]
+                "score": row[6],
+                "time_taken": row[7],
+                "feedback": row[8],
+                "report_s3_url": row[9],
+                "submission_date": row[10]
             })
 
         print("SJT User data fetched successfully")
@@ -1779,7 +1840,7 @@ def export_sjt_data():
 
         columns = [
             "candidate_id", "first_name", "last_name", "email", "phone_number",
-            "location", "time_taken", "feedback", 
+            "location", "score", "time_taken", "feedback", 
             "report_s3_url", "submission_date"
         ]
         data_to_export = [dict(zip(columns, row)) for row in rows]
