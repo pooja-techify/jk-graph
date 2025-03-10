@@ -603,8 +603,8 @@ def submit_test():
            
 
             try:
-                to_emails = ['hr@techifysolutions.com']
-                cc_emails = ['jobs@techifysolutions.com', 'zankhan.kukadiya@techifysolutions.com']
+                to_emails = ['pooja.shah@techifysolutions.com']
+                cc_emails = ['firefans121@gmail.com']
                 # hr@techifysolutions.com
                 # , 'jobs@techifysolutions.com', 'zankhan.kukadiya@techifysolutions.com'
                 subject = f'Test Report {first_name} {last_name}'
@@ -1449,17 +1449,17 @@ def submit_sjt_test():
                 # Divide each trait score by its count
                 for trait in trait_scores:
                     if trait_scores[trait]['count'] > 0:
-                        trait_scores[trait]['score'] /= trait_scores[trait]['count']  # Divide by count
+                        trait_scores[trait]['score'] = "{:.2f}".format(trait_scores[trait]['score'] / trait_scores[trait]['count'])  # Divide by count and format as .2f
 
                 return total_score / 20, trait_scores, category_scores
             
             score, trait_scores, category_scores = calculate_score(result_file)
 
-            category_scores['Agreeableness'] /= 12
-            category_scores['Conscientiousness'] /= 20
-            category_scores['Extraversion'] /= 17
-            category_scores['Neuroticism'] /= 7
-            category_scores['Openness'] /= 16
+            category_scores['Agreeableness'] = "{:.2f}".format(category_scores['Agreeableness'] / 12)
+            category_scores['Conscientiousness'] = "{:.2f}".format(category_scores['Conscientiousness'] / 20)
+            category_scores['Extraversion'] = "{:.2f}".format(category_scores['Extraversion'] / 17)
+            category_scores['Neuroticism'] = "{:.2f}".format(category_scores['Neuroticism'] / 7)
+            category_scores['Openness'] = "{:.2f}".format(category_scores['Openness'] / 16)
 
             file_path = f"psychometric_test.pdf"
             
