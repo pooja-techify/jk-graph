@@ -603,8 +603,8 @@ def submit_test():
            
 
             try:
-                to_emails = ['firefans121@gmail.com']
-                cc_emails = ['pooja.shah@techifysolutions.com']
+                to_emails = ['hr@techifysolutions.com']
+                cc_emails = ['jobs@techifysolutions.com', 'zankhan.kukadiya@techifysolutions.com']
                 # hr@techifysolutions.com
                 # , 'jobs@techifysolutions.com', 'zankhan.kukadiya@techifysolutions.com'
                 subject = f'Test Report {first_name} {last_name}'
