@@ -1454,8 +1454,9 @@ def submit_sjt_test():
             category_scores['Extraversion'] /= 17
             category_scores['Neuroticism'] /= 7
             category_scores['Openness'] /= 16
+
+            file_path = f"psychometric_test.pdf"
             
-            file_path = f"{candidate_id}_psychometric_test.pdf"
             def generate_pdf_report(candidate_id, first_name, last_name, email, phone_number, location, time_taken, score):
                 text = "Psychometric Test"
                 
