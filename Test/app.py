@@ -1449,7 +1449,7 @@ def submit_sjt_test():
                 # Divide each trait score by its count
                 for trait in trait_scores:
                     if trait_scores[trait]['count'] > 0:
-                        trait_scores[trait]['score'] = "{:.2f}".format(trait_scores[trait]['score'] / trait_scores[trait]['count'])  # Divide by count and format as .2f
+                        trait_scores[trait]['score'] = "{:.2f}".format(float(trait_scores[trait]['score']) / trait_scores[trait]['count'])  # Divide by count and format as .2f
 
                 return total_score / 20, trait_scores, category_scores
             
