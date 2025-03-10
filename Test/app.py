@@ -1402,6 +1402,7 @@ def submit_sjt_test():
         phone_number = data.get('phone_number')
         location = data.get('location')
         time_taken = data.get('time_taken')
+        submit_reason = data.get('submit_reason')
         result_file = data.get('result_file')
 
         if not result_file:
@@ -1459,8 +1460,6 @@ def submit_sjt_test():
             category_scores['Extraversion'] /= 17
             category_scores['Neuroticism'] /= 7
             category_scores['Openness'] /= 16
-
-            
 
             file_path = f"psychometric_test.pdf"
             
@@ -1662,7 +1661,7 @@ def submit_sjt_test():
             print("location fetched. storing data now.")
 
             try:
-                store_sjt_data(candidate_id, first_name, last_name, email, phone_number, location, score, time_taken, report_s3_url)
+                store_sjt_data(candidate_id, first_name, last_name, email, phone_number, location, score, category_scores['Agreeableness'], category_scores['Conscientiousness'], category_scores['Extraversion'], category_scores['Neuroticism'], category_scores['Openness'], time_taken, report_s3_url, submit_reason)
                 print("SJT data stored successfully")
 
             except Exception as e:
@@ -1762,7 +1761,7 @@ def submit_sjt_feedback():
         if conn:
             conn.close()
 
-def store_sjt_data(candidate_id, first_name, last_name, email, phone_number, location, score, time_taken, report_s3_url):
+def store_sjt_data(candidate_id, first_name, last_name, email, phone_number, location, score, agreeableness, conscientiousness, extraversion, neuroticism, openness, time_taken, report_s3_url, submit_reason):
     cursor = None
     conn = None
     try:
@@ -1785,19 +1784,25 @@ def store_sjt_data(candidate_id, first_name, last_name, email, phone_number, loc
                 phone_number VARCHAR(15),
                 location VARCHAR(50),
                 score varchar(10),
+                agreeableness varchar(10),
+                conscientiousness varchar(10),
+                extraversion varchar(10),
+                neuroticism varchar(10),
+                openness varchar(10),
                 time_taken VARCHAR(50),
                 feedback TEXT DEFAULT '',
                 report_s3_url TEXT,
-                submission_date TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP
+                submission_date TIMESTAMP WITHOUT TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+                submit_reason VARCHAR(20)
             )
             ''')
 
         submission_date = datetime.now().replace(microsecond=0)
 
         cursor.execute('''
-            INSERT INTO sjt_test_reports (candidate_id, first_name, last_name, email, phone_number, location, score, time_taken, report_s3_url, submission_date)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-            ''', (candidate_id, first_name, last_name, email, phone_number, location, score, time_taken, report_s3_url, submission_date))
+            INSERT INTO sjt_test_reports (candidate_id, first_name, last_name, email, phone_number, location, score, agreeableness, conscientiousness, extraversion, neuroticism, openness, time_taken, report_s3_url, submission_date, submit_reason)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+            ''', (candidate_id, first_name, last_name, email, phone_number, location, score, agreeableness, conscientiousness, extraversion, neuroticism, openness, time_taken, report_s3_url, submission_date, submit_reason))
         
         conn.commit()
 
@@ -1846,11 +1851,17 @@ def fetch_sjt_data():
                 "email": row[3],
                 "phone_number": row[4],
                 "location": row[5],
-                "score": row[6],
-                "time_taken": row[7],
-                "feedback": row[8],
-                "report_s3_url": row[9],
-                "submission_date": row[10]
+                "agreeableness": row[6], 
+                "conscientiousness": row[7], 
+                "extraversion": row[8],
+                "neuroticism": row[9],
+                "openness": row[10],
+                "score": row[11],
+                "time_taken": row[12],
+                "feedback": row[13],
+                "report_s3_url": row[14],
+                "submission_date": row[15],
+                "submit_reason": row[16]
             })
 
         print("SJT User data fetched successfully")
@@ -1955,9 +1966,7 @@ def export_sjt_data():
         rows = cursor.fetchall()
 
         columns = [
-            "candidate_id", "first_name", "last_name", "email", "phone_number",
-            "location", "score", "time_taken", "feedback", 
-            "report_s3_url", "submission_date"
+            "candidate_id", "first_name", "last_name", "email", "phone_number", "location", "score", "agreeableness", "conscientiousness", "extraversion", "neuroticism", "openness", "time_taken", "feedback", "report_s3_url", "submission_date", "submit_reason"
         ]
         data_to_export = [dict(zip(columns, row)) for row in rows]
 
