@@ -1416,7 +1416,7 @@ def submit_sjt_test():
             with open('traits.json') as f:
                 traits_data = json.load(f)
 
-            trait_scores = {trait['trait']: {'score': 0, 'category': trait['category']} for trait in traits_data['traits']}
+            trait_scores = {trait['trait']: {'score': 0, 'category': trait['category'], 'count': trait['count']} for trait in traits_data['traits']}
 
             category_scores = {trait['category']: 0 for trait in traits_data['traits']}
 
@@ -1445,7 +1445,12 @@ def submit_sjt_test():
                         # Update the category score based on the trait's category
                         category_scores[trait_scores[trait]['category']] += score  # Add score to the corresponding category
 
-                return total_score/20, trait_scores, category_scores
+                # Divide each trait score by its count
+                for trait in trait_scores:
+                    if trait_scores[trait]['count'] > 0:
+                        trait_scores[trait]['score'] /= trait_scores[trait]['count']  # Divide by count
+
+                return total_score / 20, trait_scores, category_scores
             
             score, trait_scores, category_scores = calculate_score(result_file)
 
@@ -1454,6 +1459,8 @@ def submit_sjt_test():
             category_scores['Extraversion'] /= 17
             category_scores['Neuroticism'] /= 7
             category_scores['Openness'] /= 16
+
+            
 
             file_path = f"psychometric_test.pdf"
             
