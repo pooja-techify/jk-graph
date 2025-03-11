@@ -1527,7 +1527,7 @@ def submit_sjt_test():
                 c.setFont("Helvetica", 12)
                 for category, score in category_scores.items():
                     c.drawString(100, y_position, category)
-                    c.drawString(300, y_position, "{:.2f}".format(score))
+                    c.drawString(300, y_position, "{:.2f}".format(float(score)))
                     y_position -= 15
                 
                 c.showPage()
@@ -1644,7 +1644,7 @@ def submit_sjt_test():
                 c.save()
             
             generate_pdf_report(candidate_id, first_name, last_name, email, phone_number, location, time_taken, score)
-            
+
             print("Uploading to s3")
 
             s3_client = boto3.client('s3')
