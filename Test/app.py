@@ -1551,7 +1551,7 @@ def submit_sjt_test():
                 c.setFont("Helvetica", 12)
                 for trait, details in trait_scores.items():
                     c.drawString(100, y_position, trait)
-                    c.drawString(300, y_position, "{:.2f}".format(details['score']))
+                    c.drawString(300, y_position, "{:.2f}".format(float(details['score'])))
                     c.drawString(400, y_position, details['category'])
                     y_position -= 15
                 
