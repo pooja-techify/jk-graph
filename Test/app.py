@@ -1443,25 +1443,41 @@ def submit_sjt_test():
                     
                     for trait in question_data.get('traits', []):
                         trait_scores[trait]['score'] += score  # Update the score for the trait
-                        # Update the category score based on the trait's category
                         category_scores[trait_scores[trait]['category']] += score  # Add score to the corresponding category
 
-                # Divide each trait score by its count
-                for trait in trait_scores:
-                    if trait_scores[trait]['count'] > 0:
-                        trait_scores[trait]['score'] = "{:.2f}".format(float(trait_scores[trait]['score']) / trait_scores[trait]['count'])  # Divide by count and format as .2f
+                print("Calculating Trait Score")
+                try:
+                    for trait in trait_scores:
+                        if trait_scores[trait]['count'] > 0:
+                            trait_scores[trait]['score'] = "{:.2f}".format(float(trait_scores[trait]['score']) / float(trait_scores[trait]['count']))  # Divide by count and format as .2f
 
+                except ValueError as e:
+                    print(f"Error converting trait scores to float: {e}")
+                    logger.error(f"Error converting trait scores to float: {e}")
+                    return jsonify({"error": "Invalid trait score format"}), 500
+                
                 return total_score / 20, trait_scores, category_scores
+            
+            print("Calculating Score")
             
             score, trait_scores, category_scores = calculate_score(result_file)
 
-            category_scores['Agreeableness'] = "{:.2f}".format(category_scores['Agreeableness'] / 12)
-            category_scores['Conscientiousness'] = "{:.2f}".format(category_scores['Conscientiousness'] / 20)
-            category_scores['Extraversion'] = "{:.2f}".format(category_scores['Extraversion'] / 17)
-            category_scores['Neuroticism'] = "{:.2f}".format(category_scores['Neuroticism'] / 7)
-            category_scores['Openness'] = "{:.2f}".format(category_scores['Openness'] / 16)
+            print("Calculating Category Score")
+            try:
+                category_scores['Agreeableness'] = "{:.2f}".format(float(category_scores['Agreeableness']))  # Ensure it's a float
+                category_scores['Conscientiousness'] = "{:.2f}".format(float(category_scores['Conscientiousness']))  # Ensure it's a float
+                category_scores['Extraversion'] = "{:.2f}".format(float(category_scores['Extraversion']))  # Ensure it's a float
+                category_scores['Neuroticism'] = "{:.2f}".format(float(category_scores['Neuroticism']))  # Ensure it's a float
+                category_scores['Openness'] = "{:.2f}".format(float(category_scores['Openness']))  # Ensure it's a float
+            
+            except ValueError as e:
+                print(f"Error converting category scores to float: {e}")
+                logger.error(f"Error converting category scores to float: {e}")
+                return jsonify({"error": "Invalid category score format"}), 500
 
             file_path = f"psychometric_test.pdf"
+
+            print("Starting report generation")
             
             def generate_pdf_report(candidate_id, first_name, last_name, email, phone_number, location, time_taken, score):
                 text = "Psychometric Test"
@@ -1475,6 +1491,8 @@ def submit_sjt_test():
                 c.setFont("Helvetica-Bold", 12)
                 c.drawString(100, 730, "Candidate Information")
                 
+                print("Candidate Details")
+
                 c.setFont("Helvetica", 12)
                 details = [
                     ("Candidate ID", candidate_id),
@@ -1491,6 +1509,8 @@ def submit_sjt_test():
                     c.drawString(100, y_position, field)
                     c.drawString(300, y_position, str(value))
                     y_position -= 15
+
+                print("Category Scores")
 
                 c.setFont("Helvetica-Bold", 16)
                 c.drawString(100, 500, "Category Scores")
@@ -1511,6 +1531,8 @@ def submit_sjt_test():
                     y_position -= 15
                 
                 c.showPage()
+
+                print("Trait Scores")
 
                 c.setFont("Helvetica-Bold", 16)
                 c.drawString(100, 750, "Trait Scores")
@@ -1552,6 +1574,8 @@ def submit_sjt_test():
                         y -= 15
 
                     return y
+                
+                print("Questions")
                 
                 y_position = 750
 
@@ -1620,7 +1644,7 @@ def submit_sjt_test():
                 c.save()
             
             generate_pdf_report(candidate_id, first_name, last_name, email, phone_number, location, time_taken, score)
-
+            
             print("Uploading to s3")
 
             s3_client = boto3.client('s3')
@@ -2208,6 +2232,50 @@ def export_sjt_registration_data():
 def health_check():
     print("Health check successful")
     return jsonify({"status": "healthy"}), 200
+
+@app.route('/verify_login', methods=['POST'])
+def verify_login():
+    cursor = None
+    conn = None
+    try:
+        data = request.json
+        username = data.get("username")
+        password = data.get("password")
+
+        if not username or not password:
+            return jsonify({"error": "Username and password are required"}), 400
+
+        conn = psycopg2.connect(
+            dbname='hrtest',
+            user='hruser',
+            password='T@chify$ol8m0s0!',
+            host='localhost',
+            port='5432'
+        )
+
+        cursor = conn.cursor()
+
+        cursor.execute('''
+            SELECT permission_access FROM login WHERE username = %s AND password = %s;
+        ''', (username, password))
+        result = cursor.fetchone()
+
+        if result:
+            permission_access = result[0]
+            return jsonify({"success": True, "permission_access": permission_access}), 200
+        else:
+            return jsonify({"success": False, "permission_access": "no"}), 200
+
+    except Exception as e:
+        print(f"Error verifying login: {str(e)}")
+        logger.error(f"Error verifying login: {str(e)}")
+        return jsonify({"error": str(e)}), 500
+
+    finally:
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=5001, debug=True)
