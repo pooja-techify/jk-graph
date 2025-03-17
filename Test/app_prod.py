@@ -22,6 +22,7 @@ from io import BytesIO
 from werkzeug.utils import secure_filename
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
+from botocore.exceptions import ClientError
 
 app = Flask(__name__)
 CORS(app, resources={r"/*": {
@@ -31,10 +32,7 @@ CORS(app, resources={r"/*": {
     "supports_credentials": True
 }})
 
-SMTP_SERVER = 'smtp.gmail.com'
-SMTP_PORT = 587
-EMAIL_SENDER = 'hrtest.techify@gmail.com'
-EMAIL_PASSWORD = 'twar fdoi zxau djde'
+EMAIL_SENDER = 'hr@techifysolutions.com'
 
 # Set up logging
 logging.basicConfig(
@@ -249,41 +247,47 @@ def get_sjt_questions():
             
 def send_email(subject, body, to_recipients, cc_recipients, attachment_path=None):
     try:
-        msg = MIMEMultipart()
-        msg['From'] = EMAIL_SENDER
-        msg['To'] = ', '.join(to_recipients)
-        msg['Cc'] = ', '.join(cc_recipients)
-        msg['Subject'] = subject
-        msg.attach(MIMEText(body, 'html'))
+        ses_client = boto3.client('ses', region_name='us-east-1', aws_access_key_id=ACCESS_KEY, aws_secret_access_key=SECRET_KEY)
 
+        # Add attachment if provided
         if attachment_path:
             with open(attachment_path, 'rb') as attachment:
+                attachment_data = attachment.read()
+                attachment_name = os.path.basename(attachment_path)
+
+                # Create a multipart email with attachment
+                msg = MIMEMultipart()
+                msg['From'] = EMAIL_SENDER
+                msg['To'] = ', '.join(to_recipients)
+                msg['Cc'] = ', '.join(cc_recipients)
+                msg['Subject'] = subject
+                msg.attach(MIMEText(body, 'html'))
+
                 part = MIMEBase('application', 'octet-stream')
-                part.set_payload(attachment.read())
+                part.set_payload(attachment_data)
                 encoders.encode_base64(part)
-                part.add_header(
-                    'Content-Disposition',
-                    f'attachment; filename= {os.path.basename(attachment_path)}',
-                )
+                part.add_header('Content-Disposition', f'attachment; filename={attachment_name}')
                 msg.attach(part)
 
-        all_recipients = to_recipients + cc_recipients
+                # Send the email
+                response = ses_client.send_raw_email(
+                    Source=EMAIL_SENDER,
+                    Destinations=to_recipients + cc_recipients,
+                    RawMessage={'Data': msg.as_string()}
+                )
 
-        server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT)
-        server.starttls()
-        server.login(EMAIL_SENDER, EMAIL_PASSWORD)
-        server.sendmail(EMAIL_SENDER, all_recipients, msg.as_string())
-        server.quit()
+        print("Email sent! Message ID:", response['MessageId'])
         return True
-    
-    except smtplib.SMTPException as e:
-        print(f'SMTP error: {e}')
-        logger.error(f'SMTP error: {e}')
-        return jsonify({"error": f"SMTP error: {str(e)}"}), 500
+
+    except ClientError as e:
+        print(f"Error sending email: {e.response['Error']['Message']}")
+        logger.exception("Error sending email")  # Log the exception with stack trace
+        return jsonify({"error": f"Error sending email: {e.response['Error']['Message']}"}), 500
     except Exception as e:
-        print(f'Error sending email: {e}')
-        logger.error(f'Error sending email: {e}')
+        print(f"Error sending email: {e}")
+        logger.exception("Error sending email")  # Log the exception with stack trace
         return jsonify({"error": f"Error sending email: {str(e)}"}), 500
+    
     
 @app.route('/send_verification', methods=['POST'])
 def send_verification():
@@ -2289,5 +2293,3 @@ def verify_login():
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=5001, debug=True)
-
-# Score=∑(5−| X given − X correct |)
