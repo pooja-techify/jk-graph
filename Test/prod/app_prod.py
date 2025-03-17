@@ -569,7 +569,7 @@ def submit_test():
             compress_pdf(report_path, compressed_report_path)
 
             # Upload the compressed PDF to S3
-            s3_key = f'reports/{candidate_id}'
+            s3_key = f'prod/reports/{candidate_id}'
             try:
                 s3_client.upload_file(
                     compressed_report_path, 'onlinetest-stag-documents', s3_key,
@@ -846,7 +846,7 @@ def delete_user_data():
         WHERE candidate_id = ANY(%s);
         '''
 
-        s3_key = f'reports/{candidate_ids[0]}'
+        s3_key = f'prod/reports/{candidate_ids[0]}'
         try:
             s3_client.delete_object(Bucket='onlinetest-stag-documents', Key=s3_key)
             print(f"Deleted report for candidate ID: {candidate_ids[0]} from S3.")
@@ -1005,7 +1005,7 @@ def delete_registration_data():
         WHERE candidate_id = ANY(%s);
         '''
 
-        s3_key = f'reports/{candidate_ids[0]}'
+        s3_key = f'prod/reports/{candidate_ids[0]}'
         try:
             s3_client.delete_object(Bucket='onlinetest-stag-documents', Key=s3_key)
             print(f"Deleted report for candidate ID: {candidate_ids[0]} from S3.")
@@ -1671,7 +1671,7 @@ def submit_sjt_test():
 
             print("Uploading to s3")
 
-            s3_key = f'sjt_reports/{candidate_id}'
+            s3_key = f'prod/sjt_reports/{candidate_id}'
             try:
                 s3_client.upload_file(
                     file_path, 'onlinetest-stag-documents', s3_key,
@@ -1949,7 +1949,7 @@ def delete_sjt_data():
         WHERE candidate_id = ANY(%s);
         '''
 
-        s3_key = f'sjt_reports/{candidate_ids[0]}'
+        s3_key = f'prod/sjt_reports/{candidate_ids[0]}'
         try:
             s3_client.delete_object(Bucket='onlinetest-stag-documents', Key=s3_key)
             print(f"Deleted SJT report for candidate ID: {candidate_ids[0]} from S3.")
@@ -2169,7 +2169,7 @@ def delete_sjt_registration_data():
         WHERE candidate_id = ANY(%s);
         '''
 
-        s3_key = f'sjt_reports/{candidate_ids[0]}'
+        s3_key = f'prod/sjt_reports/{candidate_ids[0]}'
         try:
             s3_client.delete_object(Bucket='onlinetest-stag-documents', Key=s3_key)
             print(f"Deleted SJT report for candidate ID: {candidate_ids[0]} from S3.")

@@ -563,7 +563,7 @@ def submit_test():
             # Upload the compressed PDF to S3
             s3_client = boto3.client('s3')
             s3_bucket = 'onlinetest-stag-documents'
-            s3_key = f'reports/{candidate_id}'
+            s3_key = f'stag/reports/{candidate_id}'
             report_s3_url = f'https://{s3_bucket}.s3.us-east-1.amazonaws.com/{s3_key}'
 
             try:
@@ -845,7 +845,7 @@ def delete_user_data():
         s3_client = boto3.client('s3')
         s3_bucket = 'onlinetest-stag-documents'
         for candidate_id in candidate_ids:
-            s3_key = f'reports/{candidate_id}'
+            s3_key = f'stag/reports/{candidate_id}'
             try:
                 s3_client.delete_object(Bucket=s3_bucket, Key=s3_key)
                 print(f"Deleted report for candidate ID: {candidate_id} from S3.")
@@ -1659,7 +1659,7 @@ def submit_sjt_test():
 
             s3_client = boto3.client('s3')
             s3_bucket = 'onlinetest-stag-documents'
-            s3_key = f'sjt_reports/{candidate_id}'
+            s3_key = f'stag/sjt_reports/{candidate_id}'
             report_s3_url = f'https://{s3_bucket}.s3.us-east-1.amazonaws.com/{s3_key}'
 
             try:
@@ -1942,7 +1942,7 @@ def delete_sjt_data():
         s3_client = boto3.client('s3')
         s3_bucket = 'onlinetest-stag-documents'
         for candidate_id in candidate_ids:
-            s3_key = f'sjt_reports/{candidate_id}'
+            s3_key = f'stag/sjt_reports/{candidate_id}'
             try:
                 s3_client.delete_object(Bucket=s3_bucket, Key=s3_key)
                 print(f"Deleted SJT report for candidate ID: {candidate_id} from S3.")
