@@ -247,7 +247,7 @@ def get_sjt_questions():
             
 def send_email(subject, body, to_recipients, cc_recipients, attachment_path=None):
     try:
-        ses_client = boto3.client('ses', region_name='us-east-1', aws_access_key_id=ACCESS_KEY, aws_secret_access_key=SECRET_KEY)
+        ses_client = boto3.client('ses', region_name='us-east-1')
 
         # Add attachment if provided
         if attachment_path:
