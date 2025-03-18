@@ -2283,7 +2283,7 @@ def verify_login():
         cursor = conn.cursor()
 
         cursor.execute('''
-            SELECT permission_access FROM login WHERE username = %s AND password = %s;
+            SELECT permission_access FROM prod.login WHERE username = %s AND password = %s;
         ''', (username, password))
         result = cursor.fetchone()
 
