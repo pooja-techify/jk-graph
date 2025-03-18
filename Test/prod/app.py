@@ -318,7 +318,7 @@ def send_verification():
 
 def send_test(name, email, phone_number):
     candidate_id = f"{random.randint(0, 999)}{int(datetime.now().timestamp() * 1000)}"
-    candidate_url = f"https://stag-onlinetest.techifysolutions.com/#/?candidate_id={candidate_id}"
+    candidate_url = f"https://onlinetest.techifysolutions.com/#/?candidate_id={candidate_id}"
     passcode = str(random.randint(100000, 999999))
     
     cursor = None
@@ -1155,7 +1155,7 @@ def send_sjt_new_verification():
 
 def send_sjt_new_test(name, email, phone_number):
     candidate_id = f"{random.randint(0, 999)}{int(datetime.now().timestamp() * 1000)}"
-    candidate_url = f"https://stag-onlinetest.techifysolutions.com/#/?candidate_id={candidate_id}/sjt"
+    candidate_url = f"https://onlinetest.techifysolutions.com/#/?candidate_id={candidate_id}/sjt"
     passcode = str(random.randint(100000, 999999))
     
     cursor = None
@@ -1252,7 +1252,7 @@ def send_sjt_verification():
 
 def send_sjt_test(name, email, phone_number, candidate_id):
     # candidate_id = f"{random.randint(0, 999)}{int(datetime.now().timestamp() * 1000)}"
-    candidate_url = f"https://stag-onlinetest.techifysolutions.com/#/?candidate_id={candidate_id}/sjt"
+    candidate_url = f"https://onlinetest.techifysolutions.com/#/?candidate_id={candidate_id}/sjt"
     passcode = str(random.randint(100000, 999999))
     
     cursor = None
