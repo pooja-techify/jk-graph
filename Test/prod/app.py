@@ -336,7 +336,7 @@ def send_test(name, email, phone_number):
         cursor = conn.cursor()
 
         cursor.execute('''
-            CREATE TABLE IF NOT EXISTS registration (
+            CREATE TABLE IF NOT EXISTS prod.registration (
                 candidate_id VARCHAR(50) PRIMARY KEY,
                 email VARCHAR(50),
                 name VARCHAR(50),
@@ -351,7 +351,7 @@ def send_test(name, email, phone_number):
         entry_date = datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')
 
         cursor.execute('''
-            INSERT INTO registration (candidate_id, email, name, phone_number, passcode, entry_date)
+            INSERT INTO prod.registration (candidate_id, email, name, phone_number, passcode, entry_date)
             VALUES (%s, %s, %s, %s, %s, %s)
             ON CONFLICT (candidate_id) DO UPDATE SET email = EXCLUDED.email, passcode = EXCLUDED.passcode;
         ''', (candidate_id, email, name, phone_number, passcode, entry_date))
@@ -412,7 +412,7 @@ def verify_passcode():
         cursor = conn.cursor()
 
         cursor.execute('''
-            SELECT passcode, test_attempted FROM registration WHERE candidate_id = %s;
+            SELECT passcode, test_attempted FROM prod.registration WHERE candidate_id = %s;
         ''', (candidate_id,))
         result = cursor.fetchone()
 
@@ -461,7 +461,7 @@ def get_mail():
 
         if is_sjt:
             cursor.execute('''
-                SELECT email FROM sjt_registration WHERE candidate_id = %s;
+                SELECT email FROM prod.sjt_registration WHERE candidate_id = %s;
             ''', (candidate_id,))
             result = cursor.fetchone()
 
@@ -473,7 +473,7 @@ def get_mail():
 
         else:
             cursor.execute('''
-                SELECT email FROM registration WHERE candidate_id = %s;
+                SELECT email FROM prod.registration WHERE candidate_id = %s;
             ''', (candidate_id,))
             result = cursor.fetchone()
 
@@ -517,7 +517,7 @@ def start_test():
         test_attempted_date = datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')
 
         cursor.execute('''
-            UPDATE registration SET test_attempted = TRUE, test_attempted_date = %s WHERE candidate_id = %s;
+            UPDATE prod.registration SET test_attempted = TRUE, test_attempted_date = %s WHERE candidate_id = %s;
         ''', (test_attempted_date, candidate_id,))
         conn.commit()
 
@@ -611,10 +611,8 @@ def submit_test():
            
 
             try:
-                to_emails = ['pooja.shah@techifysolutions.com']
-                cc_emails = ['firefans121@gmail.com']
-                # hr@techifysolutions.com
-                # , 'jobs@techifysolutions.com', 'zankhan.kukadiya@techifysolutions.com'
+                to_emails = ['hr@techifysolutions.com']
+                cc_emails = ['jobs@techifysolutions.com', 'zankhan.kukadiya@techifysolutions.com']
                 subject = f'Test Report {first_name} {last_name}'
                 body = f"""
                 Please find the attached test report.<br><br>
@@ -681,7 +679,7 @@ def submit_feedback():
         cursor = conn.cursor()
 
         sql_query = '''
-        UPDATE hrtest_reports
+        UPDATE prod.hrtest_reports
         SET feedback = %s
         WHERE candidate_id = %s;
         '''
@@ -719,7 +717,7 @@ def store_user_data(candidate_id, first_name, last_name, email, phone_number, lo
         cursor = conn.cursor()
 
         cursor.execute('''
-            CREATE TABLE IF NOT EXISTS hrtest_reports (
+            CREATE TABLE IF NOT EXISTS prod.hrtest_reports (
                 candidate_id VARCHAR(50) PRIMARY KEY,
                 first_name VARCHAR(50),
                 last_name VARCHAR(50),
@@ -742,7 +740,7 @@ def store_user_data(candidate_id, first_name, last_name, email, phone_number, lo
         submission_date = datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')
 
         cursor.execute('''
-            INSERT INTO hrtest_reports (candidate_id, first_name, last_name, email, phone_number, location, score, aptitude_score, verbal_score, programming_score, logical_score, time_taken, report_s3_url, submission_date, submit_reason)
+            INSERT INTO prod.hrtest_reports (candidate_id, first_name, last_name, email, phone_number, location, score, aptitude_score, verbal_score, programming_score, logical_score, time_taken, report_s3_url, submission_date, submit_reason)
             VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             ''', (candidate_id, first_name, last_name, email, phone_number, location, score, aptitude_score, verbal_score, programming_score, logical_score, time_taken, report_s3_url, submission_date, submit_reason))
         
@@ -781,7 +779,7 @@ def fetch_user_data():
 
         cursor = conn.cursor()
 
-        cursor.execute('SELECT * FROM hrtest_reports ORDER BY submission_date DESC')
+        cursor.execute('SELECT * FROM prod.hrtest_reports ORDER BY submission_date DESC')
         rows = cursor.fetchall()
 
         user_data = []
@@ -842,7 +840,7 @@ def delete_user_data():
         cursor = conn.cursor()
 
         sql_query = '''
-        DELETE FROM hrtest_reports
+        DELETE FROM prod.hrtest_reports
         WHERE candidate_id = ANY(%s);
         '''
 
@@ -896,7 +894,7 @@ def export_candidate_data():
         cursor = conn.cursor()
 
         sql_query = '''
-        SELECT * FROM hrtest_reports
+        SELECT * FROM prod.hrtest_reports
         WHERE candidate_id = ANY(%s);
         '''
 
@@ -948,7 +946,7 @@ def fetch_registration():
 
         cursor = conn.cursor()
 
-        cursor.execute('SELECT * FROM registration ORDER BY entry_date DESC')
+        cursor.execute('SELECT * FROM prod.registration ORDER BY entry_date DESC')
         rows = cursor.fetchall()
 
         registration_data = []
@@ -1001,7 +999,7 @@ def delete_registration_data():
         cursor = conn.cursor()
 
         sql_query = '''
-        DELETE FROM registration
+        DELETE FROM prod.registration
         WHERE candidate_id = ANY(%s);
         '''
 
@@ -1056,7 +1054,7 @@ def export_registration_data():
 
         sql_query = '''
         SELECT candidate_id, email, name, phone_number, test_attempted, entry_date
-        FROM registration
+        FROM prod.registration
         WHERE candidate_id = ANY(%s);
         '''
 
@@ -1173,7 +1171,7 @@ def send_sjt_new_test(name, email, phone_number):
         cursor = conn.cursor()
 
         cursor.execute('''
-            CREATE TABLE IF NOT EXISTS sjt_registration (
+            CREATE TABLE IF NOT EXISTS prod.sjt_registration (
                 candidate_id VARCHAR(50) PRIMARY KEY,
                 email VARCHAR(50),
                 name VARCHAR(50),
@@ -1188,7 +1186,7 @@ def send_sjt_new_test(name, email, phone_number):
         entry_date = datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')
 
         cursor.execute('''
-            INSERT INTO sjt_registration (candidate_id, email, name, phone_number, passcode, entry_date)
+            INSERT INTO prod.sjt_registration (candidate_id, email, name, phone_number, passcode, entry_date)
             VALUES (%s, %s, %s, %s, %s, %s)
             ON CONFLICT (candidate_id) DO UPDATE SET email = EXCLUDED.email, passcode = EXCLUDED.passcode;
         ''', (candidate_id, email, name, phone_number, passcode, entry_date))
@@ -1270,7 +1268,7 @@ def send_sjt_test(name, email, phone_number, candidate_id):
         cursor = conn.cursor()
 
         cursor.execute('''
-            CREATE TABLE IF NOT EXISTS sjt_registration (
+            CREATE TABLE IF NOT EXISTS prod.sjt_registration (
                 candidate_id VARCHAR(50) PRIMARY KEY,
                 email VARCHAR(50),
                 name VARCHAR(50),
@@ -1285,7 +1283,7 @@ def send_sjt_test(name, email, phone_number, candidate_id):
         entry_date = datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')
 
         cursor.execute('''
-            INSERT INTO sjt_registration (candidate_id, email, name, phone_number, passcode, entry_date)
+            INSERT INTO prod.sjt_registration (candidate_id, email, name, phone_number, passcode, entry_date)
             VALUES (%s, %s, %s, %s, %s, %s)
             ON CONFLICT (candidate_id) DO UPDATE SET email = EXCLUDED.email, passcode = EXCLUDED.passcode;
         ''', (candidate_id, email, name, phone_number, passcode, entry_date))
@@ -1346,7 +1344,7 @@ def verify_sjt_passcode():
         cursor = conn.cursor()
 
         cursor.execute('''
-            SELECT passcode, test_attempted FROM sjt_registration WHERE candidate_id = %s;
+            SELECT passcode, test_attempted FROM prod.sjt_registration WHERE candidate_id = %s;
         ''', (candidate_id,))
         result = cursor.fetchone()
 
@@ -1394,7 +1392,7 @@ def start_sjt_test():
         test_attempted_date = datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')
 
         cursor.execute('''
-            UPDATE sjt_registration SET test_attempted = TRUE, test_attempted_date = %s WHERE candidate_id = %s;
+            UPDATE prod.sjt_registration SET test_attempted = TRUE, test_attempted_date = %s WHERE candidate_id = %s;
         ''', (test_attempted_date, candidate_id,))
         conn.commit()
 
@@ -1782,7 +1780,7 @@ def submit_sjt_feedback():
         cursor = conn.cursor()
 
         sql_query = '''
-        UPDATE sjt_test_reports
+        UPDATE prod.sjt_test_reports
         SET feedback = %s
         WHERE candidate_id = %s;
         '''
@@ -1820,7 +1818,7 @@ def store_sjt_data(candidate_id, first_name, last_name, email, phone_number, loc
         cursor = conn.cursor()
 
         cursor.execute('''
-            CREATE TABLE IF NOT EXISTS sjt_test_reports (
+            CREATE TABLE IF NOT EXISTS prod.sjt_test_reports (
                 candidate_id VARCHAR(50) PRIMARY KEY,
                 first_name VARCHAR(50),
                 last_name VARCHAR(50),
@@ -1844,7 +1842,7 @@ def store_sjt_data(candidate_id, first_name, last_name, email, phone_number, loc
         submission_date = datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')
 
         cursor.execute('''
-            INSERT INTO sjt_test_reports (candidate_id, first_name, last_name, email, phone_number, location, score, agreeableness, conscientiousness, extraversion, neuroticism, openness, time_taken, report_s3_url, submission_date, submit_reason)
+            INSERT INTO prod.sjt_test_reports (candidate_id, first_name, last_name, email, phone_number, location, score, agreeableness, conscientiousness, extraversion, neuroticism, openness, time_taken, report_s3_url, submission_date, submit_reason)
             VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             ''', (candidate_id, first_name, last_name, email, phone_number, location, score, agreeableness, conscientiousness, extraversion, neuroticism, openness, time_taken, report_s3_url, submission_date, submit_reason))
         
@@ -1883,7 +1881,7 @@ def fetch_sjt_data():
 
         cursor = conn.cursor()
 
-        cursor.execute('SELECT * FROM sjt_test_reports ORDER BY submission_date DESC')
+        cursor.execute('SELECT * FROM prod.sjt_test_reports ORDER BY submission_date DESC')
         rows = cursor.fetchall()
 
         user_data = []
@@ -1945,7 +1943,7 @@ def delete_sjt_data():
         cursor = conn.cursor()
 
         sql_query = '''
-        DELETE FROM sjt_test_reports
+        DELETE FROM prod.sjt_test_reports
         WHERE candidate_id = ANY(%s);
         '''
 
@@ -2000,7 +1998,7 @@ def export_sjt_data():
         cursor = conn.cursor()
 
         sql_query = '''
-        SELECT * FROM sjt_test_reports
+        SELECT * FROM prod.sjt_test_reports
         WHERE candidate_id = ANY(%s);
         '''
 
@@ -2112,7 +2110,7 @@ def fetch_sjt_registration():
 
         cursor = conn.cursor()
 
-        cursor.execute('SELECT * FROM sjt_registration ORDER BY entry_date DESC')
+        cursor.execute('SELECT * FROM prod.sjt_registration ORDER BY entry_date DESC')
         rows = cursor.fetchall()
 
         sjt_registration_data = []
@@ -2165,7 +2163,7 @@ def delete_sjt_registration_data():
         cursor = conn.cursor()
 
         sql_query = '''
-        DELETE FROM sjt_registration
+        DELETE FROM prod.sjt_registration
         WHERE candidate_id = ANY(%s);
         '''
 
@@ -2221,7 +2219,7 @@ def export_sjt_registration_data():
 
         sql_query = '''
         SELECT candidate_id, email, name, phone_number, test_attempted, entry_date
-        FROM sjt_registration
+        FROM prod.sjt_registration
         WHERE candidate_id = ANY(%s);
         '''
 
