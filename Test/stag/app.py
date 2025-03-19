@@ -1519,34 +1519,32 @@ def submit_sjt_test():
 
                 if photo_base64:
                     try:
-                        # Remove the data URL prefix if present
+                        print("1")
                         if 'data:image/' in photo_base64:
                             photo_base64 = photo_base64.split(',')[1]
                         
-                        # Decode base64 to image
+                        print("2")
                         photo_bytes = base64.b64decode(photo_base64)
                         photo_image = Image.open(BytesIO(photo_bytes))
-                        
-                        # Convert to RGB if necessary (in case of RGBA)
+ 
                         if photo_image.mode != 'RGB':
+                            print("3")
                             photo_image = photo_image.convert('RGB')
                         
-                        # Resize image to reasonable dimensions (e.g., 100x100 pixels)
+                        print("4")
                         photo_size = (100, 100)
                         photo_image.thumbnail(photo_size)
-                        
-                        # Save to temporary BytesIO
+
                         temp_photo = BytesIO()
                         photo_image.save(temp_photo, format='JPEG')
                         temp_photo.seek(0)
                         
-                        # Add image to PDF (positioned in top right corner)
+                        print("5")
                         c.drawImage(ImageReader(temp_photo), 450, 650, width=100, height=100)
                         
                     except Exception as e:
                         print(f"Error processing photo: {e}")
                         logger.error(f"Error processing photo: {e}")
-                        # Continue without photo if there's an error
                 
                 
                 y_position = 710
