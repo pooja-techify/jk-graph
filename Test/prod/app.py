@@ -23,6 +23,7 @@ from werkzeug.utils import secure_filename
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
 from botocore.exceptions import ClientError, NoCredentialsError, PartialCredentialsError
+from reportlab.lib.utils import ImageReader
 
 app = Flask(__name__)
 CORS(app, resources={r"/*": {
@@ -1443,6 +1444,7 @@ def submit_sjt_test():
         time_taken = data.get('time_taken')
         submit_reason = data.get('submit_reason')
         result_file = data.get('result_file')
+        photo_base64 = data.get('photo')
 
         if not result_file:
             return jsonify({"error": "No result_file data provided"}), 400
@@ -1518,10 +1520,42 @@ def submit_sjt_test():
 
             print("Starting report generation")
             
-            def generate_pdf_report(candidate_id, first_name, last_name, email, phone_number, location, time_taken, score):
+            def generate_pdf_report(candidate_id, first_name, last_name, email, phone_number, location, time_taken, score, photo_base64=None):
                 text = "Psychometric Test"
                 
                 c = canvas.Canvas(file_path, pagesize=letter)
+                
+                # Add photo if provided
+                if photo_base64:
+                    try:
+                        # Remove the data URL prefix if present
+                        if 'data:image/' in photo_base64:
+                            photo_base64 = photo_base64.split(',')[1]
+                        
+                        # Decode base64 to image
+                        photo_bytes = base64.b64decode(photo_base64)
+                        photo_image = Image.open(BytesIO(photo_bytes))
+                        
+                        # Convert to RGB if necessary (in case of RGBA)
+                        if photo_image.mode != 'RGB':
+                            photo_image = photo_image.convert('RGB')
+                        
+                        # Resize image to reasonable dimensions (e.g., 100x100 pixels)
+                        photo_size = (100, 100)
+                        photo_image.thumbnail(photo_size)
+                        
+                        # Save to temporary BytesIO
+                        temp_photo = BytesIO()
+                        photo_image.save(temp_photo, format='JPEG')
+                        temp_photo.seek(0)
+                        
+                        # Add image to PDF (positioned in top right corner)
+                        c.drawImage(ImageReader(temp_photo), 450, 650, width=100, height=100)
+                        
+                    except Exception as e:
+                        print(f"Error processing photo: {e}")
+                        logger.error(f"Error processing photo: {e}")
+                        # Continue without photo if there's an error
                 
                 c.setFont("Helvetica-Bold", 16)
                 text_width = c.stringWidth(text, "Helvetica-Bold", 16)
@@ -1682,7 +1716,7 @@ def submit_sjt_test():
 
                 c.save()
             
-            generate_pdf_report(candidate_id, first_name, last_name, email, phone_number, location, time_taken, score)
+            generate_pdf_report(candidate_id, first_name, last_name, email, phone_number, location, time_taken, score, photo_base64)
 
             print("Uploading to s3")
 
