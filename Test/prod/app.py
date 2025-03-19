@@ -1444,7 +1444,6 @@ def submit_sjt_test():
         time_taken = data.get('time_taken')
         submit_reason = data.get('submit_reason')
         result_file = data.get('result_file')
-        photo_base64 = data.get('photo')
 
         if not result_file:
             return jsonify({"error": "No result_file data provided"}), 400
@@ -1520,7 +1519,7 @@ def submit_sjt_test():
 
             print("Starting report generation")
             
-            def generate_pdf_report(candidate_id, first_name, last_name, email, phone_number, location, time_taken, score, photo_base64=None):
+            def generate_pdf_report(candidate_id, first_name, last_name, email, phone_number, location, time_taken, score):
                 text = "Psychometric Test"
                 
                 c = canvas.Canvas(file_path, pagesize=letter)
@@ -1684,7 +1683,7 @@ def submit_sjt_test():
 
                 c.save()
             
-            generate_pdf_report(candidate_id, first_name, last_name, email, phone_number, location, time_taken, score, photo_base64)
+            generate_pdf_report(candidate_id, first_name, last_name, email, phone_number, location, time_taken, score)
 
             print("Uploading to s3")
 
