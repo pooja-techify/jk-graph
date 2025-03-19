@@ -22,6 +22,8 @@ from io import BytesIO
 from werkzeug.utils import secure_filename
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
+from botocore.exceptions import ClientError, NoCredentialsError, PartialCredentialsError
+from reportlab.lib.utils import ImageReader
 
 app = Flask(__name__)
 CORS(app, resources={r"/*": {
