@@ -359,19 +359,23 @@ def send_test(name, email, phone_number):
         conn.commit()
 
         body = f"""
-            Dear {name},<br><br>
-            Greetings!!<br><br>
-            Techify's DNA is about Solutions & Technologies. We believe that "Every problem has a solution".<br><br>
-            To take your first step to be part of our amazing team, you are invited to appear in a test for your candidature.<br><br>
-            The test link will work only for one attempt so please use high speed internet and after one attempt link will be disabled.<br><br>
-            Please <b>read the instructions carefully</b> before appearing in the test.<br><br>
-            <b>To appear in the test please click here: <a href="{candidate_url}">Test Link</a></b><br><br>
-            You will need the following passcode to appear in the test: <b>{passcode}</b><br><br>
-            All the best!<br><br>
-            Talent Acquisition Team<br>
-            Email: hr@techifysolutions.com<br>
-            Mobile: +917862063131<br><br>
-            **If you face any difficulty while giving the test please reach us at 8390849886 for technical support.
+            Dear {name},
+            <br>Thank you for your interest in joining the Techify team. As part of our selection process, we invite you to complete a technical assessment designed to showcase your problem-solving abilities.
+            <br><br>Assessment Details:
+            <br>This assessment link is valid for one attempt only.
+            <br>Please ensure you have a stable internet connection before beginning.
+            <br>We recommend <b>carefully reviewing all instructions</b> prior to starting the test.
+            <br><br>Access Information:
+            <br><b>Assessment Link: <a href="{candidate_url}">Test Link</a></b>
+            <br><b>Unique Access Code: {passcode}</b>
+            <br><br>The assessment has been designed to evaluate key skills relevant to the position you've applied for. We encourage you to approach it methodically and demonstrate your technical capabilities.
+            <br>Should you encounter any technical difficulties during the assessment, please contact our talent acquisition team at +91 7862063131.
+            <br>We wish you success and look forward to reviewing your completed assessment.
+            <br><br>Regards,
+            <br>Talent Acquisition Team
+            <br>Techify Solutions
+            <br>hr@techifysolutions.com 
+            <br>+91 7862063131
             """
 
         subject = "Invite to test from Techify Solutions Pvt Ltd"
@@ -634,10 +638,15 @@ def submit_test():
                 to_email = email
                 subject = "Test Submitted Successfully"
                 body = f"""
-                Your test has been submitted successfully. Someone from our side will get back to you soon. Thank you for your time and effort.<br><br>
-                Talent Acquisition Team<br>
-                Email: hr@techifysolutions.com<br>
-                Mobile: +917862063131<br><br>
+                Dear {first_name},
+                <br>Thank you for completing the Techify technical assessment. We are pleased to confirm that your submission has been successfully received.
+                <br>Our technical evaluation team will now review your work thoroughly. We appreciate the time and effort you've invested in this process and will be in touch with you regarding next steps.
+                <br>If you have any questions in the interim, please don't hesitate to contact our Talent Acquisition Team.
+                <br><br>Regards,
+                <br>Talent Acquisition Team 
+                <br>Techify Solutions
+                <br>hr@techifysolutions.com 
+                <br>+91 786-206-3131
                 """
                 send_email(subject, body, [to_email], [])
                 print("Submission confirmation mail sent successfully")
@@ -1194,19 +1203,23 @@ def send_sjt_new_test(name, email, phone_number):
         conn.commit()
 
         body = f"""
-            Dear {name},<br><br>
-            Greetings!!<br><br>
-            Techify's DNA is about Solutions & Technologies. We believe that "Every problem has a solution".<br><br>
-            We are pleased with your candidature and want to invite you to appear in a psychometric test for a detailed review.<br><br>
-            The test link will work only for one attempt so please use high speed internet and after one attempt link will be disabled.<br><br>
-            Please <b>read the instructions carefully</b> before appearing in the test.<br><br>
-            <b>To appear in the test please click here: <a href="{candidate_url}">Test Link</a></b><br><br>
-            You will need the following passcode to appear in the test: <b>{passcode}</b><br><br>
-            All the best!<br><br>
-            Talent Acquisition Team<br>
-            Email: hr@techifysolutions.com<br>
-            Mobile: +917862063131<br><br>
-            **If you face any difficulty while giving the test please reach us at 8390849886 for technical support.
+            Dear {name},
+            <br>Thank you for your continued interest in joining Techify. We are pleased with your progress thus far and would like to invite you to complete a psychometric assessment as the next step in our selection process.
+            <br><br>Assessment Details:
+            <br>This assessment link is valid for one attempt only.
+            <br>Please ensure you have a stable internet connection before beginning the test.
+            <br>We recommend <b>carefully reviewing all instructions</b> prior to starting the test.
+            <br><br>Access Information:
+            <br><b>Assessment Link: <a href="{candidate_url}">Test Link</a></b>
+            <br>Unique Access Code: {passcode}
+            <br><br>This assessment is designed to provide a more comprehensive understanding of your work preferences and aptitudes. The results will help us determine how your unique strengths align with our team dynamics and organizational culture.
+            <br>Should you encounter any technical difficulties during the assessment, please contact our Talent Acquisition team at +91 7862063131.
+            <br>We appreciate your participation in this process and look forward to reviewing your completed assessment.
+            <br><br>Regards,
+            <br>Talent Acquisition Team 
+            <br>Techify Solutions
+            <br>hr@techifysolutions.com 
+            <br>+91 7862063131
             """
 
         subject = "Invite to test from Techify Solutions Pvt Ltd"
@@ -1291,19 +1304,23 @@ def send_sjt_test(name, email, phone_number, candidate_id):
         conn.commit()
 
         body = f"""
-            Dear Candidate,<br><br>
-            Greetings!!<br><br>
-            Techify's DNA is about Solutions & Technologies. We believe that "Every problem has a solution".<br><br>
-            We are pleased with your candidature and want to invite you to appear in a psychometric test for a detailed review.<br><br>
-            The test link will work only for one attempt so please use high speed internet and after one attempt link will be disabled.<br><br>
-            Please <b>read the instructions carefully</b> before appearing in the test.<br><br>
-            <b>To appear in the test please click here: <a href="{candidate_url}">Test Link</a></b><br><br>
-            You will need the following passcode to appear in the test: <b>{passcode}</b><br><br>
-            All the best!<br><br>
-            Talent Acquisition Team<br>
-            Email: hr@techifysolutions.com<br>
-            Mobile: +917862063131<br><br>
-            **If you face any difficulty while giving the test please reach us at 8390849886 for technical support.
+            Dear {name},
+            <br>Thank you for your continued interest in joining Techify. We are pleased with your progress thus far and would like to invite you to complete a psychometric assessment as the next step in our selection process.
+            <br><br>Assessment Details:
+            <br>This assessment link is valid for one attempt only.
+            <br>Please ensure you have a stable internet connection before beginning the test.
+            <br>We recommend <b>carefully reviewing all instructions</b> prior to starting the test.
+            <br><br>Access Information:
+            <br><b>Assessment Link: <a href="{candidate_url}">Test Link</a></b>
+            <br>Unique Access Code: {passcode}
+            <br><br>This assessment is designed to provide a more comprehensive understanding of your work preferences and aptitudes. The results will help us determine how your unique strengths align with our team dynamics and organizational culture.
+            <br>Should you encounter any technical difficulties during the assessment, please contact our Talent Acquisition team at +91 7862063131.
+            <br>We appreciate your participation in this process and look forward to reviewing your completed assessment.
+            <br><br>Regards,
+            <br>Talent Acquisition Team 
+            <br>Techify Solutions
+            <br>hr@techifysolutions.com 
+            <br>+91 7862063131
             """
 
         subject = "Invite to test from Techify Solutions Pvt Ltd"
@@ -1736,10 +1753,15 @@ def submit_sjt_test():
                 to_email = email
                 subject = "Test Submitted Successfully"
                 body = f"""
-                Your psychometric test has been submitted successfully. Someone from our side will get back to you soon. Thank you for your time and effort.<br><br>
-                Talent Acquisition Team<br>
-                Email: hr@techifysolutions.com<br>
-                Mobile: +917862063131<br><br>
+                Dear {first_name},
+                <br>Thank you for completing the Techify psychometric assessment. We are pleased to confirm that your submission has been successfully received.
+                <br>Our technical evaluation team will now review your work thoroughly. We appreciate the time and effort you've invested in this process and will be in touch with you regarding next steps.
+                <br>If you have any questions in the interim, please don't hesitate to contact our Talent Acquisition Team.
+                <br><br>Regards,
+                <br>Talent Acquisition Team 
+                <br>Techify Solutions
+                <br>hr@techifysolutions.com 
+                <br>+91 786-206-3131
                 """
                 send_email(subject, body, [to_email], [])
                 print("SJT Submission confirmation mail sent")
