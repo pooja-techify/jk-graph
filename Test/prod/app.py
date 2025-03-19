@@ -330,7 +330,7 @@ def send_test(name, email, phone_number):
             dbname='hrtest',
             user='hruser',
             password='T@chify$ol8m0s0!',
-            host='localhost',
+            host='10.1.0.18',
             port='5432'
         )
 
@@ -410,7 +410,7 @@ def verify_passcode():
             dbname='hrtest',
             user='hruser',
             password='T@chify$ol8m0s0!',
-            host='localhost',
+            host='10.1.0.18',
             port='5432'
         )
 
@@ -458,7 +458,7 @@ def get_mail():
             dbname='hrtest',
             user='hruser',
             password='T@chify$ol8m0s0!',
-            host='localhost',
+            host='10.1.0.18',
             port='5432'
         )
 
@@ -513,7 +513,7 @@ def start_test():
             dbname='hrtest',
             user='hruser',
             password='T@chify$ol8m0s0!',
-            host='localhost',
+            host='10.1.0.18',
             port='5432'
         )
         
@@ -682,7 +682,7 @@ def submit_feedback():
             dbname='hrtest',
             user='hruser',
             password='T@chify$ol8m0s0!',
-            host='localhost',
+            host='10.1.0.18',
             port='5432'
         )
         
@@ -720,7 +720,7 @@ def store_user_data(candidate_id, first_name, last_name, email, phone_number, lo
             dbname='hrtest',
             user='hruser',
             password='T@chify$ol8m0s0!',
-            host='localhost',
+            host='10.1.0.18',
             port='5432'
         )
 
@@ -783,7 +783,7 @@ def fetch_user_data():
             dbname='hrtest',
             user='hruser',
             password='T@chify$ol8m0s0!',
-            host='localhost',
+            host='10.1.0.18',
             port='5432'
         )
 
@@ -843,7 +843,7 @@ def delete_user_data():
             dbname='hrtest',
             user='hruser',
             password='T@chify$ol8m0s0!',
-            host='localhost',
+            host='10.1.0.18',
             port='5432'
         )
 
@@ -897,7 +897,7 @@ def export_candidate_data():
             dbname='hrtest',
             user='hruser',
             password='T@chify$ol8m0s0!',
-            host='localhost',
+            host='10.1.0.18',
             port='5432'
         )
 
@@ -950,7 +950,7 @@ def fetch_registration():
             dbname='hrtest',
             user='hruser',
             password='T@chify$ol8m0s0!',
-            host='localhost',
+            host='10.1.0.18',
             port='5432'
         )
 
@@ -1002,7 +1002,7 @@ def delete_registration_data():
             dbname='hrtest',
             user='hruser',
             password='T@chify$ol8m0s0!',
-            host='localhost',
+            host='10.1.0.18',
             port='5432'
         )
 
@@ -1056,7 +1056,7 @@ def export_registration_data():
             dbname='hrtest',
             user='hruser',
             password='T@chify$ol8m0s0!',
-            host='localhost',
+            host='10.1.0.18',
             port='5432'
         )
 
@@ -1174,7 +1174,7 @@ def send_sjt_new_test(name, email, phone_number):
             dbname='hrtest',
             user='hruser',
             password='T@chify$ol8m0s0!',
-            host='localhost',
+            host='10.1.0.18',
             port='5432'
         )
 
@@ -1275,7 +1275,7 @@ def send_sjt_test(name, email, phone_number, candidate_id):
             dbname='hrtest',
             user='hruser',
             password='T@chify$ol8m0s0!',
-            host='localhost',
+            host='10.1.0.18',
             port='5432'
         )
 
@@ -1355,7 +1355,7 @@ def verify_sjt_passcode():
             dbname='hrtest',
             user='hruser',
             password='T@chify$ol8m0s0!',
-            host='localhost',
+            host='10.1.0.18',
             port='5432'
         )
 
@@ -1401,7 +1401,7 @@ def start_sjt_test():
             dbname='hrtest',
             user='hruser',
             password='T@chify$ol8m0s0!',
-            host='localhost',
+            host='10.1.0.18',
             port='5432'
         )
         
@@ -1524,38 +1524,6 @@ def submit_sjt_test():
                 text = "Psychometric Test"
                 
                 c = canvas.Canvas(file_path, pagesize=letter)
-                
-                # Add photo if provided
-                if photo_base64:
-                    try:
-                        # Remove the data URL prefix if present
-                        if 'data:image/' in photo_base64:
-                            photo_base64 = photo_base64.split(',')[1]
-                        
-                        # Decode base64 to image
-                        photo_bytes = base64.b64decode(photo_base64)
-                        photo_image = Image.open(BytesIO(photo_bytes))
-                        
-                        # Convert to RGB if necessary (in case of RGBA)
-                        if photo_image.mode != 'RGB':
-                            photo_image = photo_image.convert('RGB')
-                        
-                        # Resize image to reasonable dimensions (e.g., 100x100 pixels)
-                        photo_size = (100, 100)
-                        photo_image.thumbnail(photo_size)
-                        
-                        # Save to temporary BytesIO
-                        temp_photo = BytesIO()
-                        photo_image.save(temp_photo, format='JPEG')
-                        temp_photo.seek(0)
-                        
-                        # Add image to PDF (positioned in top right corner)
-                        c.drawImage(ImageReader(temp_photo), 450, 650, width=100, height=100)
-                        
-                    except Exception as e:
-                        print(f"Error processing photo: {e}")
-                        logger.error(f"Error processing photo: {e}")
-                        # Continue without photo if there's an error
                 
                 c.setFont("Helvetica-Bold", 16)
                 text_width = c.stringWidth(text, "Helvetica-Bold", 16)
@@ -1829,7 +1797,7 @@ def submit_sjt_feedback():
             dbname='hrtest',
             user='hruser',
             password='T@chify$ol8m0s0!',
-            host='localhost',
+            host='10.1.0.18',
             port='5432'
         )
         
@@ -1867,7 +1835,7 @@ def store_sjt_data(candidate_id, first_name, last_name, email, phone_number, loc
             dbname='hrtest',
             user='hruser',
             password='T@chify$ol8m0s0!',
-            host='localhost',
+            host='10.1.0.18',
             port='5432'
         )
 
@@ -1931,7 +1899,7 @@ def fetch_sjt_data():
             dbname='hrtest',
             user='hruser',
             password='T@chify$ol8m0s0!',
-            host='localhost',
+            host='10.1.0.18',
             port='5432'
         )
 
@@ -1992,7 +1960,7 @@ def delete_sjt_data():
             dbname='hrtest',
             user='hruser',
             password='T@chify$ol8m0s0!',
-            host='localhost',
+            host='10.1.0.18',
             port='5432'
         )
 
@@ -2047,7 +2015,7 @@ def export_sjt_data():
             dbname='hrtest',
             user='hruser',
             password='T@chify$ol8m0s0!',
-            host='localhost',
+            host='10.1.0.18',
             port='5432'
         )
 
@@ -2160,7 +2128,7 @@ def fetch_sjt_registration():
             dbname='hrtest',
             user='hruser',
             password='T@chify$ol8m0s0!',
-            host='localhost',
+            host='10.1.0.18',
             port='5432'
         )
 
@@ -2212,7 +2180,7 @@ def delete_sjt_registration_data():
             dbname='hrtest',
             user='hruser',
             password='T@chify$ol8m0s0!',
-            host='localhost',
+            host='10.1.0.18',
             port='5432'
         )
 
@@ -2267,7 +2235,7 @@ def export_sjt_registration_data():
             dbname='hrtest',
             user='hruser',
             password='T@chify$ol8m0s0!',
-            host='localhost',
+            host='10.1.0.18',
             port='5432'
         )
 
@@ -2332,7 +2300,7 @@ def verify_login():
             dbname='hrtest',
             user='hruser',
             password='T@chify$ol8m0s0!',
-            host='localhost',
+            host='10.1.0.18',
             port='5432'
         )
 
