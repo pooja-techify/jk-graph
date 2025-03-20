@@ -326,13 +326,7 @@ def send_test(name, email, phone_number):
     conn = None
     
     try:
-        conn = psycopg2.connect(
-            dbname='hrtest',
-            user='hruser',
-            password='T@chify$ol8m0s0!',
-            host='10.1.0.18',
-            port='5432'
-        )
+        conn = get_db_connection()
 
         cursor = conn.cursor()
 
@@ -406,13 +400,7 @@ def verify_passcode():
     conn = None
 
     try:
-        conn = psycopg2.connect(
-            dbname='hrtest',
-            user='hruser',
-            password='T@chify$ol8m0s0!',
-            host='10.1.0.18',
-            port='5432'
-        )
+        conn = get_db_connection()
 
         cursor = conn.cursor()
 
@@ -454,13 +442,7 @@ def get_mail():
     cursor = None
     conn = None
     try:
-        conn = psycopg2.connect(
-            dbname='hrtest',
-            user='hruser',
-            password='T@chify$ol8m0s0!',
-            host='10.1.0.18',
-            port='5432'
-        )
+        conn = get_db_connection()
 
         cursor = conn.cursor()
 
@@ -509,14 +491,7 @@ def start_test():
     cursor = None
     conn = None
     try:
-        conn = psycopg2.connect(
-            dbname='hrtest',
-            user='hruser',
-            password='T@chify$ol8m0s0!',
-            host='10.1.0.18',
-            port='5432'
-        )
-        
+        conn = get_db_connection()        
         cursor = conn.cursor()
 
         test_attempted_date = datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')
@@ -681,13 +656,7 @@ def submit_feedback():
         if not candidate_id or not feedback:
             return jsonify({"error": "Candidate ID and feedback are required"}), 400
 
-        conn = psycopg2.connect(
-            dbname='hrtest',
-            user='hruser',
-            password='T@chify$ol8m0s0!',
-            host='10.1.0.18',
-            port='5432'
-        )
+        conn = get_db_connection()
         
         cursor = conn.cursor()
 
@@ -719,13 +688,7 @@ def store_user_data(candidate_id, first_name, last_name, email, phone_number, lo
     cursor = None
     conn = None
     try:
-        conn = psycopg2.connect(
-            dbname='hrtest',
-            user='hruser',
-            password='T@chify$ol8m0s0!',
-            host='10.1.0.18',
-            port='5432'
-        )
+        conn = get_db_connection()
 
         cursor = conn.cursor()
 
@@ -782,13 +745,7 @@ def fetch_user_data():
     cursor = None
     conn = None
     try:
-        conn = psycopg2.connect(
-            dbname='hrtest',
-            user='hruser',
-            password='T@chify$ol8m0s0!',
-            host='10.1.0.18',
-            port='5432'
-        )
+        conn = get_db_connection()
 
         cursor = conn.cursor()
 
@@ -842,13 +799,7 @@ def delete_user_data():
         if not candidate_ids or not isinstance(candidate_ids, list):
             return jsonify({"error": "A list of Candidate IDs is required"}), 400
 
-        conn = psycopg2.connect(
-            dbname='hrtest',
-            user='hruser',
-            password='T@chify$ol8m0s0!',
-            host='10.1.0.18',
-            port='5432'
-        )
+        conn = get_db_connection()
 
         cursor = conn.cursor()
 
@@ -897,13 +848,7 @@ def export_candidate_data():
         if not candidate_ids or not isinstance(candidate_ids, list):
             return jsonify({"error": "A list of Candidate IDs is required"}), 400
 
-        conn = psycopg2.connect(
-            dbname='hrtest',
-            user='hruser',
-            password='T@chify$ol8m0s0!',
-            host='10.1.0.18',
-            port='5432'
-        )
+        conn = get_db_connection()
 
         cursor = conn.cursor()
 
@@ -950,13 +895,7 @@ def fetch_registration():
     cursor = None
     conn = None
     try:
-        conn = psycopg2.connect(
-            dbname='hrtest',
-            user='hruser',
-            password='T@chify$ol8m0s0!',
-            host='10.1.0.18',
-            port='5432'
-        )
+        conn = get_db_connection()
 
         cursor = conn.cursor()
 
@@ -1002,13 +941,7 @@ def delete_registration_data():
         if not candidate_ids or not isinstance(candidate_ids, list):
             return jsonify({"error": "A list of Candidate IDs is required"}), 400
 
-        conn = psycopg2.connect(
-            dbname='hrtest',
-            user='hruser',
-            password='T@chify$ol8m0s0!',
-            host='10.1.0.18',
-            port='5432'
-        )
+        conn = get_db_connection()
 
         cursor = conn.cursor()
 
@@ -1045,13 +978,7 @@ def export_registration_data():
         if not candidate_ids or not isinstance(candidate_ids, list):
             return jsonify({"error": "A list of Candidate IDs is required"}), 400
 
-        conn = psycopg2.connect(
-            dbname='hrtest',
-            user='hruser',
-            password='T@chify$ol8m0s0!',
-            host='10.1.0.18',
-            port='5432'
-        )
+        conn = get_db_connection()
 
         cursor = conn.cursor()
 
@@ -1163,13 +1090,7 @@ def send_sjt_new_test(name, email, phone_number):
     conn = None
     
     try:
-        conn = psycopg2.connect(
-            dbname='hrtest',
-            user='hruser',
-            password='T@chify$ol8m0s0!',
-            host='10.1.0.18',
-            port='5432'
-        )
+        conn = get_db_connection()
 
         cursor = conn.cursor()
 
@@ -1264,13 +1185,7 @@ def send_sjt_test(name, email, phone_number, candidate_id):
     conn = None
     
     try:
-        conn = psycopg2.connect(
-            dbname='hrtest',
-            user='hruser',
-            password='T@chify$ol8m0s0!',
-            host='10.1.0.18',
-            port='5432'
-        )
+        conn = get_db_connection()
 
         cursor = conn.cursor()
 
@@ -1344,13 +1259,7 @@ def verify_sjt_passcode():
     conn = None
 
     try:
-        conn = psycopg2.connect(
-            dbname='hrtest',
-            user='hruser',
-            password='T@chify$ol8m0s0!',
-            host='10.1.0.18',
-            port='5432'
-        )
+        conn = get_db_connection()
 
         cursor = conn.cursor()
 
@@ -1390,13 +1299,7 @@ def start_sjt_test():
     cursor = None
     conn = None
     try:
-        conn = psycopg2.connect(
-            dbname='hrtest',
-            user='hruser',
-            password='T@chify$ol8m0s0!',
-            host='10.1.0.18',
-            port='5432'
-        )
+        conn = get_db_connection()
         
         cursor = conn.cursor()
 
@@ -1821,13 +1724,7 @@ def submit_sjt_feedback():
         if not candidate_id or not feedback:
             return jsonify({"error": "SJT Candidate ID and feedback are required"}), 400
 
-        conn = psycopg2.connect(
-            dbname='hrtest',
-            user='hruser',
-            password='T@chify$ol8m0s0!',
-            host='10.1.0.18',
-            port='5432'
-        )
+        conn = get_db_connection()
         
         cursor = conn.cursor()
 
@@ -1859,13 +1756,7 @@ def store_sjt_data(candidate_id, first_name, last_name, email, phone_number, loc
     cursor = None
     conn = None
     try:
-        conn = psycopg2.connect(
-            dbname='hrtest',
-            user='hruser',
-            password='T@chify$ol8m0s0!',
-            host='10.1.0.18',
-            port='5432'
-        )
+        conn = get_db_connection()
 
         cursor = conn.cursor()
 
@@ -1923,13 +1814,7 @@ def fetch_sjt_data():
     cursor = None
     conn = None
     try:
-        conn = psycopg2.connect(
-            dbname='hrtest',
-            user='hruser',
-            password='T@chify$ol8m0s0!',
-            host='10.1.0.18',
-            port='5432'
-        )
+        conn = get_db_connection()
 
         cursor = conn.cursor()
 
@@ -1984,13 +1869,7 @@ def delete_sjt_data():
         if not candidate_ids or not isinstance(candidate_ids, list):
             return jsonify({"error": "A list of Candidate IDs is required"}), 400
 
-        conn = psycopg2.connect(
-            dbname='hrtest',
-            user='hruser',
-            password='T@chify$ol8m0s0!',
-            host='10.1.0.18',
-            port='5432'
-        )
+        conn = get_db_connection()
 
         cursor = conn.cursor()
 
@@ -2041,13 +1920,7 @@ def export_sjt_data():
         if not candidate_ids or not isinstance(candidate_ids, list):
             return jsonify({"error": "A list of Candidate IDs is required"}), 400
 
-        conn = psycopg2.connect(
-            dbname='hrtest',
-            user='hruser',
-            password='T@chify$ol8m0s0!',
-            host='10.1.0.18',
-            port='5432'
-        )
+        conn = get_db_connection()
 
         cursor = conn.cursor()
 
@@ -2154,13 +2027,7 @@ def fetch_sjt_registration():
     cursor = None
     conn = None
     try:
-        conn = psycopg2.connect(
-            dbname='hrtest',
-            user='hruser',
-            password='T@chify$ol8m0s0!',
-            host='10.1.0.18',
-            port='5432'
-        )
+        conn = get_db_connection()
 
         cursor = conn.cursor()
 
@@ -2206,13 +2073,7 @@ def delete_sjt_registration_data():
         if not candidate_ids or not isinstance(candidate_ids, list):
             return jsonify({"error": "A list of Candidate IDs is required"}), 400
 
-        conn = psycopg2.connect(
-            dbname='hrtest',
-            user='hruser',
-            password='T@chify$ol8m0s0!',
-            host='10.1.0.18',
-            port='5432'
-        )
+        conn = get_db_connection()
 
         cursor = conn.cursor()
 
@@ -2250,13 +2111,7 @@ def export_sjt_registration_data():
         if not candidate_ids or not isinstance(candidate_ids, list):
             return jsonify({"error": "A list of Candidate IDs is required"}), 400
 
-        conn = psycopg2.connect(
-            dbname='hrtest',
-            user='hruser',
-            password='T@chify$ol8m0s0!',
-            host='10.1.0.18',
-            port='5432'
-        )
+        conn = get_db_connection()
 
         cursor = conn.cursor()
 
@@ -2315,13 +2170,7 @@ def verify_login():
         if not username or not password:
             return jsonify({"error": "Username and password are required"}), 400
 
-        conn = psycopg2.connect(
-            dbname='hrtest',
-            user='hruser',
-            password='T@chify$ol8m0s0!',
-            host='10.1.0.18',
-            port='5432'
-        )
+        conn = get_db_connection()
 
         cursor = conn.cursor()
 
@@ -2346,6 +2195,21 @@ def verify_login():
             cursor.close()
         if conn:
             conn.close()
+
+def get_db_connection():
+    try:
+        conn = psycopg2.connect(
+            dbname='hrtest',
+            user='hruser',
+            password='T@chify$ol8m0s0!',
+            host='10.1.0.18',
+            port='5432',
+            options="-c search_path=prod"
+        )
+        return conn
+    except Exception as e:
+        print(f"Error connecting to database: {e}")
+        logger.error(f"Error connecting to database: {e}")
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=5001, debug=True)
