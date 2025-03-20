@@ -1467,6 +1467,19 @@ def submit_sjt_test():
                     logger.error(f"Error converting trait scores to float: {e}")
                     return jsonify({"error": "Invalid trait score format"}), 500
                 
+                try:
+                    category_scores['Agreeableness'] = "{:.2f}".format(float(category_scores['Agreeableness']) / 12)
+                    category_scores['Conscientiousness'] = "{:.2f}".format(float(category_scores['Conscientiousness']) / 20)
+                    category_scores['Extraversion'] = "{:.2f}".format(float(category_scores['Extraversion']) / 17)
+                    category_scores['Neuroticism'] = "{:.2f}".format(float(category_scores['Neuroticism']) / 5)
+                    category_scores['Openness'] = "{:.2f}".format(float(category_scores['Openness']) / 16)
+                
+                except ValueError as e:
+                    print(f"Error converting category scores to float: {e}")
+                    logger.error(f"Error converting category scores to float: {e}")
+                    return jsonify({"error": "Invalid category score format"}), 500
+
+                
                 return total_score / 20, trait_scores, category_scores
             
             print("Calculating Score")
@@ -1474,18 +1487,7 @@ def submit_sjt_test():
             score, trait_scores, category_scores = calculate_score(result_file)
 
             print("Calculating Category Score")
-            try:
-                category_scores['Agreeableness'] = "{:.2f}".format(float(category_scores['Agreeableness']))  # Ensure it's a float
-                category_scores['Conscientiousness'] = "{:.2f}".format(float(category_scores['Conscientiousness']))  # Ensure it's a float
-                category_scores['Extraversion'] = "{:.2f}".format(float(category_scores['Extraversion']))  # Ensure it's a float
-                category_scores['Neuroticism'] = "{:.2f}".format(float(category_scores['Neuroticism']))  # Ensure it's a float
-                category_scores['Openness'] = "{:.2f}".format(float(category_scores['Openness']))  # Ensure it's a float
             
-            except ValueError as e:
-                print(f"Error converting category scores to float: {e}")
-                logger.error(f"Error converting category scores to float: {e}")
-                return jsonify({"error": "Invalid category score format"}), 500
-
             file_path = f"psychometric_test.pdf"
 
             print("Starting report generation")
@@ -1512,7 +1514,7 @@ def submit_sjt_test():
                     ("Phone Number", phone_number),
                     ("Location", location),
                     ("Time Taken", time_taken),
-                    ("Score", score)
+                    ("Score", score) #between 0 to 20
                 ]
 
                 if photo_base64:
