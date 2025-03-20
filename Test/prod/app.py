@@ -1457,8 +1457,8 @@ def submit_sjt_test():
 
             def calculate_score(result_file):
                 total_score = 0
-                for question_id, user_response in result_file.items():
 
+                for question_id, user_response in result_file.items():
                     user_options = user_response.split('|')
                     user_options_json = {option.strip(): value for option, value in zip(user_options, [5, 3, 1, -1])}
 
@@ -1488,6 +1488,19 @@ def submit_sjt_test():
                     logger.error(f"Error converting trait scores to float: {e}")
                     return jsonify({"error": "Invalid trait score format"}), 500
                 
+                try:
+                    category_scores['Agreeableness'] = "{:.2f}".format(float(category_scores['Agreeableness']) / 12)
+                    category_scores['Conscientiousness'] = "{:.2f}".format(float(category_scores['Conscientiousness']) / 20)
+                    category_scores['Extraversion'] = "{:.2f}".format(float(category_scores['Extraversion']) / 17)
+                    category_scores['Neuroticism'] = "{:.2f}".format(float(category_scores['Neuroticism']) / 5)
+                    category_scores['Openness'] = "{:.2f}".format(float(category_scores['Openness']) / 16)
+                
+                except ValueError as e:
+                    print(f"Error converting category scores to float: {e}")
+                    logger.error(f"Error converting category scores to float: {e}")
+                    return jsonify({"error": "Invalid category score format"}), 500
+
+                
                 return total_score / 20, trait_scores, category_scores
             
             print("Calculating Score")
@@ -1495,18 +1508,7 @@ def submit_sjt_test():
             score, trait_scores, category_scores = calculate_score(result_file)
 
             print("Calculating Category Score")
-            try:
-                category_scores['Agreeableness'] = "{:.2f}".format(float(category_scores['Agreeableness']))  # Ensure it's a float
-                category_scores['Conscientiousness'] = "{:.2f}".format(float(category_scores['Conscientiousness']))  # Ensure it's a float
-                category_scores['Extraversion'] = "{:.2f}".format(float(category_scores['Extraversion']))  # Ensure it's a float
-                category_scores['Neuroticism'] = "{:.2f}".format(float(category_scores['Neuroticism']))  # Ensure it's a float
-                category_scores['Openness'] = "{:.2f}".format(float(category_scores['Openness']))  # Ensure it's a float
             
-            except ValueError as e:
-                print(f"Error converting category scores to float: {e}")
-                logger.error(f"Error converting category scores to float: {e}")
-                return jsonify({"error": "Invalid category score format"}), 500
-
             file_path = f"psychometric_test.pdf"
 
             print("Starting report generation")
@@ -1548,14 +1550,24 @@ def submit_sjt_test():
                         if photo_image.mode != 'RGB':
                             photo_image = photo_image.convert('RGB')
                         
-                        photo_size = (100, 100)
-                        photo_image.thumbnail(photo_size)
+                        # Keep target size at 100x100
+                        target_size = (150, 150)
+                        original_width, original_height = photo_image.size
+                        
+                        # Calculate dimensions to maintain aspect ratio
+                        ratio = min(target_size[0]/original_width, target_size[1]/original_height)
+                        new_size = (int(original_width*ratio), int(original_height*ratio))
+                        
+                        # Use high-quality resampling with antialiasing
+                        resized_image = photo_image.resize(new_size, Image.Resampling.LANCZOS)
 
                         temp_photo = BytesIO()
-                        photo_image.save(temp_photo, format='JPEG')
+                        # Save with maximum quality settings
+                        resized_image.save(temp_photo, format='PNG', optimize=False, quality=100)
                         temp_photo.seek(0)
                         
-                        c.drawImage(ImageReader(temp_photo), 450, 600, width=100, height=100)
+                        # Draw image with original dimensions
+                        c.drawImage(ImageReader(temp_photo), 400, 650, width=new_size[0], height=new_size[1], preserveAspectRatio=True)
                         
                     except Exception as e:
                         print(f"Error processing photo: {e}")
