@@ -1530,7 +1530,7 @@ def submit_sjt_test():
                             photo_image = photo_image.convert('RGB')
                         
                         # Calculate new dimensions while maintaining aspect ratio
-                        target_size = (300, 300)  # Increased from 100x100 to 300x300
+                        target_size = (100, 100)
                         original_width, original_height = photo_image.size
                         ratio = min(target_size[0]/original_width, target_size[1]/original_height)
                         new_size = (int(original_width*ratio), int(original_height*ratio))
@@ -1540,7 +1540,7 @@ def submit_sjt_test():
 
                         temp_photo = BytesIO()
                         # Save with maximum quality and no compression
-                        resized_image.save(temp_photo, format='PNG', optimize=False)  # Changed to PNG for lossless quality
+                        resized_image.save(temp_photo, format='PNG', optimize=False)  # Using PNG for lossless quality
                         temp_photo.seek(0)
                         
                         # Draw image with original dimensions
