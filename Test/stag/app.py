@@ -1546,7 +1546,7 @@ def submit_sjt_test():
                         temp_photo.seek(0)
                         
                         # Draw image with original dimensions
-                        c.drawImage(ImageReader(temp_photo), 400, 700, width=new_size[0], height=new_size[1], preserveAspectRatio=True)
+                        c.drawImage(ImageReader(temp_photo), 400, 710, width=new_size[0], height=new_size[1], preserveAspectRatio=True)
                         
                     except Exception as e:
                         print(f"Error processing photo: {e}")
@@ -1555,7 +1555,7 @@ def submit_sjt_test():
                 y_position = 710
                 for field, value in details:
                     c.drawString(100, y_position, field)
-                    c.drawString(224, y_position, str(value))
+                    c.drawString(225, y_position, str(value))
                     y_position -= 15
 
                 print("Category Scores")
