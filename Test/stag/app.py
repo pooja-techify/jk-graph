@@ -1436,14 +1436,12 @@ def submit_sjt_test():
 
             def calculate_score(result_file):
                 total_score = 0
-                for question_id, user_response in result_file.items():
 
+                for question_id, user_response in result_file.items():
                     user_options = user_response.split('|')
                     user_options_json = {option.strip(): value for option, value in zip(user_options, [5, 3, 1, -1])}
-                    # print(user_options_json)
 
                     question_data = sjt_questions[int(question_id)]
-                    # print(question_data)
                     
                     score = 0
 
@@ -1519,19 +1517,16 @@ def submit_sjt_test():
 
                 if photo_base64:
                     try:
-                        print("1")
+                        print("adding photo")
                         if 'data:image/' in photo_base64:
                             photo_base64 = photo_base64.split(',')[1]
                         
-                        print("2")
                         photo_bytes = base64.b64decode(photo_base64)
                         photo_image = Image.open(BytesIO(photo_bytes))
  
                         if photo_image.mode != 'RGB':
-                            print("3")
                             photo_image = photo_image.convert('RGB')
                         
-                        print("4")
                         photo_size = (100, 100)
                         photo_image.thumbnail(photo_size)
 
@@ -1539,13 +1534,11 @@ def submit_sjt_test():
                         photo_image.save(temp_photo, format='JPEG')
                         temp_photo.seek(0)
                         
-                        print("5")
-                        c.drawImage(ImageReader(temp_photo), 450, 650, width=100, height=100)
+                        c.drawImage(ImageReader(temp_photo), 450, 600, width=100, height=100)
                         
                     except Exception as e:
                         print(f"Error processing photo: {e}")
                         logger.error(f"Error processing photo: {e}")
-                
                 
                 y_position = 710
                 for field, value in details:

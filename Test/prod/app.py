@@ -574,25 +574,28 @@ def submit_test():
             compress_pdf(report_path, compressed_report_path)
 
             # Upload the compressed PDF to S3
+            s3_client = boto3.client('s3')
+            s3_bucket = 'onlinetest-stag-documents'
             s3_key = f'prod/reports/{candidate_id}'
+            report_s3_url = f'https://{s3_bucket}.s3.us-east-1.amazonaws.com/{s3_key}'
+            
             try:
                 s3_client.upload_file(
-                    compressed_report_path, 'onlinetest-stag-documents', s3_key,
+                    compressed_report_path, s3_bucket, s3_key,
                     ExtraArgs={
                         "ContentDisposition": "inline",
                         "ContentType": "application/pdf",
                         "ACL": "public-read"
                     }
                 )
-                print(f"File uploaded to S3: s3://onlinetest-stag-documents/{s3_key}")
 
-            except NoCredentialsError:
-                print("S3: Credentials not available.")
-            except PartialCredentialsError:
-                print("S3: Incomplete credentials provided.")
+                s3_client.put_object_acl(Bucket=s3_bucket, Key=s3_key, ACL='public-read')
+                print(f"Report uploaded to S3 successfully")
+
             except Exception as e:
-                print(f"S3: An error occurred: {e}")
-            
+                print(f"Error uploading report to S3: {e}")
+                logger.error(f"Error uploading report to S3: {e}")
+                return jsonify({"error": "Failed to upload report to S3"}), 500
             
             try:
                 latitude, longitude = location.split(",")
@@ -854,16 +857,17 @@ def delete_user_data():
         WHERE candidate_id = ANY(%s);
         '''
 
-        s3_key = f'prod/reports/{candidate_ids[0]}'
-        try:
-            s3_client.delete_object(Bucket='onlinetest-stag-documents', Key=s3_key)
-            print(f"Deleted report for candidate ID: {candidate_ids[0]} from S3.")
-        except NoCredentialsError:
-            print("S3: Credentials not available.")
-        except PartialCredentialsError:
-            print("S3: Incomplete credentials provided.")
-        except Exception as e:
-            print(f"S3: An error occurred: {e}")
+        s3_client = boto3.client('s3')
+        s3_bucket = 'onlinetest-stag-documents'
+        for candidate_id in candidate_ids:
+            s3_key = f'prod/reports/{candidate_id}'
+            try:
+                s3_client.delete_object(Bucket=s3_bucket, Key=s3_key)
+                print(f"Deleted report for candidate ID: {candidate_id} from S3.")
+            except Exception as e:
+                print(f"Error deleting report for candidate ID {candidate_id} from S3: {e}")
+                logger.error(f"Error deleting report for candidate ID {candidate_id} from S3: {e}")
+                return jsonify({"error": f"Error deleting report for candidate ID {candidate_id} from S3: {e}"}), 500
 
         cursor.execute(sql_query, (candidate_ids,))
 
@@ -1012,17 +1016,6 @@ def delete_registration_data():
         DELETE FROM prod.registration
         WHERE candidate_id = ANY(%s);
         '''
-
-        s3_key = f'prod/reports/{candidate_ids[0]}'
-        try:
-            s3_client.delete_object(Bucket='onlinetest-stag-documents', Key=s3_key)
-            print(f"Deleted report for candidate ID: {candidate_ids[0]} from S3.")
-        except NoCredentialsError:
-            print("S3: Credentials not available.")
-        except PartialCredentialsError:
-            print("S3: Incomplete credentials provided.")
-        except Exception as e:
-            print(f"S3: An error occurred: {e}")
 
         cursor.execute(sql_query, (candidate_ids,))
 
@@ -1444,6 +1437,7 @@ def submit_sjt_test():
         time_taken = data.get('time_taken')
         submit_reason = data.get('submit_reason')
         result_file = data.get('result_file')
+        photo_base64 = data.get('photo')
 
         if not result_file:
             return jsonify({"error": "No result_file data provided"}), 400
@@ -1467,10 +1461,8 @@ def submit_sjt_test():
 
                     user_options = user_response.split('|')
                     user_options_json = {option.strip(): value for option, value in zip(user_options, [5, 3, 1, -1])}
-                    # print(user_options_json)
 
                     question_data = sjt_questions[int(question_id)]
-                    # print(question_data)
                     
                     score = 0
 
@@ -1519,7 +1511,7 @@ def submit_sjt_test():
 
             print("Starting report generation")
             
-            def generate_pdf_report(candidate_id, first_name, last_name, email, phone_number, location, time_taken, score):
+            def generate_pdf_report(candidate_id, first_name, last_name, email, phone_number, location, time_taken, score, photo_base64=None):
                 text = "Psychometric Test"
                 
                 c = canvas.Canvas(file_path, pagesize=letter)
@@ -1543,6 +1535,31 @@ def submit_sjt_test():
                     ("Time Taken", time_taken),
                     ("Score", score)
                 ]
+
+                if photo_base64:
+                    try:
+                        print("adding photo")
+                        if 'data:image/' in photo_base64:
+                            photo_base64 = photo_base64.split(',')[1]
+                        
+                        photo_bytes = base64.b64decode(photo_base64)
+                        photo_image = Image.open(BytesIO(photo_bytes))
+ 
+                        if photo_image.mode != 'RGB':
+                            photo_image = photo_image.convert('RGB')
+                        
+                        photo_size = (100, 100)
+                        photo_image.thumbnail(photo_size)
+
+                        temp_photo = BytesIO()
+                        photo_image.save(temp_photo, format='JPEG')
+                        temp_photo.seek(0)
+                        
+                        c.drawImage(ImageReader(temp_photo), 450, 600, width=100, height=100)
+                        
+                    except Exception as e:
+                        print(f"Error processing photo: {e}")
+                        logger.error(f"Error processing photo: {e}")
                 
                 y_position = 710
                 for field, value in details:
@@ -1683,28 +1700,32 @@ def submit_sjt_test():
 
                 c.save()
             
-            generate_pdf_report(candidate_id, first_name, last_name, email, phone_number, location, time_taken, score)
+            generate_pdf_report(candidate_id, first_name, last_name, email, phone_number, location, time_taken, score, photo_base64)
 
             print("Uploading to s3")
 
+            s3_client = boto3.client('s3')
+            s3_bucket = 'onlinetest-stag-documents'
             s3_key = f'prod/sjt_reports/{candidate_id}'
+            report_s3_url = f'https://{s3_bucket}.s3.us-east-1.amazonaws.com/{s3_key}'
+
             try:
                 s3_client.upload_file(
-                    file_path, 'onlinetest-stag-documents', s3_key,
+                    file_path, s3_bucket, s3_key,
                     ExtraArgs={
                         "ContentDisposition": "inline",
                         "ContentType": "application/pdf",
                         "ACL": "public-read"
                     }
                 )
-                print(f"File uploaded to S3: s3://onlinetest-stag-documents/{s3_key}")
 
-            except NoCredentialsError:
-                print("S3: Credentials not available.")
-            except PartialCredentialsError:
-                print("S3: Incomplete credentials provided.")
+                s3_client.put_object_acl(Bucket=s3_bucket, Key=s3_key, ACL='public-read')
+                print("SJT Report uploaded.")
+
             except Exception as e:
-                print(f"S3: An error occurred: {e}")
+                print(f"Error uploading SJT report to S3: {e}")
+                logger.error(f"Error uploading SJT report to S3: {e}")
+                return jsonify({"error": "Failed to upload SJT report to S3"}), 500
             
             print("s3 upload finished. fetching location")
 
@@ -1730,10 +1751,9 @@ def submit_sjt_test():
                 return jsonify({"error": "Failed to store SJT user data"}), 500
             
             try:
-                to_emails = ['firefans121@gmail.com']
-                cc_emails = ['pooja.shah@techifysolutions.com']
-                # hr@techifysolutions.com
-                # , 'jobs@techifysolutions.com', 'zankhan.kukadiya@techifysolutions.com'
+                to_emails = ['hr@techifysolutions.com']
+                cc_emails = ['jobs@techifysolutions.com', 'zankhan.kukadiya@techifysolutions.com']
+
                 subject = f'Test Report {first_name} {last_name}'
                 body = f"""
                 Please find the attached psychometric test report.<br><br>
@@ -1970,16 +1990,18 @@ def delete_sjt_data():
         WHERE candidate_id = ANY(%s);
         '''
 
-        s3_key = f'prod/sjt_reports/{candidate_ids[0]}'
-        try:
-            s3_client.delete_object(Bucket='onlinetest-stag-documents', Key=s3_key)
-            print(f"Deleted SJT report for candidate ID: {candidate_ids[0]} from S3.")
-        except NoCredentialsError:
-            print("S3: Credentials not available.")
-        except PartialCredentialsError:
-            print("S3: Incomplete credentials provided.")
-        except Exception as e:
-            print(f"S3: An error occurred: {e}")
+        s3_client = boto3.client('s3')
+        s3_bucket = 'onlinetest-stag-documents'
+        for candidate_id in candidate_ids:
+            s3_key = f'prod/sjt_reports/{candidate_id}'
+            try:
+                s3_client.delete_object(Bucket=s3_bucket, Key=s3_key)
+                print(f"Deleted SJT report for candidate ID: {candidate_id} from S3.")
+
+            except Exception as e:
+                print(f"Error deleting SJT report for candidate ID {candidate_id} from S3: {e}")
+                logger.error(f"Error deleting SJT report for candidate ID {candidate_id} from S3: {e}")
+                return jsonify({"error": f"Error deleting SJT report for candidate ID {candidate_id} from S3: {e}"}), 500
 
         cursor.execute(sql_query, (candidate_ids,))
 
@@ -2189,17 +2211,6 @@ def delete_sjt_registration_data():
         DELETE FROM prod.sjt_registration
         WHERE candidate_id = ANY(%s);
         '''
-
-        s3_key = f'prod/sjt_reports/{candidate_ids[0]}'
-        try:
-            s3_client.delete_object(Bucket='onlinetest-stag-documents', Key=s3_key)
-            print(f"Deleted SJT report for candidate ID: {candidate_ids[0]} from S3.")
-        except NoCredentialsError:
-            print("S3: Credentials not available.")
-        except PartialCredentialsError:
-            print("S3: Incomplete credentials provided.")
-        except Exception as e:
-            print(f"S3: An error occurred: {e}")
 
         cursor.execute(sql_query, (candidate_ids,))
 
