@@ -1529,14 +1529,21 @@ def submit_sjt_test():
                         if photo_image.mode != 'RGB':
                             photo_image = photo_image.convert('RGB')
                         
-                        photo_size = (100, 100)
-                        photo_image.thumbnail(photo_size)
+                        # Calculate new dimensions while maintaining aspect ratio
+                        target_size = (100, 100)
+                        original_width, original_height = photo_image.size
+                        ratio = min(target_size[0]/original_width, target_size[1]/original_height)
+                        new_size = (int(original_width*ratio), int(original_height*ratio))
+                        
+                        # Use high-quality resampling
+                        resized_image = photo_image.resize(new_size, Image.Resampling.LANCZOS)
 
                         temp_photo = BytesIO()
-                        photo_image.save(temp_photo, format='JPEG')
+                        # Save with high quality
+                        resized_image.save(temp_photo, format='JPEG', quality=95, optimize=True)
                         temp_photo.seek(0)
                         
-                        c.drawImage(ImageReader(temp_photo), 450, 600, width=100, height=100)
+                        c.drawImage(ImageReader(temp_photo), 450, 600, width=new_size[0], height=new_size[1])
                         
                     except Exception as e:
                         print(f"Error processing photo: {e}")
