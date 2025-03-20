@@ -1546,7 +1546,7 @@ def submit_sjt_test():
                         temp_photo.seek(0)
                         
                         # Draw image with original dimensions
-                        c.drawImage(ImageReader(temp_photo), 400, 710, width=new_size[0], height=new_size[1], preserveAspectRatio=True)
+                        c.drawImage(ImageReader(temp_photo), 400, 650, width=new_size[0], height=new_size[1], preserveAspectRatio=True)
                         
                     except Exception as e:
                         print(f"Error processing photo: {e}")
