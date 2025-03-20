@@ -1530,20 +1530,21 @@ def submit_sjt_test():
                             photo_image = photo_image.convert('RGB')
                         
                         # Calculate new dimensions while maintaining aspect ratio
-                        target_size = (100, 100)
+                        target_size = (300, 300)  # Increased from 100x100 to 300x300
                         original_width, original_height = photo_image.size
                         ratio = min(target_size[0]/original_width, target_size[1]/original_height)
                         new_size = (int(original_width*ratio), int(original_height*ratio))
                         
-                        # Use high-quality resampling
+                        # Use high-quality resampling with antialiasing
                         resized_image = photo_image.resize(new_size, Image.Resampling.LANCZOS)
 
                         temp_photo = BytesIO()
-                        # Save with high quality
-                        resized_image.save(temp_photo, format='JPEG', quality=95, optimize=True)
+                        # Save with maximum quality and no compression
+                        resized_image.save(temp_photo, format='PNG', optimize=False)  # Changed to PNG for lossless quality
                         temp_photo.seek(0)
                         
-                        c.drawImage(ImageReader(temp_photo), 450, 600, width=new_size[0], height=new_size[1])
+                        # Draw image with original dimensions
+                        c.drawImage(ImageReader(temp_photo), 450, 600, width=new_size[0], height=new_size[1], preserveAspectRatio=True)
                         
                     except Exception as e:
                         print(f"Error processing photo: {e}")
