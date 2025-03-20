@@ -1438,372 +1438,369 @@ def submit_sjt_test():
         submit_reason = data.get('submit_reason')
         result_file = data.get('result_file')
         photo_base64 = data.get('photo')
-
-        if not result_file:
-            return jsonify({"error": "No result_file data provided"}), 400
         
-        else:
-            print("generating report")
+        print("generating report")
 
-            with open('sjt_questions.json') as f:
-                sjt_questions = json.load(f)
+        with open('sjt_questions.json') as f:
+            sjt_questions = json.load(f)
 
-            with open('traits.json') as f:
-                traits_data = json.load(f)
+        with open('traits.json') as f:
+            traits_data = json.load(f)
 
-            trait_scores = {trait['trait']: {'score': 0, 'category': trait['category'], 'count': trait['count']} for trait in traits_data['traits']}
+        trait_scores = {trait['trait']: {'score': 0, 'category': trait['category'], 'count': trait['count']} for trait in traits_data['traits']}
 
-            category_scores = {trait['category']: 0 for trait in traits_data['traits']}
+        category_scores = {trait['category']: 0 for trait in traits_data['traits']}
 
-            def calculate_score(result_file):
-                total_score = 0
+        def calculate_score(result_file):
+            total_score = 0
 
-                for question_id, user_response in result_file.items():
-                    user_options = user_response.split('|')
-                    user_options_json = {option.strip(): value for option, value in zip(user_options, [5, 3, 1, -1])}
+            for question_id, user_response in result_file.items():
+                user_options = user_response.split('|')
+                user_options_json = {option.strip(): value for option, value in zip(user_options, [5, 3, 1, -1])}
 
-                    question_data = sjt_questions[int(question_id)]
+                question_data = sjt_questions[int(question_id)]
+                
+                score = 0
+
+                for option in user_options:
+                    correct_score = question_data['score'].get(option.strip(), 0)
+                    given_score = user_options_json.get(option.strip(), 0)
+                    score += (5 - abs(correct_score - given_score))  # Score = ∑(5−| X given − X correct |)
+
+                total_score += score
                     
-                    score = 0
+                for trait in question_data.get('traits', []):
+                    trait_scores[trait]['score'] += score  # Update the score for the trait
+                    category_scores[trait_scores[trait]['category']] += score  # Add score to the corresponding category
 
-                    for option in user_options:
-                        correct_score = question_data['score'].get(option.strip(), 0)
-                        given_score = user_options_json.get(option.strip(), 0)
-                        score += (5 - abs(correct_score - given_score))  # Score = ∑(5−| X given − X correct |)
+            print("Calculating Trait Score")
 
-                    total_score += score
-                    
-                    for trait in question_data.get('traits', []):
-                        trait_scores[trait]['score'] += score  # Update the score for the trait
-                        category_scores[trait_scores[trait]['category']] += score  # Add score to the corresponding category
+            try:
+                for trait in trait_scores:
+                    if trait_scores[trait]['count'] > 0:
+                        trait_scores[trait]['score'] = "{:.2f}".format(float(trait_scores[trait]['score']) / float(trait_scores[trait]['count']))  # Divide by count and format as .2f
 
-                print("Calculating Trait Score")
+            except ValueError as e:
+                print(f"Error converting trait scores to float: {e}")
+                logger.error(f"Error converting trait scores to float: {e}")
+                return jsonify({"error": "Invalid trait score format"}), 500
+                
+            try:
+                category_scores['Agreeableness'] = "{:.2f}".format(float(category_scores['Agreeableness']) / 12)
+                category_scores['Conscientiousness'] = "{:.2f}".format(float(category_scores['Conscientiousness']) / 20)
+                category_scores['Extraversion'] = "{:.2f}".format(float(category_scores['Extraversion']) / 17)
+                category_scores['Neuroticism'] = "{:.2f}".format(float(category_scores['Neuroticism']) / 5)
+                category_scores['Openness'] = "{:.2f}".format(float(category_scores['Openness']) / 16)
+                
+            except ValueError as e:
+                print(f"Error converting category scores to float: {e}")
+                logger.error(f"Error converting category scores to float: {e}")
+                return jsonify({"error": "Invalid category score format"}), 500
+
+                
+            return total_score / 20, trait_scores, category_scores
+            
+        print("Calculating Score")
+            
+        score, trait_scores, category_scores = calculate_score(result_file)
+
+        print("Calculating Category Score")
+            
+        file_path = f"psychometric_test.pdf"
+
+        print("Starting report generation")
+            
+        def generate_pdf_report(candidate_id, first_name, last_name, email, phone_number, location, time_taken, score, photo_base64=None):
+            text = "Psychometric Test"
+                
+            c = canvas.Canvas(file_path, pagesize=letter)
+                
+            c.setFont("Helvetica-Bold", 16)
+            text_width = c.stringWidth(text, "Helvetica-Bold", 16)
+            c.drawString((letter[0] - text_width) / 2, 750, text)
+
+            c.setFont("Helvetica-Bold", 12)
+            c.drawString(100, 730, "Candidate Information")
+                
+            print("Candidate Details")
+
+            c.setFont("Helvetica", 12)
+            details = [
+                ("Candidate ID", candidate_id),
+                ("Name", first_name + " " + last_name),
+                ("Email", email),
+                ("Phone Number", phone_number),
+                ("Location", location),
+                ("Time Taken", time_taken),
+                ("Score", score) #between 0 to 20
+            ]
+
+            if photo_base64:
                 try:
-                    for trait in trait_scores:
-                        if trait_scores[trait]['count'] > 0:
-                            trait_scores[trait]['score'] = "{:.2f}".format(float(trait_scores[trait]['score']) / float(trait_scores[trait]['count']))  # Divide by count and format as .2f
-
-                except ValueError as e:
-                    print(f"Error converting trait scores to float: {e}")
-                    logger.error(f"Error converting trait scores to float: {e}")
-                    return jsonify({"error": "Invalid trait score format"}), 500
-                
-                try:
-                    category_scores['Agreeableness'] = "{:.2f}".format(float(category_scores['Agreeableness']) / 12)
-                    category_scores['Conscientiousness'] = "{:.2f}".format(float(category_scores['Conscientiousness']) / 20)
-                    category_scores['Extraversion'] = "{:.2f}".format(float(category_scores['Extraversion']) / 17)
-                    category_scores['Neuroticism'] = "{:.2f}".format(float(category_scores['Neuroticism']) / 5)
-                    category_scores['Openness'] = "{:.2f}".format(float(category_scores['Openness']) / 16)
-                
-                except ValueError as e:
-                    print(f"Error converting category scores to float: {e}")
-                    logger.error(f"Error converting category scores to float: {e}")
-                    return jsonify({"error": "Invalid category score format"}), 500
-
-                
-                return total_score / 20, trait_scores, category_scores
-            
-            print("Calculating Score")
-            
-            score, trait_scores, category_scores = calculate_score(result_file)
-
-            print("Calculating Category Score")
-            
-            file_path = f"psychometric_test.pdf"
-
-            print("Starting report generation")
-            
-            def generate_pdf_report(candidate_id, first_name, last_name, email, phone_number, location, time_taken, score, photo_base64=None):
-                text = "Psychometric Test"
-                
-                c = canvas.Canvas(file_path, pagesize=letter)
-                
-                c.setFont("Helvetica-Bold", 16)
-                text_width = c.stringWidth(text, "Helvetica-Bold", 16)
-                c.drawString((letter[0] - text_width) / 2, 750, text)
-
-                c.setFont("Helvetica-Bold", 12)
-                c.drawString(100, 730, "Candidate Information")
-                
-                print("Candidate Details")
-
-                c.setFont("Helvetica", 12)
-                details = [
-                    ("Candidate ID", candidate_id),
-                    ("Name", first_name + " " + last_name),
-                    ("Email", email),
-                    ("Phone Number", phone_number),
-                    ("Location", location),
-                    ("Time Taken", time_taken),
-                    ("Score", score)
-                ]
-
-                if photo_base64:
-                    try:
-                        print("adding photo")
-                        if 'data:image/' in photo_base64:
-                            photo_base64 = photo_base64.split(',')[1]
+                    print("adding photo")
+                    if 'data:image/' in photo_base64:
+                        photo_base64 = photo_base64.split(',')[1]
                         
-                        photo_bytes = base64.b64decode(photo_base64)
-                        photo_image = Image.open(BytesIO(photo_bytes))
+                    photo_bytes = base64.b64decode(photo_base64)
+                    photo_image = Image.open(BytesIO(photo_bytes))
  
-                        if photo_image.mode != 'RGB':
-                            photo_image = photo_image.convert('RGB')
+                    if photo_image.mode != 'RGB':
+                        photo_image = photo_image.convert('RGB')
                         
-                        # Keep target size at 100x100
-                        target_size = (150, 150)
-                        original_width, original_height = photo_image.size
+                    # Keep target size at 100x100
+                    target_size = (150, 150)
+                    original_width, original_height = photo_image.size
                         
-                        # Calculate dimensions to maintain aspect ratio
-                        ratio = min(target_size[0]/original_width, target_size[1]/original_height)
-                        new_size = (int(original_width*ratio), int(original_height*ratio))
+                    # Calculate dimensions to maintain aspect ratio
+                    ratio = min(target_size[0]/original_width, target_size[1]/original_height)
+                    new_size = (int(original_width*ratio), int(original_height*ratio))
                         
-                        # Use high-quality resampling with antialiasing
-                        resized_image = photo_image.resize(new_size, Image.Resampling.LANCZOS)
+                    # Use high-quality resampling with antialiasing
+                    resized_image = photo_image.resize(new_size, Image.Resampling.LANCZOS)
 
-                        temp_photo = BytesIO()
-                        # Save with maximum quality settings
-                        resized_image.save(temp_photo, format='PNG', optimize=False, quality=100)
-                        temp_photo.seek(0)
+                    temp_photo = BytesIO()
+                    # Save with maximum quality settings
+                    resized_image.save(temp_photo, format='PNG', optimize=False, quality=100)
+                    temp_photo.seek(0)
                         
-                        # Draw image with original dimensions
-                        c.drawImage(ImageReader(temp_photo), 400, 650, width=new_size[0], height=new_size[1], preserveAspectRatio=True)
+                    # Draw image with original dimensions
+                    c.drawImage(ImageReader(temp_photo), 400, 650, width=new_size[0], height=new_size[1], preserveAspectRatio=True)
                         
-                    except Exception as e:
-                        print(f"Error processing photo: {e}")
-                        logger.error(f"Error processing photo: {e}")
+                except Exception as e:
+                    print(f"Error processing photo: {e}")
+                    logger.error(f"Error processing photo: {e}")
                 
-                y_position = 710
-                for field, value in details:
-                    c.drawString(100, y_position, field)
-                    c.drawString(300, y_position, str(value))
-                    y_position -= 15
-
-                print("Category Scores")
-
-                c.setFont("Helvetica-Bold", 16)
-                c.drawString(100, 500, "Category Scores")
-                y_position -= 10
-                
-                c.setFont("Helvetica-Bold", 12)
-                c.drawString(100, 475, "Category")
-                y_position -= 10
-                c.drawString(300, 475, "Score")
-                
-                c.line(100, 470, 400, 470)
-                
-                y_position = 455
-                c.setFont("Helvetica", 12)
-                for category, score in category_scores.items():
-                    c.drawString(100, y_position, category)
-                    c.drawString(300, y_position, "{:.2f}".format(float(score)))
-                    y_position -= 15
-                
-                c.showPage()
-
-                print("Trait Scores")
-
-                c.setFont("Helvetica-Bold", 16)
-                c.drawString(100, 750, "Trait Scores")
-                y_position = 735
-                y_position -= 10
-                
-                c.setFont("Helvetica-Bold", 12)
-                c.drawString(100, y_position, "Trait")
-                c.drawString(300, y_position, "Score")
-                c.drawString(400, y_position, "Category")
+            y_position = 710
+            for field, value in details:
+                c.drawString(100, y_position, field)
+                c.drawString(225, y_position, str(value))
                 y_position -= 15
 
-                c.line(100, y_position + 10, 500, y_position + 10)
-                y_position -= 5
+            print("Category Scores")
 
-                c.setFont("Helvetica", 12)
-                for trait, details in trait_scores.items():
-                    c.drawString(100, y_position, trait)
-                    c.drawString(300, y_position, "{:.2f}".format(float(details['score'])))
-                    c.drawString(400, y_position, details['category'])
-                    y_position -= 15
+            c.setFont("Helvetica-Bold", 16)
+            c.drawString(100, 500, "Category Scores")
+            y_position -= 10
                 
-                c.showPage()
+            c.setFont("Helvetica-Bold", 12)
+            c.drawString(100, 475, "Category")
+            y_position -= 10
+            c.drawString(300, 475, "Score")
+                
+            c.line(100, 470, 400, 470)
+            
+            y_position = 455
+            c.setFont("Helvetica", 12)
+            for category, score in category_scores.items():
+                c.drawString(100, y_position, category)
+                c.drawString(300, y_position, "{:.2f}".format(float(score)))
+                y_position -= 15
+                
+            c.showPage()
 
-                def draw_wrapped_text(c, text, x, y, max_width):
-                    words = text.split(' ')
-                    current_line = ''
-                    for word in words:
-                        test_line = current_line + ' ' + word if current_line else word
-                        if c.stringWidth(test_line, "Helvetica", 12) < max_width:
-                            current_line = test_line
-                        else:
-                            c.drawString(x, y, current_line)
-                            y -= 15
-                            current_line = word
+            print("Trait Scores")
 
-                    if current_line:
+            c.setFont("Helvetica-Bold", 16)
+            c.drawString(100, 750, "Trait Scores")
+            y_position = 735
+            y_position -= 10
+                
+            c.setFont("Helvetica-Bold", 12)
+            c.drawString(100, y_position, "Trait")
+            c.drawString(300, y_position, "Score")
+            c.drawString(400, y_position, "Category")
+            y_position -= 15
+
+            c.line(100, y_position + 10, 500, y_position + 10)
+            y_position -= 5
+
+            c.setFont("Helvetica", 12)
+            for trait, details in trait_scores.items():
+                c.drawString(100, y_position, trait)
+                c.drawString(300, y_position, "{:.2f}".format(float(details['score'])))
+                c.drawString(400, y_position, details['category'])
+                y_position -= 15
+                
+            c.showPage()
+
+            def draw_wrapped_text(c, text, x, y, max_width):
+                words = text.split(' ')
+                current_line = ''
+                for word in words:
+                    test_line = current_line + ' ' + word if current_line else word
+                    if c.stringWidth(test_line, "Helvetica", 12) < max_width:
+                        current_line = test_line
+                    else:
                         c.drawString(x, y, current_line)
                         y -= 15
+                        current_line = word
 
-                    return y
+                if current_line:
+                    c.drawString(x, y, current_line)
+                    y -= 15
+
+                return y
                 
-                print("Questions")
+            print("Questions")
                 
-                y_position = 750
+            y_position = 750
 
-                for question_data in sjt_questions:
-                    question_id = sjt_questions.index(question_data)
-                    user_response = result_file.get(str(question_id), "")
-                    user_options = user_response.split('|') if user_response else []
-                    user_options_json = {option.strip(): value for option, value in zip(user_options, [5, 3, 1, -1])}
+            for question_data in sjt_questions:
+                question_id = sjt_questions.index(question_data)
+                user_response = result_file.get(str(question_id), "")
+                user_options = user_response.split('|') if user_response else []
+                user_options_json = {option.strip(): value for option, value in zip(user_options, [5, 3, 1, -1])}
 
-                    # Check if y_position is less than 150 to start a new page
-                    if y_position < 300:
-                        c.showPage()
-                        y_position = 750
+                # Check if y_position is less than 150 to start a new page
+                if y_position < 300:
+                    c.showPage()
+                    y_position = 750
 
-                    c.setFont("Helvetica-Bold", 12)
-                    question_text = "Question: {}".format(question_data['question'])
+                c.setFont("Helvetica-Bold", 12)
+                question_text = "Question: {}".format(question_data['question'])
 
-                    # Check if the question will fit on the page
-                    if y_position - 15 < 300:  # 15 is the height of the next line
-                        c.showPage()
-                        y_position = 750
+                # Check if the question will fit on the page
+                if y_position - 15 < 300:  # 15 is the height of the next line
+                    c.showPage()
+                    y_position = 750
 
-                    # Draw the question text
-                    y_position = draw_wrapped_text(c, question_text, 100, y_position, 400)
+                # Draw the question text
+                y_position = draw_wrapped_text(c, question_text, 100, y_position, 400)
 
-                    # Add spacing before "Selected Options"
-                    y_position -= 10  # Adjust this value for more or less spacing
+                # Add spacing before "Selected Options"
+                y_position -= 10  # Adjust this value for more or less spacing
 
-                    c.setFont("Helvetica-Bold", 12)
-                    c.drawString(100, y_position, "Selected Options:")
-                    y_position -= 15
+                c.setFont("Helvetica-Bold", 12)
+                c.drawString(100, y_position, "Selected Options:")
+                y_position -= 15
                     
-                    c.setFont("Helvetica", 12)
-                    for option, score in user_options_json.items():
-                        y_position = draw_wrapped_text(c, "{}: {}".format(score, option), 100, y_position, 400)
+                c.setFont("Helvetica", 12)
+                for option, score in user_options_json.items():
+                    y_position = draw_wrapped_text(c, "{}: {}".format(score, option), 100, y_position, 400)
 
-                    y_position -= 15  # Add spacing after options
+                y_position -= 15  # Add spacing after options
 
-                    # Add header for scores
-                    c.setFont("Helvetica-Bold", 12)
-                    c.drawString(100, y_position, "Options with Scores:")
-                    y_position -= 15  # Move down for the options
+                # Add header for scores
+                c.setFont("Helvetica-Bold", 12)
+                c.drawString(100, y_position, "Options with Scores:")
+                y_position -= 15  # Move down for the options
 
-                    c.setFont("Helvetica", 12)
-                    options_with_scores = [
-                        "{}: {}".format(question_data['score'][option], option) for option in question_data['score']
-                    ]
-                    for option_score in options_with_scores:
-                        y_position = draw_wrapped_text(c, option_score, 100, y_position, 400)
+                c.setFont("Helvetica", 12)
+                options_with_scores = [
+                    "{}: {}".format(question_data['score'][option], option) for option in question_data['score']
+                ]
+                for option_score in options_with_scores:
+                    y_position = draw_wrapped_text(c, option_score, 100, y_position, 400)
 
-                    y_position -= 15
+                y_position -= 15
 
-                    # Add traits text
-                    c.setFont("Helvetica-Bold", 12)
-                    traits_text = "Traits: {}".format(", ".join(question_data.get('traits', [])))
-                    y_position = draw_wrapped_text(c, traits_text, 100, y_position, 400)
+                # Add traits text
+                c.setFont("Helvetica-Bold", 12)
+                traits_text = "Traits: {}".format(", ".join(question_data.get('traits', [])))
+                y_position = draw_wrapped_text(c, traits_text, 100, y_position, 400)
 
-                    # Add spacing before the next question
-                    y_position -= 50  # Adjust this value for more or less spacing before the next question
+                # Add spacing before the next question
+                y_position -= 50  # Adjust this value for more or less spacing before the next question
 
-                    # Check if y_position is less than 150 to start a new page
-                    if y_position < 300:
-                        c.showPage()
-                        y_position = 750
+                # Check if y_position is less than 150 to start a new page
+                if y_position < 300:
+                    c.showPage()
+                    y_position = 750
 
-                c.save()
+            c.save()
             
-            generate_pdf_report(candidate_id, first_name, last_name, email, phone_number, location, time_taken, score, photo_base64)
+        generate_pdf_report(candidate_id, first_name, last_name, email, phone_number, location, time_taken, score, photo_base64)
 
-            print("Uploading to s3")
+        print("Uploading to s3")
 
-            s3_client = boto3.client('s3')
-            s3_bucket = 'onlinetest-stag-documents'
-            s3_key = f'prod/sjt_reports/{candidate_id}'
-            report_s3_url = f'https://{s3_bucket}.s3.us-east-1.amazonaws.com/{s3_key}'
+        s3_client = boto3.client('s3')
+        s3_bucket = 'onlinetest-stag-documents'
+        s3_key = f'prod/sjt_reports/{candidate_id}'
+        report_s3_url = f'https://{s3_bucket}.s3.us-east-1.amazonaws.com/{s3_key}'
 
-            try:
-                s3_client.upload_file(
-                    file_path, s3_bucket, s3_key,
-                    ExtraArgs={
-                        "ContentDisposition": "inline",
-                        "ContentType": "application/pdf",
-                        "ACL": "public-read"
-                    }
-                )
+        try:
+            s3_client.upload_file(
+                file_path, s3_bucket, s3_key,
+                ExtraArgs={
+                    "ContentDisposition": "inline",
+                    "ContentType": "application/pdf",
+                    "ACL": "public-read"
+                }
+            )
 
-                s3_client.put_object_acl(Bucket=s3_bucket, Key=s3_key, ACL='public-read')
-                print("SJT Report uploaded.")
+            s3_client.put_object_acl(Bucket=s3_bucket, Key=s3_key, ACL='public-read')
+            print("SJT Report uploaded.")
 
-            except Exception as e:
-                print(f"Error uploading SJT report to S3: {e}")
-                logger.error(f"Error uploading SJT report to S3: {e}")
-                return jsonify({"error": "Failed to upload SJT report to S3"}), 500
+        except Exception as e:
+            print(f"Error uploading SJT report to S3: {e}")
+            logger.error(f"Error uploading SJT report to S3: {e}")
+            return jsonify({"error": "Failed to upload SJT report to S3"}), 500
             
-            print("s3 upload finished. fetching location")
+        print("s3 upload finished. fetching location")
 
-            try:
-                latitude, longitude = location.split(",")
-                location = get_address_from_coordinates_nominatim(latitude, longitude)
-                print("Lat/Long fetched successfully")
+        try:
+            latitude, longitude = location.split(",")
+            location = get_address_from_coordinates_nominatim(latitude, longitude)
+            print("Lat/Long fetched successfully")
 
-            except Exception as e:
-                print(f"Error getting address from coordinates: {e}")
-                logger.error(f"Error getting address from coordinates: {e}")
-                return jsonify({"error": "Failed to get address from coordinates"}), 500
+        except Exception as e:
+            print(f"Error getting address from coordinates: {e}")
+            logger.error(f"Error getting address from coordinates: {e}")
+            return jsonify({"error": "Failed to get address from coordinates"}), 500
             
-            print("location fetched. storing data now.")
+        print("location fetched. storing data now.")
 
-            try:
-                store_sjt_data(candidate_id, first_name, last_name, email, phone_number, location, score, category_scores['Agreeableness'], category_scores['Conscientiousness'], category_scores['Extraversion'], category_scores['Neuroticism'], category_scores['Openness'], time_taken, f'https://onlinetest-stag-documents.s3.us-east-1.amazonaws.com/{s3_key}', submit_reason)
-                print("SJT data stored successfully")
+        try:
+            store_sjt_data(candidate_id, first_name, last_name, email, phone_number, location, score, category_scores['Agreeableness'], category_scores['Conscientiousness'], category_scores['Extraversion'], category_scores['Neuroticism'], category_scores['Openness'], time_taken, f'https://onlinetest-stag-documents.s3.us-east-1.amazonaws.com/{s3_key}', submit_reason)
+            print("SJT data stored successfully")
 
-            except Exception as e:
-                print(f"Error storing SJT user data: {e}")
-                logger.error(f"Error storing SJT user data: {e}")
-                return jsonify({"error": "Failed to store SJT user data"}), 500
+        except Exception as e:
+            print(f"Error storing SJT user data: {e}")
+            logger.error(f"Error storing SJT user data: {e}")
+            return jsonify({"error": "Failed to store SJT user data"}), 500
             
-            try:
-                to_emails = ['hr@techifysolutions.com']
-                cc_emails = ['jobs@techifysolutions.com', 'zankhan.kukadiya@techifysolutions.com']
+        try:
+            to_emails = ['hr@techifysolutions.com']
+            cc_emails = ['jobs@techifysolutions.com', 'zankhan.kukadiya@techifysolutions.com']
 
-                subject = f'Test Report {first_name} {last_name}'
-                body = f"""
-                Please find the attached psychometric test report.<br><br>
-                Candidate ID: {candidate_id}<br>
-                First Name: {first_name}<br>
-                Last Name: {last_name}<br>
-                """
-                send_email(subject, body, to_emails, cc_emails, attachment_path=file_path)
-                print("SJT Report sent")
+            subject = f'Test Report {first_name} {last_name}'
+            body = f"""
+            Please find the attached psychometric test report.<br><br>
+            Candidate ID: {candidate_id}<br>
+            First Name: {first_name}<br>
+            Last Name: {last_name}<br>
+            """
+            send_email(subject, body, to_emails, cc_emails, attachment_path=file_path)
+            print("SJT Report sent")
                  
-            except Exception as e:
-                print(f"Error sending SJT report email: {e}")
-                logger.error(f"Error sending SJT report email: {e}")
-                return jsonify({"error": "Failed to send SJT report email"}), 500
+        except Exception as e:
+            print(f"Error sending SJT report email: {e}")
+            logger.error(f"Error sending SJT report email: {e}")
+            return jsonify({"error": "Failed to send SJT report email"}), 500
         
         
-            try:
-                to_email = email
-                subject = "Test Submitted Successfully"
-                body = f"""
-                Dear {first_name},
-                <br>Thank you for completing the Techify psychometric assessment. We are pleased to confirm that your submission has been successfully received.
-                <br>Our technical evaluation team will now review your work thoroughly. We appreciate the time and effort you've invested in this process and will be in touch with you regarding next steps.
-                <br>If you have any questions in the interim, please don't hesitate to contact our Talent Acquisition Team.
-                <br><br>Regards,
-                <br>Talent Acquisition Team 
-                <br>Techify Solutions
-                <br>hr@techifysolutions.com 
-                <br>+91 786-206-3131
-                """
-                send_email(subject, body, [to_email], [])
-                print("SJT Submission confirmation mail sent")
+        try:
+            to_email = email
+            subject = "Test Submitted Successfully"
+            body = f"""
+            Dear {first_name},
+            <br>Thank you for completing the Techify psychometric assessment. We are pleased to confirm that your submission has been successfully received.
+            <br>Our technical evaluation team will now review your work thoroughly. We appreciate the time and effort you've invested in this process and will be in touch with you regarding next steps.
+            <br>If you have any questions in the interim, please don't hesitate to contact our Talent Acquisition Team.
+            <br><br>Regards,
+            <br>Talent Acquisition Team 
+            <br>Techify Solutions
+            <br>hr@techifysolutions.com 
+            <br>+91 786-206-3131
+            """
+            send_email(subject, body, [to_email], [])
+            print("SJT Submission confirmation mail sent")
                 
 
-            except Exception as e:
-                print(f"Error sending SJT submission confirmation mail: {e}")
-                logger.error(f"Error sending SJT submission confirmation mail: {e}")
-                return jsonify({"error": "Failed to send SJT submission confirmation mail"}), 500
+        except Exception as e:
+            print(f"Error sending SJT submission confirmation mail: {e}")
+            logger.error(f"Error sending SJT submission confirmation mail: {e}")
+            return jsonify({"error": "Failed to send SJT submission confirmation mail"}), 500
         
         return jsonify({"message": "SJT Test submitted successfully"}), 200
 
