@@ -1529,9 +1529,11 @@ def submit_sjt_test():
                         if photo_image.mode != 'RGB':
                             photo_image = photo_image.convert('RGB')
                         
-                        # Calculate new dimensions while maintaining aspect ratio
-                        target_size = (100, 100)
+                        # Keep target size at 100x100
+                        target_size = (150, 150)
                         original_width, original_height = photo_image.size
+                        
+                        # Calculate dimensions to maintain aspect ratio
                         ratio = min(target_size[0]/original_width, target_size[1]/original_height)
                         new_size = (int(original_width*ratio), int(original_height*ratio))
                         
@@ -1539,12 +1541,12 @@ def submit_sjt_test():
                         resized_image = photo_image.resize(new_size, Image.Resampling.LANCZOS)
 
                         temp_photo = BytesIO()
-                        # Save with maximum quality and no compression
-                        resized_image.save(temp_photo, format='PNG', optimize=False)  # Using PNG for lossless quality
+                        # Save with maximum quality settings
+                        resized_image.save(temp_photo, format='PNG', optimize=False, quality=100)
                         temp_photo.seek(0)
                         
                         # Draw image with original dimensions
-                        c.drawImage(ImageReader(temp_photo), 450, 600, width=new_size[0], height=new_size[1], preserveAspectRatio=True)
+                        c.drawImage(ImageReader(temp_photo), 400, 700, width=new_size[0], height=new_size[1], preserveAspectRatio=True)
                         
                     except Exception as e:
                         print(f"Error processing photo: {e}")
@@ -1553,7 +1555,7 @@ def submit_sjt_test():
                 y_position = 710
                 for field, value in details:
                     c.drawString(100, y_position, field)
-                    c.drawString(300, y_position, str(value))
+                    c.drawString(224, y_position, str(value))
                     y_position -= 15
 
                 print("Category Scores")
