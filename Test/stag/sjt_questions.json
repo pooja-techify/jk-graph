@@ -66,7 +66,7 @@
             "Suggest an automation solution to improve efficiency.",
             "Do the work as instructed without complaining.",
             "Delegate the task to someone junior.",
-            "Find a way to make the task meaningful"
+            "Find a way to make the task meaningful."
         ],
         "traits": [
             "Innovation",
@@ -78,7 +78,7 @@
             "Suggest an automation solution to improve efficiency.": 5,
             "Do the work as instructed without complaining.": 3,
             "Delegate the task to someone junior.": 1,
-            "Find a way to make the task meaningful": -1
+            "Find a way to make the task meaningful.": -1
         }
     },
     {
