@@ -2293,14 +2293,7 @@ def verify_login():
         if not username or not password:
             return jsonify({"error": "Username and password are required"}), 400
 
-        conn = psycopg2.connect(
-            dbname='hrtest',
-            user='hruser',
-            password='T@chify$ol8m0s0!',
-            host='localhost',
-            port='5432'
-        )
-
+        conn = get_db_connection()
         cursor = conn.cursor()
 
         cursor.execute('''
@@ -2309,10 +2302,16 @@ def verify_login():
         result = cursor.fetchone()
 
         if result:
-            permission_access = result[0]
-            return jsonify({"success": True, "permission_access": permission_access}), 200
+            permission_access = result
+            return jsonify({
+                "success": True, 
+                "permission_access": bool(permission_access),
+            }), 200
         else:
-            return jsonify({"success": False, "permission_access": "no"}), 200
+            return jsonify({
+                "success": False, 
+                "permission_access": False,
+            }), 200
 
     except Exception as e:
         print(f"Error verifying login: {str(e)}")
@@ -2325,7 +2324,214 @@ def verify_login():
         if conn:
             conn.close()
 
+def get_db_connection():
+    try:
+        conn = psycopg2.connect(
+            dbname='hrtest',
+            user='hruser',
+            password='T@chify$ol8m0s0!',
+            host='localhost',
+            port='5432'
+        )
+        return conn
+    except Exception as e:
+        print(f"Error connecting to database: {e}")
+        logger.error(f"Error connecting to database: {e}")
+
+@app.route('/request_password_reset', methods=['POST'])
+def request_password_reset():
+    cursor = None
+    conn = None
+    try:
+        data = request.json
+        username = data.get("username")
+        new_password = data.get("new_password")
+
+        if not username or not new_password:
+            return jsonify({"error": "Username and new password are required"}), 400
+
+        conn = get_db_connection()
+        cursor = conn.cursor()
+
+        # Check if user exists
+        cursor.execute('SELECT username FROM stag.login WHERE username = %s', (username,))
+        if not cursor.fetchone():
+            return jsonify({"error": "User not found"}), 404
+
+        # Update password
+        cursor.execute('''
+            UPDATE stag.login 
+            SET password = %s 
+            WHERE username = %s
+        ''', (new_password, username))
+
+        conn.commit()
+        return jsonify({"message": "Password updated successfully"}), 200
+
+    except Exception as e:
+        print(f"Error resetting password: {str(e)}")
+        logger.error(f"Error resetting password: {str(e)}")
+        return jsonify({"error": str(e)}), 500
+    finally:
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
+
+@app.route('/request_delete_user', methods=['DELETE'])
+def request_delete_user():
+    cursor = None
+    conn = None
+    try:
+        data = request.json
+        username = data.get("username")
+
+        if not username:
+            return jsonify({"error": "Username is required"}), 400
+
+        conn = get_db_connection()
+        cursor = conn.cursor()
+
+        # Check if user exists and get is_super flag
+        cursor.execute('SELECT is_super FROM stag.login WHERE username = %s', (username,))
+        result = cursor.fetchone()
+        
+        if not result:
+            return jsonify({"error": "User not found"}), 404
+            
+        is_super = result[0]
+        if is_super:
+            return jsonify({"error": "Cannot delete superuser account"}), 403
+
+        # Delete user
+        cursor.execute('DELETE FROM stag.login WHERE username = %s', (username,))
+        conn.commit()
+
+        return jsonify({"message": "User deleted successfully"}), 200
+
+    except Exception as e:
+        print(f"Error deleting user: {str(e)}")
+        logger.error(f"Error deleting user: {str(e)}")
+        return jsonify({"error": str(e)}), 500
+    finally:
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
+
+@app.route('/request_create_user', methods=['POST'])
+def request_create_user():
+    cursor = None
+    conn = None
+    try:
+        data = request.json
+        username = data.get("username")
+        password = data.get("password")
+        permission_access = bool(data.get("permission_access", False)) 
+        is_super = bool(data.get("is_super", False)) 
+
+        if not username or not password:
+            return jsonify({"error": "Username and password are required"}), 400
+
+        conn = get_db_connection()
+        cursor = conn.cursor()
+
+        # Check if user already exists
+        cursor.execute('SELECT username FROM stag.login WHERE username = %s', (username,))
+        if cursor.fetchone():
+            return jsonify({"error": "Username already exists"}), 409
+
+        # Create new user
+        cursor.execute('''
+            INSERT INTO stag.login (username, password, permission_access)
+            VALUES (%s, %s, %s)
+        ''', (username, password, permission_access))
+
+        conn.commit()
+        return jsonify({"message": "User created successfully"}), 201
+
+    except Exception as e:
+        print(f"Error creating user: {str(e)}")
+        logger.error(f"Error creating user: {str(e)}")
+        return jsonify({"error": str(e)}), 500
+    finally:
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
+
+@app.route('/update_permission_access', methods=['PUT'])
+def update_permission_access():
+    cursor = None
+    conn = None
+    try:
+        data = request.json
+        username = data.get("username")
+        new_permission_access = bool(data.get("permission_access", False))
+
+        if not username or not new_permission_access:
+            return jsonify({"error": "Username and permission_access are required"}), 400
+
+        conn = get_db_connection()
+        cursor = conn.cursor()
+
+        # Check if user exists
+        cursor.execute('SELECT username FROM stag.login WHERE username = %s', (username,))
+        if not cursor.fetchone():
+            return jsonify({"error": "User not found"}), 404
+
+        # Update permission_access
+        cursor.execute('''
+            UPDATE stag.login 
+            SET permission_access = %s 
+            WHERE username = %s
+        ''', (new_permission_access, username))
+
+        conn.commit()
+        return jsonify({"message": "Permission access updated successfully"}), 200
+
+    except Exception as e:
+        print(f"Error updating permission access: {str(e)}")
+        logger.error(f"Error updating permission access: {str(e)}")
+        return jsonify({"error": str(e)}), 500
+    finally:
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
+
+@app.route('/fetch_users', methods=['GET'])
+def fetch_users():
+    cursor = None
+    conn = None
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+
+        # Fetch all users
+        cursor.execute('SELECT username, permission_access, is_super FROM stag.login')
+        rows = cursor.fetchall()
+
+        users = []
+        for row in rows:
+            users.append({
+                "username": row[0],
+                "permission_access": row[1],
+                "is_super": row[2]
+            })
+
+        print("Users fetched successfully")
+        return jsonify(users), 200
+
+    except Exception as e:
+        print(f"Error fetching users: {str(e)}")
+        logger.error(f"Error fetching users: {str(e)}")
+        return jsonify({"error": str(e)}), 500
+    finally:
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
+
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=5001, debug=True)
-
-# Score=∑(5−| X given − X correct |)

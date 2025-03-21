@@ -2171,7 +2171,6 @@ def verify_login():
             return jsonify({"error": "Username and password are required"}), 400
 
         conn = get_db_connection()
-
         cursor = conn.cursor()
 
         cursor.execute('''
@@ -2180,10 +2179,16 @@ def verify_login():
         result = cursor.fetchone()
 
         if result:
-            permission_access = result[0]
-            return jsonify({"success": True, "permission_access": permission_access}), 200
+            permission_access = result
+            return jsonify({
+                "success": True, 
+                "permission_access": bool(permission_access),
+            }), 200
         else:
-            return jsonify({"success": False, "permission_access": "no"}), 200
+            return jsonify({
+                "success": False, 
+                "permission_access": False,
+            }), 200
 
     except Exception as e:
         print(f"Error verifying login: {str(e)}")
@@ -2300,8 +2305,8 @@ def request_create_user():
         data = request.json
         username = data.get("username")
         password = data.get("password")
-        permission_access = data.get("permission_access", "no")  # Default to "no" if not specified
-        is_super = data.get("is_super", False)  # Default to False if not specified
+        permission_access = bool(data.get("permission_access", False)) 
+        is_super = bool(data.get("is_super", False)) 
 
         if not username or not password:
             return jsonify({"error": "Username and password are required"}), 400
@@ -2340,14 +2345,10 @@ def update_permission_access():
     try:
         data = request.json
         username = data.get("username")
-        new_permission_access = data.get("permission_access")
+        new_permission_access = bool(data.get("permission_access", False))
 
         if not username or not new_permission_access:
             return jsonify({"error": "Username and permission_access are required"}), 400
-
-        # Validate permission_access value (optional)
-        if new_permission_access not in ["yes", "no"]:
-            return jsonify({"error": "permission_access must be either 'yes' or 'no'"}), 400
 
         conn = get_db_connection()
         cursor = conn.cursor()
