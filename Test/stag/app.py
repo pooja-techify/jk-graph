@@ -1530,7 +1530,7 @@ def submit_sjt_test():
                             photo_image = photo_image.convert('RGB')
                         
                         # Keep target size at 100x100
-                        target_size = (100, 100)
+                        target_size = (150, 150)
                         original_width, original_height = photo_image.size
                         
                         # Calculate dimensions to maintain aspect ratio
@@ -1545,14 +1545,8 @@ def submit_sjt_test():
                         resized_image.save(temp_photo, format='PNG', optimize=False, quality=100)
                         temp_photo.seek(0)
                         
-                        # Calculate center position for image
-                        x_offset = 450 + (target_size[0] - new_size[0]) // 2  # Center horizontally
-                        y_offset = 600 + (target_size[1] - new_size[1]) // 2  # Center vertically
-
                         # Draw image with original dimensions
-                        c.drawImage(ImageReader(temp_photo), x_offset, y_offset, 
-                                    width=new_size[0], height=new_size[1], 
-                                    preserveAspectRatio=True, mask='auto')
+                        c.drawImage(ImageReader(temp_photo), 400, 650, width=new_size[0], height=new_size[1], preserveAspectRatio=True)
                         
                     except Exception as e:
                         print(f"Error processing photo: {e}")
