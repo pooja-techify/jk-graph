@@ -123,7 +123,7 @@
     "Question": "In HTML, which tag is used for the largest heading?",
     "Level": "Basic",
     "Category": "Programming",
-    "Options": ["<h1\\>", "<heading\\>", "<h6\\>", "<title\\>"],
+    "Options": ["\<h1\>", "\<heading\>", "\<h6\>", "\<title\>"],
     "Answer": "1"
   },
   {
