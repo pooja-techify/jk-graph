@@ -1457,6 +1457,7 @@ def submit_sjt_test():
                         category_scores[trait_scores[trait]['category']] += score  # Add score to the corresponding category
 
                 print("Calculating Trait Score")
+
                 try:
                     for trait in trait_scores:
                         if trait_scores[trait]['count'] > 0:
@@ -1471,7 +1472,7 @@ def submit_sjt_test():
                     category_scores['Agreeableness'] = "{:.2f}".format(float(category_scores['Agreeableness']) / 12)
                     category_scores['Conscientiousness'] = "{:.2f}".format(float(category_scores['Conscientiousness']) / 20)
                     category_scores['Extraversion'] = "{:.2f}".format(float(category_scores['Extraversion']) / 17)
-                    category_scores['Neuroticism'] = "{:.2f}".format(float(category_scores['Neuroticism']) / 5)
+                    category_scores['Neuroticism'] = "{:.2f}".format(float(category_scores['Neuroticism']) / 7)
                     category_scores['Openness'] = "{:.2f}".format(float(category_scores['Openness']) / 16)
                 
                 except ValueError as e:
@@ -1562,20 +1563,37 @@ def submit_sjt_test():
 
                 c.setFont("Helvetica-Bold", 16)
                 c.drawString(100, 500, "Category Scores")
-                y_position -= 10
                 
+                # Define column positions for categories
+                category_col = 100
+                score_col = 300
+                
+                # Add headers
                 c.setFont("Helvetica-Bold", 12)
-                c.drawString(100, 475, "Category")
-                y_position -= 10
-                c.drawString(300, 475, "Score")
+                c.drawString(category_col, 475, "Category")
+                c.drawString(score_col, 475, "Score")
                 
-                c.line(100, 470, 400, 470)
+                c.line(category_col, 470, 400, 470)
                 
                 y_position = 455
                 c.setFont("Helvetica", 12)
-                for category, score in category_scores.items():
-                    c.drawString(100, y_position, category)
-                    c.drawString(300, y_position, "{:.2f}".format(float(score)))
+
+                # Sort categories by score in descending order
+                sorted_categories = sorted(
+                    category_scores.items(),
+                    key=lambda x: float(x[1]),
+                    reverse=True
+                )
+
+                for category, score in sorted_categories:
+                    # Draw category name
+                    c.drawString(category_col, y_position, category)
+                    
+                    # Format score with exactly 2 decimal places and right-align
+                    score_str = "{:.2f}".format(float(score))
+                    score_width = c.stringWidth(score_str, "Helvetica", 12)
+                    score_x = score_col + 50 - score_width  # Right-align within a 50-point width
+                    c.drawString(score_x, y_position, score_str)
                     y_position -= 15
                 
                 c.showPage()
@@ -1587,22 +1605,48 @@ def submit_sjt_test():
                 y_position = 735
                 y_position -= 10
                 
+                # Define column positions
+                trait_col = 100
+                score_col = 300
+                category_col = 400
+                
+                # Add headers
                 c.setFont("Helvetica-Bold", 12)
-                c.drawString(100, y_position, "Trait")
-                c.drawString(300, y_position, "Score")
-                c.drawString(400, y_position, "Category")
+                c.drawString(trait_col, y_position, "Trait")
+                c.drawString(score_col, y_position, "Score")
+                c.drawString(category_col, y_position, "Category")
                 y_position -= 15
 
-                c.line(100, y_position + 10, 500, y_position + 10)
+                c.line(trait_col, y_position + 10, 500, y_position + 10)
                 y_position -= 5
 
+                # Calculate maximum width needed for score alignment
                 c.setFont("Helvetica", 12)
-                for trait, details in trait_scores.items():
-                    c.drawString(100, y_position, trait)
-                    c.drawString(300, y_position, "{:.2f}".format(float(details['score'])))
-                    c.drawString(400, y_position, details['category'])
+                max_score_width = max(
+                    c.stringWidth("{:.2f}".format(float(details['score'])), "Helvetica", 12)
+                    for details in trait_scores.values()
+                )
+
+                # Sort traits by category and then by score
+                sorted_traits = sorted(
+                    trait_scores.items(),
+                    key=lambda x: (x[1]['category'], -float(x[1]['score']))
+                )
+
+                for trait, details in sorted_traits:
+                    # Draw trait name
+                    c.drawString(trait_col, y_position, trait)
+                    
+                    # Format score with exactly 2 decimal places and right-align
+                    score = "{:.2f}".format(float(details['score']))
+                    score_width = c.stringWidth(score, "Helvetica", 12)
+                    score_x = score_col + 50 - score_width  # Right-align within a 50-point width
+                    c.drawString(score_x, y_position, score)
+                    
+                    # Draw category
+                    c.drawString(category_col, y_position, details['category'])
                     y_position -= 15
-                
+
                 c.showPage()
 
                 def draw_wrapped_text(c, text, x, y, max_width):
