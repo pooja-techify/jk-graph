@@ -2331,21 +2331,6 @@ def verify_login():
         if conn:
             conn.close()
 
-def get_db_connection():
-    try:
-        conn = psycopg2.connect(
-            dbname='hrtest',
-            user='hruser',
-            password='T@chify$ol8m0s0!',
-            host='localhost',
-            port='5432'
-        )
-        return conn
-    except Exception as e:
-        print(f"Error connecting to database: {e}")
-        logger.error(f"Error connecting to database: {e}")
-        raise
-
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=5001, debug=True)
 
