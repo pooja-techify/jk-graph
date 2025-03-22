@@ -2346,7 +2346,7 @@ def verify_login():
         result = cursor.fetchone()
 
         if result:
-            permission_access = result
+            permission_access = result[0]
             return jsonify({
                 "success": True, 
                 "permission_access": bool(permission_access),
