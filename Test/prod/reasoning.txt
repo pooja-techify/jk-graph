@@ -63,7 +63,7 @@
     "Answer": "1"
   },
   {
-    "Question": "If \"CLOUD\" is written as \"DMPVE\", then how is \"STEAM\" written in the same code?",
+    "Question": "If 'CLOUD' is written as 'DMPVE', then how is 'STEAM' written in the same code?",
     "Level": "Basic",
     "Category": "Reasoning",
     "Options": ["TUFBN", "NBFUT", "NBFTS", "TUFAM"],
@@ -203,7 +203,7 @@
     "Answer": "1"
   },
   {
-    "Question": "Four cards are placed face down on a table. Each card has a number on one side and a letter on the other. The cards show 4, 7, A, and K.  Which cards must be turned over to test the rule: \"If a card has an even number on one side, it must have a vowel on the other side\"?",
+    "Question": "Four cards are placed face down on a table. Each card has a number on one side and a letter on the other. The cards show 4, 7, A, and K.  Which cards must be turned over to test the rule: 'If a card has an even number on one side, it must have a vowel on the other side'?",
     "Level": "Intermediate",
     "Category": "Reasoning",
     "Options": ["4 and 7", "4 and A", "4 and K", "7 and A"],
