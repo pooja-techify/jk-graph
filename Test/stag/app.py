@@ -2513,9 +2513,6 @@ def update_permission_access():
         username = data.get("username")
         new_permission_access = bool(data.get("permission_access", False))
 
-        if not username or not new_permission_access:
-            return jsonify({"error": "Username and permission_access are required"}), 400
-
         conn = get_db_connection()
         cursor = conn.cursor()
 
