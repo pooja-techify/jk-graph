@@ -1,0 +1,21 @@
+{
+  "mcpServers": {
+    "postgres": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-postgres",
+        "postgresql://username:password@host:port/database"
+      ]
+    },
+    "google-workspace": {
+      "command": "node",
+      "args": ["path/to/google-workspace-mcp-server/build/index.js"],
+      "env": {
+        "GOOGLE_CLIENT_ID": "your client id",
+        "GOOGLE_CLIENT_SECRET": "your client secret",
+        "GOOGLE_REFRESH_TOKEN": "your refresh token"
+      }
+    }
+  }
+}
